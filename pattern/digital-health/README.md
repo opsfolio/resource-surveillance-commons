@@ -6,3 +6,9 @@
   `stateless-fhir.surveilr.sql` to create `*_cached` tables which creates a
   denormalized "static" table from the views to improve performance for larger
   datasets
+
+## TODO
+
+- [ ] Review and consider
+      [SQL-on-FHIR](https://build.fhir.org/ig/FHIR/sql-on-fhir-v2) as an
+      approach to auto-generate SQL views.
