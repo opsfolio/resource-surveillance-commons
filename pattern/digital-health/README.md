@@ -9,6 +9,9 @@
 
 ## TODO
 
-- [ ] Review and consider
-      [SQL-on-FHIR](https://build.fhir.org/ig/FHIR/sql-on-fhir-v2) as an
-      approach to auto-generate SQL views.
+- [ ] Review and consider language-agnostic
+      [SQL-on-FHIR](https://build.fhir.org/ig/FHIR/sql-on-fhir-v2) _View
+      Definitions_ as an approach to auto-generate _SQL views_. In GitHub see
+      [SQL-on-FHIR Repo](https://github.com/FHIR/sql-on-fhir-v2)
+      [Reference implementation of the SQL on FHIR spec in JavaScript](https://github.com/FHIR/sql-on-fhir-v2/tree/master/sof-js)
+      for a technique to parse the _SQL-on-FHIR View Definitions_.

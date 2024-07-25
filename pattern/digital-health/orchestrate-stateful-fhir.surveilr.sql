@@ -13,8 +13,12 @@
 DROP TABLE IF EXISTS fhir_v4_patient_cached;
 CREATE TABLE fhir_v4_patient_cached AS SELECT * ROM fhir_v4_patient;
 
+-- TODO: add indexes to help improve performance
+
 -- This table caches the average age of patients as calculated from the fhir_v4_patient_age_avg view.
 -- The data is stored in a static form, meaning updates to the original JSON data
 -- will not reflect here unless the data is refreshed manually.
 DROP TABLE IF EXISTS fhir_v4_patient_age_avg_cached;
 CREATE TABLE fhir_v4_patient_age_avg_cached AS SELECT * FROM fhir_v4_patient_age_avg;
+
+-- TODO: add indexes to help improve performance
