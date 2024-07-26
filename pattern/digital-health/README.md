@@ -11,7 +11,39 @@
   changes in the source data will not be reflected until the tables are
   refreshed.
 
-## Try it out
+## Try it out on any device without this repo (if you're just using the SQL scripts)
+
+Prepare the directory with sample files, download Synthea samples, download
+`surveilr`, and create `resource-surveillance.sqlite.db` RSSD file that will
+contain queryable FHIR data.
+
+```bash
+# prepare a working directory with files
+$ mkdir -p /tmp/fhir-query
+$ cd /tmp/fhir-query
+
+# download and unzip sample Synthea FHIR JSON files
+$ wget https://synthetichealth.github.io/synthea-sample-data/downloads/latest/synthea_sample_data_fhir_latest.zip
+$ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip && cd ..
+
+# download surveilr using instructions at https://docs.opsfolio.com/surveilr/how-to/installation-guide
+# then run the ingestion of files downloaded above
+$ ./surveilr ingest files -r ingest/
+
+# apply the FHIR views and create cached tables directly from GitHub
+$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+```
+
+Once you ingest all the JSON using `surveilr`, apply
+`orchestrate-stateful-fhir.surveilr.sql` and `stateless-fhir.surveilr.sql` all
+content will be accessed through views or `*.cached` tables in
+`resource-surveillance.sqlite.db`.
+
+At this point you can rename the SQLite database file, archive it, use in
+reporting tools, DBeaver, DataGrip, or any other SQLite data access tools.
+
+## Try it out in this repo (if you're developing SQL scripts)
 
 First prepare the directory with sample files:
 
