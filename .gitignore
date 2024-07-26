@@ -6,4 +6,5 @@ surveilr.exe
 resource-surveillance.sqlite.db
 
 # when testing in this repo, we might have ingest samples / exemplars
+*sample*
 ingest/

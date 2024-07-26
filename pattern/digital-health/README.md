@@ -1,26 +1,61 @@
 # `surveilr` Digital Health Patterns
 
-- `stateless-fhir.surveilr.sql` script focuses on creating views that define how to extract and present specific FHIR data from the uniform_resource.content JSONB column. It does not modify or store any persistent data; it only sets up views for querying.
-  `uniform_resource.content` as FHIR JSON
-- `orchestrate-stateful-fhir.surveilr.sql` script is responsible for creating tables that cache the data extracted by the views. These tables serve as materialized views, allowing for faster access to the data. The tables are updated manually, and any changes in the source data will not be reflected until the tables are refreshed.
+- `stateless-fhir.surveilr.sql` script focuses on creating views that define how
+  to extract and present specific FHIR data from the `uniform_resource.content`
+  JSONB column. It does not modify or store any persistent data; it only sets up
+  views for querying.
+- `orchestrate-stateful-fhir.surveilr.sql` script is responsible for creating
+  tables that cache data extracted by views. These tables serve as "materialized
+  views", allowing for faster access to the data but are static. The tables are
+  updated manually, and any changes in the source data will not be reflected
+  until the tables are refreshed.
 
 ## Try it out
 
-- Prepare a new directory (e.g. `/tmp/fhir-100`)
-- [Download 100 Sample Synthetic Patient Records, FHIR R4 (Synthea)](https://synthetichealth.github.io/synthea-sample-data/downloads/latest/synthea_sample_data_fhir_latest.zip) and unzip into subdirectory of new directory `/tmp/fhir-100/ingest`
-- [Download `surveilr`](https://docs.opsfolio.com/surveilr/how-to/installation-guide/) into new directory (`/tmp/fhir-100/surveilr`)
+First prepare the directory with sample files:
 
 ```bash
-# prepare a destination
-$ mkdir -p /tmp/fhir-100
-$ cd /tmp/fhir-100
+$ cd pattern/digital-health
 $ wget https://synthetichealth.github.io/synthea-sample-data/downloads/latest/synthea_sample_data_fhir_latest.zip
 $ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip && cd ..
-$ ls -al
+```
 
+The directory should look like this now:
+
+```
+.
+├── ingest
+│   ├── Abe604_Runolfsdottir785_3718b84e-cbe9-1950-6c6c-e6f4fdc907be.json
+│   ├── ...(many more files)
+│   └── Yon80_Kiehn525_54fe5c50-37cc-930b-8e3a-2c4e91bb6eec.json
+├── orchestrate-stateful-fhir.surveilr.sql
+├── stateless-fhir.surveilr.sql
+└── synthea_sample_data_fhir_latest.zip
+```
+
+Now
+[Download `surveilr` binary](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
+into this directory, then ingest and query the data:
+
+```bash
 # ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
 $ ./surveilr ingest files -r ingest/
+```
 
+After ingestion, you will only work with these files:
+
+```
+├── orchestrate-stateful-fhir.surveilr.sql
+├── stateless-fhir.surveilr.sql 
+└── resource-surveillance.sqlite.db            # SQLite database
+```
+
+After ingestion, `surveilr` is no longer required, the `ingest` directory can be
+ignored, only `sqlite3` is required because all content is in the
+`resource-surveillance.sqlite.db` SQLite database which does not require any
+other dependencies.
+
+```
 # see how many files were ingested into `uniform_resource` table
 $ echo "select count(*) from uniform_resource" | sqlite3 resource-surveillance.sqlite.db
 
@@ -40,7 +75,12 @@ $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle
 $ echo "select * from fhir_v4_patient_age_avg_cached" | sqlite3 resource-surveillance.sqlite.db -table
 ```
 
-- Run `./surveilr ingest files -r ingest` to take all the JSON files and prepare an RSSD. Note new `resource-surveillance.sqlite.db` created file in the same directory
+Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
+`stateless-fhir.surveilr.sql` you can ignore those files and all content will be
+accessed through views or `*.cached` tables in
+`resource-surveillance.sqlite.db`. At this point you can rename the SQLite
+database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
+other SQLite data access tools.
 
 ## TODO
 
