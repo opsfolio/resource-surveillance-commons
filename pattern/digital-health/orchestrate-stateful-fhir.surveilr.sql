@@ -6,19 +6,28 @@
 -- materialized views.
 -- ---------------------------------------------------------------------------------
 
--- This table caches the denormalized patient data extracted from the fhir_v4_patient view.
--- The data is stored in a static form, meaning updates to the original JSON data
--- will not reflect here unless the data is refreshed manually.
--- The table structure and data are directly taken from the fhir_v4_patient view.
-DROP TABLE IF EXISTS fhir_v4_patient_cached;
-CREATE TABLE fhir_v4_patient_cached AS SELECT * ROM fhir_v4_patient;
+-- Cache for the fhir_v4_bundle_resource_patient view.
+-- Caches detailed information about Patient resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_patient_cached;
+CREATE TABLE fhir_v4_bundle_resource_patient_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_patient;
 
--- TODO: add indexes to help improve performance
+-- Calculates the average age of patients
+-- Uses the birth date from the cached FHIR Patient resources to compute the average age with better performance.
+DROP VIEW IF EXISTS fhir_v4_patient_age_avg_cached;
+CREATE VIEW fhir_v4_patient_age_avg_cached AS
+WITH patient_birth_dates AS (
+    SELECT
+        birth_date
+    FROM
+        fhir_v4_bundle_resource_patient_cached
+    WHERE
+        birth_date IS NOT NULL
+)
+SELECT
+    AVG((julianday('now') - julianday(birth_date)) / 365.25) AS average_age
+FROM
+    patient_birth_dates;
 
--- This table caches the average age of patients as calculated from the fhir_v4_patient_age_avg view.
--- The data is stored in a static form, meaning updates to the original JSON data
--- will not reflect here unless the data is refreshed manually.
-DROP TABLE IF EXISTS fhir_v4_patient_age_avg_cached;
-CREATE TABLE fhir_v4_patient_age_avg_cached AS SELECT * FROM fhir_v4_patient_age_avg;
 
 -- TODO: add indexes to help improve performance
