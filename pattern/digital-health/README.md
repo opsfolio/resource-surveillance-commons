@@ -6,9 +6,10 @@
   views for querying.
 - `orchestrate-stateful-fhir.surveilr.sql` script is responsible for creating
   tables that cache data extracted by views. These tables serve as "materialized
-  views", allowing for faster access to the data but are static. The tables are
-  updated manually, and any changes in the source data will not be reflected
-  until the tables are refreshed.
+  views", allowing for faster access to the data but are static. When new data
+  is ingested, the tables need to be dropped and recreated manually, and any
+  changes in the source data will not be reflected until the tables are
+  refreshed.
 
 ## Try it out
 
@@ -50,12 +51,12 @@ After ingestion, you will only work with these files:
 └── resource-surveillance.sqlite.db            # SQLite database
 ```
 
-After ingestion, `surveilr` is no longer required, the `ingest` directory can be
+Post-ingestion, `surveilr` is no longer required, the `ingest` directory can be
 ignored, only `sqlite3` is required because all content is in the
 `resource-surveillance.sqlite.db` SQLite database which does not require any
 other dependencies.
 
-```
+```bash
 # see how many files were ingested into `uniform_resource` table
 $ echo "select count(*) from uniform_resource" | sqlite3 resource-surveillance.sqlite.db
 
