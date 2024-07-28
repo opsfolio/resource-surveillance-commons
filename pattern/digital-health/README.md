@@ -33,6 +33,11 @@ $ ./surveilr ingest files -r ingest/
 # apply the FHIR views and create cached tables directly from GitHub
 $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
 $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+
+# use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
+$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+$ surveilr sqlpage --port 9000
+# launch a browser and go to http://localhost:9000/fhir/index.sql
 ```
 
 Once you ingest all the JSON using `surveilr`, apply
@@ -106,6 +111,11 @@ $ echo "select * from fhir_v4_patient_age_avg" | sqlite3 resource-surveillance.s
 $ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
 $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient_cached" | sqlite3 resource-surveillance.sqlite.db -table
 $ echo "select * from fhir_v4_patient_age_avg_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+# use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
+$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+$ surveilr sqlpage --port 9000
+# launch a browser and go to http://localhost:9000/fhir/index.sql
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
