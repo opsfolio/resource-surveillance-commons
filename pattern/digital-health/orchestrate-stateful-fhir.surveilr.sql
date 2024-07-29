@@ -31,3 +31,37 @@ FROM
 
 
 -- TODO: add indexes to help improve performance
+
+-- Cache for the fhir_v4_bundle_resource_encounter view.
+-- Caches detailed information about Encounter resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_encounter_cached;
+CREATE TABLE fhir_v4_bundle_resource_encounter_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_encounter;
+
+-- Cache for the fhir_v4_bundle_resource_condition view.
+-- Caches detailed information about condition resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_condition_cached;
+CREATE TABLE fhir_v4_bundle_resource_condition_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_condition;
+
+-- Cache for the fhir_v4_bundle_resource_ServiceRequest view.
+-- Caches detailed information about Service request resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_ServiceRequest_cached;
+CREATE TABLE fhir_v4_bundle_resource_ServiceRequest_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_ServiceRequest;
+
+
+-- Cache for the fhir_v4_bundle_resource_procedure view.
+-- Caches detailed information about Procedure resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_procedure_cached;
+CREATE TABLE fhir_v4_bundle_resource_procedure_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_procedure;
+
+  
+-- Cache for the fhir_v4_bundle_resource_practitioner view.
+-- Caches detailed information about Practioner resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_practitioner_cached;
+CREATE TABLE fhir_v4_bundle_resource_practitioner_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_practitioner;
+
+  
