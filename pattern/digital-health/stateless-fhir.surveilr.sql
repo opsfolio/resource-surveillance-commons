@@ -255,3 +255,27 @@ SELECT
     resource_content->>'$.resource.identifier[4].value' AS identifier_value_4,
     resource_content->>'$.resource.performedDateTime' AS performedDateTime
 FROM procedure_resources;
+
+
+
+
+CREATE VIEW fhir_v4_bundle_resource_practitioner AS
+WITH practitioner_resources AS (
+    SELECT
+        resource_content
+    FROM
+        fhir_v4_bundle_resource
+    WHERE
+        resource_type = 'Practitioner'
+)
+SELECT
+    resource_content->>'$.resource.id' AS id,
+    resource_content->>'$.resource.meta.lastUpdated' AS lastUpdated,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[0].url' AS lineage_meta_data_url_0,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[0].valueString' AS lineage_meta_data_value_0,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[1].url' AS lineage_meta_data_url_1,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[1].valueString' AS lineage_meta_data_value_1,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[2].url' AS lineage_meta_data_url_2,
+    resource_content->>'$.resource.extension[0].lineage_meta_data[2].valueString' AS lineage_meta_data_value_2
+FROM
+practitioner_resources;
