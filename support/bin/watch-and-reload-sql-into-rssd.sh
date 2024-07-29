@@ -11,7 +11,7 @@ DIM=$(tput dim)
 RESET=$(tput sgr0)
 
 # Set default database path if not provided
-DB_PATH=${SURVEILR_RSSD_PATH:-resource-surveillance.sqlite.db}
+DB_PATH=${SURVEILR_STATEDB_FS_PATH:-resource-surveillance.sqlite.db}
 
 # List all files being watched
 echo -e "${DIM}Watching the following files:${RESET}"

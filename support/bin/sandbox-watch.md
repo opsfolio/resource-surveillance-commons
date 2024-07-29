@@ -18,10 +18,10 @@ sudo apt-get install inotify-tools
 ## Watch Script
 
 The following script watches for changes in `.sql.ts` and `.sql` files. It uses
-an environment variable `SURVEILR_RSSD_PATH` to specify the SQLite database
+an environment variable `SURVEILR_STATEDB_FS_PATH` to specify the SQLite database
 path, which defaults to `resource-surveillance.sqlite.db`. 
 
-The actual script is available here: [`watch-and-reload-sql.sh`](watch-and-reload-sql.sh).
+The actual script is available here: [`watch-and-reload-sql-into-rssd.sh`](watch-and-reload-sql-into-rssd.sh).
 
 Below is the general approach to learn from:
 
@@ -29,7 +29,7 @@ Below is the general approach to learn from:
 #!/bin/bash
 
 # Set default database path if not provided
-DB_PATH=${SURVEILR_RSSD_PATH:-resource-surveillance.sqlite.db}
+DB_PATH=${SURVEILR_STATEDB_FS_PATH:-resource-surveillance.sqlite.db}
 
 # List all files being watched
 echo "Watching the following files:"
@@ -58,8 +58,8 @@ detected.
 
 ### Explanation (if you need to edit it or make your own version)
 
-- `DB_PATH=${SURVEILR_RSSD_PATH:-resource-surveillance.sqlite.db}`: Sets the
-  database path to the value of `SURVEILR_RSSD_PATH` or defaults to
+- `DB_PATH=${SURVEILR_STATEDB_FS_PATH:-resource-surveillance.sqlite.db}`: Sets the
+  database path to the value of `SURVEILR_STATEDB_FS_PATH` or defaults to
   `resource-surveillance.sqlite.db`.
 - `ls *.sql.ts *.sql`: Lists all `.sql.ts` and `.sql` files being watched.
 - `inotifywait -e close_write *.sql.ts *.sql`: Watches for `close_write` events
