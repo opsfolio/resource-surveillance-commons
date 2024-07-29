@@ -254,4 +254,4 @@ SELECT
     resource_content->>'$.resource.identifier[3].value' AS identifier_value_3,
     resource_content->>'$.resource.identifier[4].value' AS identifier_value_4,
     resource_content->>'$.resource.performedDateTime' AS performedDateTime
-FROM procedure_resources
+FROM procedure_resources;
