@@ -133,8 +133,8 @@ $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr sqlpage --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
 
-# in a separate shell you can use watch-and-reload-sql-into-rssd.sh
-$ ../../support/bin/watch-and-reload-sql-into-rssd.sh
+# if you want to start surveilr SQLPage in "watch" mode to re-load files automatically
+$ ./sqlpage-watch.sh
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
@@ -151,7 +151,8 @@ to automatically re-load the contents into SQLite regularly. Since it can be
 time-consuming to re-run the same command in the CLI manually each time a file
 changes, you can use _watch mode_ instead.
 
-See: [Using `watch-and-reload-sql-into-rssd.sh`](../../support/bin/sandbox-watch.md).
+See: [`sqlpage-watch.sh`](./sqlpage-watch.sh) and
+[Using `watch-and-reload-sql-into-rssd.sh`](../../support/bin/sandbox-watch.md).
 
 ## TODO
 
