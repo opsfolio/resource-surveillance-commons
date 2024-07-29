@@ -116,8 +116,6 @@ $ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sql
 $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient_cached" | sqlite3 resource-surveillance.sqlite.db -table
 $ echo "select * from fhir_v4_patient_age_avg_cached" | sqlite3 resource-surveillance.sqlite.db -table
 
-
-
 $ echo "SELECT id, lastUpdated, type_code, type_system, type_display, class_code, class_system, class_display, period_start, period_end, status, subject_display, subject_reference, location, diagnosis_reference FROM fhir_v4_bundle_resource_encounter_cached" | sqlite3 resource-surveillance.sqlite.db -table
 
 $ echo "SELECT observation_id, status, category_system, category_code, category_display, code_system, code, code_display, subject_reference FROM fhir_v4_bundle_resource_observation_cached" | sqlite3 resource-surveillance.sqlite.db -table
@@ -134,6 +132,9 @@ $ echo "SELECT id, lastUpdated, lineage_meta_data_url_0, lineage_meta_data_value
 $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr sqlpage --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
+
+# in a separate shell you can use watch-and-reload-sql.sh
+$ ../../support/bin/watch-and-reload-sql.sh
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
@@ -142,6 +143,15 @@ accessed through views or `*.cached` tables in
 `resource-surveillance.sqlite.db`. At this point you can rename the SQLite
 database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
 other SQLite data access tools.
+
+## Automatically reloading SQL when it changes
+
+On sandboxes during development and editing of `.sql` or `.sql.ts` you may want
+to automatically re-load the contents into SQLite regularly. Since it can be
+time-consuming to re-run the same command in the CLI manually each time a file
+changes, you can use _watch mode_ instead.
+
+See: [Using `watch-and-reload-sql.sh`](../../support/bin/sandbox-watch.md).
 
 ## TODO
 
