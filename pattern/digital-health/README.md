@@ -116,6 +116,20 @@ $ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sql
 $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient_cached" | sqlite3 resource-surveillance.sqlite.db -table
 $ echo "select * from fhir_v4_patient_age_avg_cached" | sqlite3 resource-surveillance.sqlite.db -table
 
+
+
+$ echo "SELECT id, lastUpdated, type_code, type_system, type_display, class_code, class_system, class_display, period_start, period_end, status, subject_display, subject_reference, location, diagnosis_reference FROM fhir_v4_bundle_resource_encounter_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+$ echo "SELECT observation_id, status, category_system, category_code, category_display, code_system, code, code_display, subject_reference FROM fhir_v4_bundle_resource_observation_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+$ echo "SELECT id, code, code_system, code_display, lastUpdated, subject_display, subject_reference, encounter_display FROM fhir_v4_bundle_resource_condition_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+$ echo "SELECT id, lastUpdated, code, code_system, code_display, category_code, category_code_system, category_code_display, intent FROM fhir_v4_bundle_resource_ServiceRequest_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+$ echo "SELECT id, code, lastUpdated, subject_display, subject_reference, bodySite, encounter_display, encounter_reference FROM fhir_v4_bundle_resource_procedure_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
+$ echo "SELECT id, lastUpdated, lineage_meta_data_url_0, lineage_meta_data_value_0, lineage_meta_data_url_1 FROM fhir_v4_bundle_resource_practitioner_cached" | sqlite3 resource-surveillance.sqlite.db -table
+
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
 $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr sqlpage --port 9000

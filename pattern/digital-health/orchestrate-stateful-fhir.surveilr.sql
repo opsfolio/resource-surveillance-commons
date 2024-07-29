@@ -64,4 +64,8 @@ DROP TABLE IF EXISTS fhir_v4_bundle_resource_practitioner_cached;
 CREATE TABLE fhir_v4_bundle_resource_practitioner_cached AS 
   SELECT * FROM fhir_v4_bundle_resource_practitioner;
 
-  
+  -- Cache for the fhir_v4_bundle_resource_practitioner view.
+-- Caches detailed information about Practioner resources extracted from FHIR bundles.
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_observation_cached;
+CREATE TABLE fhir_v4_bundle_resource_observation_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_observation;
