@@ -115,6 +115,44 @@ SELECT
 FROM
     patient_birth_dates;
 
+-- Extracts Observation resources from FHIR bundles
+-- Provides details about each observation, such as ID, status, category, code, subject, effective date/time, issued date/time, and value.
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_observation;
+CREATE VIEW fhir_v4_bundle_resource_observation AS
+WITH observation_resources AS (
+    SELECT
+        resource_content
+    FROM
+        fhir_v4_bundle_resource
+    WHERE
+        resource_type = 'Observation'
+)
+SELECT
+    resource_content ->> '$.resource.id' AS observation_id,
+    resource_content ->> '$.resource.status' AS status,
+    resource_content ->> '$.resource.category[0].coding[0].system' AS category_system,
+    resource_content ->> '$.resource.category[0].coding[0].code' AS category_code,
+    resource_content ->> '$.resource.category[0].coding[0].display' AS category_display,
+    resource_content ->> '$.resource.code.coding[0].system' AS code_system,
+    resource_content ->> '$.resource.code.coding[0].code' AS code,
+    resource_content ->> '$.resource.code.coding[0].display' AS code_display,
+    resource_content ->> '$.resource.subject.reference' AS subject_reference,
+    CASE 
+        WHEN resource_content ->> '$.resource.effectiveDateTime' IS NOT NULL THEN DATETIME(resource_content ->> '$.resource.effectiveDateTime')
+        ELSE NULL
+    END AS effective_date_time,
+    CASE 
+        WHEN resource_content ->> '$.resource.issued' IS NOT NULL THEN DATETIME(resource_content ->> '$.resource.issued')
+        ELSE NULL
+    END AS issued_date_time,
+    resource_content ->> '$.resource.valueQuantity.value' AS value_quantity,
+    resource_content ->> '$.resource.valueQuantity.unit' AS value_unit,
+    resource_content ->> '$.resource.valueString' AS value_string,
+    resource_content ->> '$.resource.valueCodeableConcept.coding[0].code' AS value_codeable_concept_code,
+    resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
+FROM
+    observation_resources;
+
 
 
 -- Extracts Encounter resources from FHIR bundles

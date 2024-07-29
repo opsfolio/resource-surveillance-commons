@@ -107,6 +107,10 @@ $ echo "SELECT resource_content FROM fhir_v4_bundle_resource WHERE resource_type
 $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient" | sqlite3 resource-surveillance.sqlite.db -table
 $ echo "select * from fhir_v4_patient_age_avg" | sqlite3 resource-surveillance.sqlite.db -table
 
+# work with Observation resources
+$ echo "SELECT resource_content FROM fhir_v4_bundle_resource WHERE resource_type = 'Observation' LIMIT 1" | sqlite3 resource-surveillance.sqlite.db -table
+$ echo "select * from fhir_v4_bundle_resource_observation" | sqlite3 resource-surveillance.sqlite.db -table
+
 # now try with `*_cached` tables ("materialized views") to notice that performance is better
 $ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
 $ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient_cached" | sqlite3 resource-surveillance.sqlite.db -table
