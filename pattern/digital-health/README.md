@@ -134,7 +134,10 @@ $ surveilr sqlpage --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
 
 # if you want to start surveilr SQLPage in "watch" mode to re-load files automatically
-$ ./sqlpage-watch.sh
+$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh
+
+# if you want to start a standalone SQLPage in "watch" mode to re-load files automatically
+$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh --standalone
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
@@ -151,7 +154,7 @@ to automatically re-load the contents into SQLite regularly. Since it can be
 time-consuming to re-run the same command in the CLI manually each time a file
 changes, you can use _watch mode_ instead.
 
-See: [`sqlpage-watch.sh`](./sqlpage-watch.sh) and
+See: [`sqlpage-watch-and-reload-sql-into-rssd.sh`](../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh) and
 [Using `watch-and-reload-sql-into-rssd.sh`](../../support/bin/sandbox-watch.md).
 
 ## TODO
