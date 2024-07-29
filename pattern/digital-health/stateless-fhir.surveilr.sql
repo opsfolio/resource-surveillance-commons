@@ -153,8 +153,6 @@ SELECT
 FROM
     observation_resources;
 
-
-
 -- Extracts Encounter resources from FHIR bundles
 -- Provides details about each Encounter resources.
 DROP VIEW IF EXISTS fhir_v4_bundle_resource_encounter;
@@ -169,41 +167,37 @@ CREATE VIEW fhir_v4_bundle_resource_encounter AS
 )
 SELECT
     resource_content ->> '$.resource.id' id,
-resource_content ->> '$.resource.meta.lastUpdated' lastUpdated,
-resource_content ->> '$.resource.type[0].coding.code' type_code,
-resource_content ->> '$.resource.type[0].coding.system' type_system,
-resource_content ->> '$.resource.type[0].coding.display' type_display,
-resource_content ->> '$.resource.class.code' class_code,
-resource_content ->> '$.resource.class.system' class_system,
-resource_content ->> '$.resource.class.display' class_display,
-resource_content ->> '$.resource.period.start' period_start,
-resource_content ->> '$.resource.period.end' period_end,
-resource_content ->> '$.resource.status' status,
-resource_content ->> '$.resource.subject.display' subject_display,
-resource_content ->> '$.resource.subject.reference' subject_reference,
-resource_content ->> '$.resource.location[0].location' location,
-resource_content ->> '$.resource.diagnosis[0].reference' diagnosis_reference,
-resource_content ->> '$.resource.extension[0].lineage meta data[0].url' extension_url,
-resource_content ->> '$.resource.extension[0].lineage meta data[0].valueString' extension_valueString,
-resource_content ->> '$.resource.identifier[0].value' identifier_value,
-resource_content ->> '$.resource.reasonCode[0].coding.code' reasonCode_code,
-resource_content ->> '$.resource.reasonCode[0].coding.system' reasonCode_system,
-resource_content ->> '$.resource.serviceType.coding[0].code' serviceType_code,
-resource_content ->> '$.resource.serviceType.coding[0].system' serviceType_system,
-resource_content ->> '$.resource.hospitalization.admitSource.coding.code' admitSource_code,
-resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].code' dischargeDisposition_code,
-resource_content ->> '$.reasonReference[0].reference' reasonReference_reference,
-resource_content ->> '$.resourceType' resourceType
+    resource_content ->> '$.resource.meta.lastUpdated' lastUpdated,
+    resource_content ->> '$.resource.type[0].coding.code' type_code,
+    resource_content ->> '$.resource.type[0].coding.system' type_system,
+    resource_content ->> '$.resource.type[0].coding.display' type_display,
+    resource_content ->> '$.resource.class.code' class_code,
+    resource_content ->> '$.resource.class.system' class_system,
+    resource_content ->> '$.resource.class.display' class_display,
+    resource_content ->> '$.resource.period.start' period_start,
+    resource_content ->> '$.resource.period.end' period_end,
+    resource_content ->> '$.resource.status' status,
+    resource_content ->> '$.resource.subject.display' subject_display,
+    resource_content ->> '$.resource.subject.reference' subject_reference,
+    resource_content ->> '$.resource.location[0].location' location,
+    resource_content ->> '$.resource.diagnosis[0].reference' diagnosis_reference,
+    resource_content ->> '$.resource.extension[0].lineage meta data[0].url' extension_url,
+    resource_content ->> '$.resource.extension[0].lineage meta data[0].valueString' extension_valueString,
+    resource_content ->> '$.resource.identifier[0].value' identifier_value,
+    resource_content ->> '$.resource.reasonCode[0].coding.code' reasonCode_code,
+    resource_content ->> '$.resource.reasonCode[0].coding.system' reasonCode_system,
+    resource_content ->> '$.resource.serviceType.coding[0].code' serviceType_code,
+    resource_content ->> '$.resource.serviceType.coding[0].system' serviceType_system,
+    resource_content ->> '$.resource.hospitalization.admitSource.coding.code' admitSource_code,
+    resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].code' dischargeDisposition_code,
+    resource_content ->> '$.reasonReference[0].reference' reasonReference_reference,
+    resource_content ->> '$.resourceType' resourceType
 FROM
     Encounter_resources;
  
- 
-   
-   
 -- Extracts Condition resources from FHIR bundles
 -- Provides details about each Condition resources.
-   
-   DROP VIEW IF EXISTS fhir_v4_bundle_resource_condition;
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_condition;
 CREATE VIEW fhir_v4_bundle_resource_condition AS
   WITH condition_resources AS (
     SELECT
@@ -229,7 +223,7 @@ CREATE VIEW fhir_v4_bundle_resource_condition AS
 FROM
    condition_resources;
   
- DROP VIEW IF EXISTS fhir_v4_bundle_resource_ServiceRequest;
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_ServiceRequest;
 CREATE VIEW fhir_v4_bundle_resource_ServiceRequest AS
   WITH servicerequest_resources AS (
     SELECT
@@ -260,10 +254,9 @@ CREATE VIEW fhir_v4_bundle_resource_ServiceRequest AS
 FROM
      servicerequest_resources;
 
-
 -- Extracts Procedure resources from FHIR bundles
 -- Provides details about each Procedure resources.
-
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_procedure;
 CREATE VIEW fhir_v4_bundle_resource_procedure AS
 WITH procedure_resources AS (
     SELECT
@@ -294,9 +287,7 @@ SELECT
     resource_content->>'$.resource.performedDateTime' AS performedDateTime
 FROM procedure_resources;
 
-
-
-
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_practitioner;
 CREATE VIEW fhir_v4_bundle_resource_practitioner AS
 WITH practitioner_resources AS (
     SELECT
@@ -316,4 +307,4 @@ SELECT
     resource_content->>'$.resource.extension[0].lineage_meta_data[2].url' AS lineage_meta_data_url_2,
     resource_content->>'$.resource.extension[0].lineage_meta_data[2].valueString' AS lineage_meta_data_value_2
 FROM
-practitioner_resources;
+    practitioner_resources;
