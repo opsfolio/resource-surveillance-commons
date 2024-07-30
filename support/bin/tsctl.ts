@@ -224,7 +224,7 @@ await new Command()
   .option(
     "--import-strategy <strategy:ImportStrategy>",
     "How to import the TypeScript module for execution",
-    { default: ImportStrategy.DIRECT },
+    { default: ImportStrategy.PROXY },
   )
   .option(
     "--profile <profile:ServerProfile>",
