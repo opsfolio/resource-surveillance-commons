@@ -51,7 +51,7 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
   }
 }
 
-if (import.meta.main) {
+if (import.meta.main || globalThis.importedFromTsctl) {
   const pages = new SqlPages();
   console.log(
     new spa.SQLPageAide(pages)
