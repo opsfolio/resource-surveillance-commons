@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
 import { SQLa, SQLPageAide as spa } from "./deps.ts";
 
-class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
+export class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
   readonly cr: spa.ComponentRenderer = new spa.ComponentRenderer();
   readonly emitCtx = SQLa.typicalSqlEmitContext({
     sqlDialect: SQLa.sqliteDialect(),
@@ -52,7 +52,7 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
 }
 
 // this will be used by any callers who want to serve it as a module (e.g. tsserve.auto.ts)
-const DEFAULT = () => {
+export const DEFAULT = () => {
   const pages = new SqlPages();
   return new spa.SQLPageAide(pages)
     .include(/\.sql$/)
@@ -65,6 +65,7 @@ const DEFAULT = () => {
     .SQL()
     .join("\n");
 };
+export const someVariable = "This is an export";
 export default DEFAULT;
 
 if (import.meta.main) {

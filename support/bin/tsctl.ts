@@ -140,8 +140,8 @@ async function handler(
     let moduleImportUrl: string;
 
     if (importStrategy === ImportStrategy.DIRECT) {
-      // Directly use the raw URL
-      moduleImportUrl = rawUrl;
+      // Directly use the raw URL, forcing it to not be cached
+      moduleImportUrl = rawUrl + `?${Date.now()}`;
     } else {
       // Fetch the content from the repository and use Data URL
       const response = await fetch(rawUrl);
@@ -166,7 +166,7 @@ async function handler(
     };
 
     const reload = async () => {
-      await import(moduleImportUrl + `?${Date.now()}`);
+      await import(moduleImportUrl);
     };
 
     try {
