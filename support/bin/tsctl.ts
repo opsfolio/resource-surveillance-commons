@@ -196,12 +196,6 @@ async function handler(
   }
 }
 
-// Modify Deno.args to default to "serve" if no command is provided
-if (Deno.args.length === 0) {
-  Deno.args.push("serve");
-}
-
-// CLI Command Setup
 await new Command()
   .globalType("ImportStrategy", new EnumType(ImportStrategy))
   .globalType("ServerProfile", new EnumType(ServerProfile))
@@ -247,4 +241,4 @@ await new Command()
       (req) => handler(req, MIME_TYPES, importStrategy, resolvedBaseUrl),
     );
   })
-  .parse(Deno.args);
+  .parse(Deno.args.length > 0 ? Deno.args : ["serve"]);
