@@ -16,7 +16,8 @@ DROP VIEW IF EXISTS converted_files_list;
 CREATE VIEW converted_files_list AS
 SELECT file_basename
 FROM ur_ingest_session_fs_path_entry
-WHERE file_extn != 'sql' AND file_extn != 'db';
+WHERE file_extn IN ('csv', 'xls', 'xlsx', 'json','html');
+
 
 -- Drop and recreate the converted_table_list view
 DROP VIEW IF EXISTS converted_table_list;

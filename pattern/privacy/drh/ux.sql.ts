@@ -17,7 +17,7 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
 
   "drh/index.sql"() {
     return this.SQL`
-      SELECT
+      /*SELECT
         'list' as component,
         'DRH DATA CONVERSION' as title,
         'Here are some useful links.' as description;        
@@ -32,9 +32,105 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
         'List of the tables' as description;  
       SELECT 'Basic tables Snapshot' as title,
         'view_table_snapshot.sql' as link,
-        'Table data' as description;       
-        `;
-      
+        'Table data' as description; 
+        */
+      select 
+      'card'                     as component,
+      'DRH Data Conversion' as title,
+      1                          as columns;
+     select 
+      'Device Summary'  as title,
+      '../drh_device_summary.sql' as link,
+      'Device Information: View the Device details' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+      select 
+      'card'                     as component,
+      'Data Summary' as title,
+      2                          as columns;
+      select 
+      'Files Information'  as title,
+      'drh_converted_file_list.sql' as link,
+      'Provides information about files being transformed' as description,
+      'file'                as icon,
+      'green'                    as color;  
+      select 
+      'Transformed Data Summary'  as title,
+      'drh_table_list.sql' as link,
+      'Provides information about the tables to which the files were transformed' as description,
+      'file'                as icon,
+      'green'                    as color;  
+      select 
+      'card'                     as component,
+      'Transformed Data Snapshot' as title,
+       9                         as columns;
+      select 
+      'Study Data'  as title,
+      'study_data.sql' as link,
+      'Transformed Data from the study file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'CGM File Meta Data'  as title,
+      'cgmfilemetadata.sql' as link,
+      'A snapshot from the converted data from CGM file meta data ' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Author'  as title,
+      'author_data.sql' as link,
+      'Data from Author file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Institution'  as title,
+      'institution_data.sql' as link,
+      'Data transformed from Author file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Investigator'  as title,
+      'investigator_data.sql' as link,
+      'Transformed data from Investigator file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Lab data'  as title,
+      'lab_data.sql' as link,
+      'Data transformed from file lab' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Participant Data'  as title,
+      'participant_data.sql' as link,
+      'Data transformed from "Participant" file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+        select 
+      'Publication'  as title,
+      'publication_data.sql' as link,
+      'Data converted from "publication" file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+
+        select 
+      'Site'  as title,
+      'site_data.sql' as link,
+      'Data converted from "site" file' as description,
+      'file'                as icon,
+      'green'                    as color;  
+        ;
+
+      `;      
   }
 
   "drh_device_summary.sql"() {
@@ -79,18 +175,107 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
        1    as level;       
       select 
       'text' as component,
-      'Study Data' as contents_md;  
+      'Study Table' as contents_md;  
         SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
         select *        
-        from study_data ; 
+        from uniform_resource_study_sub_data ; 
         select 
       'text' as component,
-      'CGM File Meta Data' as contents_md;  
+      'CGM File Meta Data table' as contents_md;  
         SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
         select *        
-        from cgmfilemetadata_view ; 
+        from uniform_resource_cgm_file_data ; 
         `;
     }
+
+  "drh/study_data.sql"() {
+      return this.SQL`      
+        SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+        SELECT * from study_data;
+        select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+          `;
+  }
+
+  "drh/cgmfilemetadata.sql"() {
+        return this.SQL`      
+          SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+          SELECT * from cgmfilemetadata_view;
+          select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+            `;
+  }
+
+  "drh/author_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from author_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+
+  "drh/institution_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from institution_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+
+  "drh/investigator_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from investigator_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+  "drh/lab_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from lab_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+
+  "drh/participant_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from participant_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+
+  "drh/publication_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from publication_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
+
+  "drh/site_data.sql"() {
+    return this.SQL`      
+      SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from site_data;
+      select 
+      'text' as component,
+      '[Back to Home](index.sql)' as contents_md;
+        `;
+  }
 }
 
 if (import.meta.main) {
