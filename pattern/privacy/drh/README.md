@@ -2,28 +2,22 @@
 
 ## Overview
 
-The `drh-deidentification.sql` performs the deidentification of the columns in the study data converted tables. The `stateless-drh-surveilr.sql` creates the database views which shall be used in SQLPage preview. The `orchestrate-drh-vv.sql` performs the verification and validation on the study data tables.(TODO)
+The `deidentification.sql` performs the deidentification of the columns in the study data converted tables. The `stateless-drh-surveilr.sql` creates the database views which shall be used in SQLPage preview. The `orchestrate-drh-vv.sql` performs the verification and validation on the study data tables.(TODO)
 
 ## Getting Started
 
-1. **Prepare the Files for conversion:**
+1. **Move to folder containing the files:**
 
-   - Prepare the files in the format mentioned in [‘Getting Started’](https://drh.diabetestechnology.org/getting-started/) on this website.
-   - Ensure the files are as mentioned in the above link.
+   - Open the command prompt and change to the directory containing the files.
+   - Command: `cd <folderpath>`
+   - Example: `cd D:/workfiles/uvastudy`
 
 2. **Download Surveilr:**
 
    - Follow the installation instructions at [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
-   - Move the downloaded software to the files folder.
-   - Example: Move the downloaded software to the 'DRH_STUDY_DATA' folder, which contains a subfolder 'STUDY1'.
+   - Download the tool to this folder.   
 
-3. **Data Conversion Steps**
-
-   - Open the command prompt and change to the directory containing the study CSV files.
-   - Command: `cd <folderpath>`
-   - Example: `cd D:/workfiles/DRH_STUDY_DATA`
-  
-   **Verify the Tool Version**
+3. **Verify the Tool Version**
 
    - Input the command `surveilr --version`.
    - If the tool is available, it will show the version number.
@@ -33,9 +27,9 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    **Command:**
 
    - Command: `surveilr ingest files -r <foldername>/`
-   - Example: `surveilr ingest files -r STUDY1/`
+   - Example: `surveilr ingest files -r study1/`
 
-   **Note**: Here 'STUDY1' is the folder name containing specific CSV files.
+   **Note**: Here `study1` is a sub folder within `uvastudy` containing the files.
 
    3.2 **Transform the Files**
 
@@ -48,20 +42,12 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    - Type the command `ls` to list the files.
    - You can also check the folder directly to see the transformed database.
 
-4. **De-Identification**
-
-   **Note:** 
-
-   - De-identification is an optional step, and DRH does not have any PHI columns in any CSV in the current situation.
-   - If De-identification is to be performed, please refer to the steps below.
-   - The SQL script will require changes from time to time.
-
-   **Steps for De-identification:**
+4. **Steps for De-identification**
 
    4.1 **Download the SQL File**   
 
    ```bash
-   curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/drh/de-identification/drh-deidentification.sql
+   curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/drh/de-identification/deidentification.sql
    ```
 
    4.2 **Execute the De-identification Process**
@@ -70,7 +56,6 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    surveilr anonymize --sql De-Identification.sql 
    ```
    
-
    
    4.3 **Remove the de-identification sql after the de-identification**
 
