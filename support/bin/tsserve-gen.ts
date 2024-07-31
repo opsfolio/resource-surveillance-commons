@@ -88,7 +88,7 @@ async function generateTsServe() {
 
 // Setup the environment and globals to let imported modules know their caller
 Deno.env.set(
-  "DENO_IMPORT_META",
+  "SURVEILR_COMMONS_IMPORT_META",
   JSON.stringify({ importedFrom: import.meta.url }),
 );
 
@@ -128,7 +128,7 @@ Deno.serve({ port: 9022 }, async (request) => {
         }
     }
 
-    console.log({ path, fullUrl, importedModule, defaultService });
+    console.log({ path, importedModule, defaultService, fullUrl });
 
     return new Response(output, {
       status: 200,
