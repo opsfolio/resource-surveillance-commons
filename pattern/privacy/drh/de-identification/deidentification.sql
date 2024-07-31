@@ -1,7 +1,5 @@
---TODO: Ask Bassit to create a unique value generator for ids 
---TODO: Ask Basit to add any error generated through orchestration into orch session issue table
---ulid not working
---ON CONFLICT IGNORE not supported in sqlite
+--Notes:ulid not working
+--Notes:ON CONFLICT IGNORE not supported in sqlite
 
 
 --INSERT INTO orchestration_nature ( orchestration_nature_id, nature)

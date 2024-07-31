@@ -1,4 +1,4 @@
---Code needs to be modified for orchestrate table entries
+--Note:Code needs to be modified for orchestrate table entries
 
 -- Create a temporary table to define the expected schema
 CREATE TEMP TABLE expected_schema (
