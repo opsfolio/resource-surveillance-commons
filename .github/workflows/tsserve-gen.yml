@@ -12,9 +12,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub's automatically generated token
+      uses: actions/checkout@v3
 
     - name: Set up Deno
       uses: denolib/setup-deno@v2
@@ -30,7 +28,8 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add support/bin/tsserve.auto.ts
         if [ -n "$(git status --porcelain)" ]; then
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
           git commit -m "chore: re-generate tsserve.auto.ts"
           git push
         else
-          echo "No changes to commit"
+          echo "No tsserve.auto.ts changes to commit"
