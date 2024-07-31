@@ -3,7 +3,7 @@ name: Generate tsserve.auto.ts
 on:
   push:
     branches:
-      - main
+      - main  # Adjust this to your main branch name if different
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
@@ -13,6 +13,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub's automatically generated token
 
     - name: Set up Deno
       uses: denolib/setup-deno@v2
@@ -32,4 +34,3 @@ jobs:
           git push
         else
           echo "No changes to commit"
-        fi
