@@ -1,4 +1,4 @@
-# Surveilr DRH Data Transformation and SqlPage Preview
+# Surveilr Data Transformation and SqlPage Preview
 
 ## Overview
 
@@ -6,15 +6,15 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
 
 ## Getting Started
 
-1. **Prepare the Study Files:**
+1. **Prepare the Files for conversion:**
 
-   - Prepare the study files in the format mentioned in [‘Getting Started’](https://drh.diabetestechnology.org/getting-started/) on the DRH website.
-   - Ensure the study files are as mentioned in the above link.
+   - Prepare the files in the format mentioned in [‘Getting Started’](https://drh.diabetestechnology.org/getting-started/) on this website.
+   - Ensure the files are as mentioned in the above link.
 
 2. **Download Surveilr:**
 
    - Follow the installation instructions at [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
-   - Move the downloaded software to the study files folder.
+   - Move the downloaded software to the files folder.
    - Example: Move the downloaded software to the 'DRH_STUDY_DATA' folder, which contains a subfolder 'STUDY1'.
 
 3. **Data Conversion Steps**
@@ -35,7 +35,7 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    - Command: `surveilr ingest files -r <foldername>/`
    - Example: `surveilr ingest files -r STUDY1/`
 
-   **Note**: Here 'STUDY1' is the folder name containing specific study CSV files.
+   **Note**: Here 'STUDY1' is the folder name containing specific CSV files.
 
    3.2 **Transform the Files**
 
@@ -58,10 +58,10 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
 
    **Steps for De-identification:**
 
-   4.1 **Download the SQL File**
+   4.1 **Download the SQL File**   
 
    ```bash
-   curl -L -o De-Identification.sql https://raw.githubusercontent.com/MeetAnithaVarghese/drh-sql-page/main/de-identification/drh-deidentification.sql
+   curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/drh/de-identification/drh-deidentification.sql
    ```
 
    4.2 **Execute the De-identification Process**
@@ -79,16 +79,16 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    ```
 
 
-5. **Apply the Study Database Views to Preview in SQLPage**
+5. **Apply the Database Views to Preview in SQLPage**
 
    ```bash
-   curl -L https://raw.githubusercontent.com/MeetAnithaVarghese/drh-sql-page/main/stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db   
+   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/drh/stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db   
    ```
 
 6. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
-   deno run https://raw.githubusercontent.com/MeetAnithaVarghese/drh-sql-page/main/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/drh/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
      
    ```
    ```bash
