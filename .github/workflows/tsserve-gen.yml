@@ -1,0 +1,35 @@
+name: Generate tsserve.auto.ts
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  generate-tsserve:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Deno
+      uses: denolib/setup-deno@v2
+      with:
+        deno-version: v1.x
+
+    - name: Run tsserve-gen.ts
+      run: deno run --allow-read --allow-net --allow-write --allow-env --allow-run --allow-sys support/bin/tsserve-gen.ts
+
+    - name: Check if tsserve.auto.ts has changed
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add support/bin/tsserve.auto.ts
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -m "chore: re-generate tsserve.auto.ts"
+          git push
+        else
+          echo "No changes to commit"
+        fi
