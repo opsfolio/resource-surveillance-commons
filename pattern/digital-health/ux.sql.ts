@@ -52,7 +52,7 @@ export class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
 }
 
 // this will be used by any callers who want to serve it as a module (e.g. tsserve.auto.ts)
-export const DEFAULT = () => {
+const DEFAULT = () => {
   const pages = new SqlPages();
   return new spa.SQLPageAide(pages)
     .include(/\.sql$/)
@@ -65,7 +65,6 @@ export const DEFAULT = () => {
     .SQL()
     .join("\n");
 };
-export const someVariable = "This is an export";
 export default DEFAULT;
 
 if (import.meta.main) {
