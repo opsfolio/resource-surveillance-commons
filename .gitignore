@@ -8,3 +8,6 @@ resource-surveillance.sqlite.db
 # when testing in this repo, we might have ingest samples / exemplars
 *sample*
 ingest/
+
+# windows security files
+*Zone.Identifier
