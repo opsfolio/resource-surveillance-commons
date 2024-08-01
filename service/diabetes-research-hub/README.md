@@ -48,7 +48,7 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
 
 
    ```bash
-   curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/service/diabetes-research-hub/de-identification/drh-deidentification.sql
+   curl -L -o De-Identification.sql curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/service/diabetes-research-hub/de-identification/drh-deidentification.sql --ssl-no-revoke
    ```
 
    4.2 **Execute the De-identification Process**
@@ -68,13 +68,13 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
 5. **Apply the Database Views to Preview in SQLPage**
 
    ```bash
-   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/service/diabetes-research-hub/stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db   
+   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db   
    ```
 
 6. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
-   deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
      
    ```
    ```bash
