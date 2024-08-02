@@ -96,7 +96,10 @@ SELECT
     resource_content ->> '$.resource.address[0].postalCode' AS postal_code,
     resource_content ->> '$.resource.address[0].country' AS country,
     resource_content ->> '$.resource.extension[0].extension[0].valueCoding.display' AS race,
-    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity
+    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity,
+    resource_content ->> '$.resource.meta.lastUpdated' AS lastUpdated,
+    resource_content ->> '$.resource.telecom[0].value' AS telecom,
+    resource_content ->> '$.resource.identifier[0].value' AS medical_record_number  
 FROM
     patient_resources;
 
@@ -130,8 +133,29 @@ WITH observation_resources AS (
         resource_type = 'Observation'
 )
 SELECT
+    resource_content ->> '$.resource.identifier[0].value' AS identifier_1,
+    resource_content ->> '$.resource.identifier[1].value' AS identifier_2,
+    resource_content ->> '$.resource.identifier[2].value' AS identifier_3,
+    resource_content ->> '$.resource.identifier[3].value' AS identifier_4,
+    resource_content ->> '$.resource.interpretation[0].coding[0].code' AS interpretation_code,
+    resource_content ->> '$.resource.interpretation[0].coding[0].system' AS interpretation_system,
+    resource_content ->> '$.resource.interpretation[0].coding[0].display' AS interpretation_display,
+    resource_content ->> '$.resource.referenceRange[0].low.value' AS reference_low,
+    resource_content ->> '$.resource.referenceRange[0].high.value' AS reference_high,
+    resource_content ->> '$.resource.referenceRange[0].text' AS reference_text,
+    resource_content ->> '$.resource.referenceRange[0].appliesTo[0].text' AS appliesTo_text,
+    resource_content ->> '$.resource.effectiveDateTime' AS effectiveDateTime,
     resource_content ->> '$.resource.id' AS observation_id,
     resource_content ->> '$.resource.status' AS status,
+    resource_content ->> '$.resource.meta.lastUpdated' AS lastUpdated,
+    resource_content ->> '$.resource.code.text' AS code_text,
+    resource_content ->> '$.resource.note.text[0]' AS note_1,
+    resource_content ->> '$.resource.note.text[1]' AS note_2,
+    resource_content ->> '$.resource.note.text[2]' AS note_3,
+    resource_content ->> '$.resource.basedOn[0].reference' AS basedOn_reference,
+    resource_content ->> '$.resource.subject.display' AS subject_display,
+    resource_content ->> '$.resource.subject.reference' AS subject_reference,
+    resource_content ->> '$.resource.encounter.display' AS encounter_display,
     resource_content ->> '$.resource.category[0].coding[0].system' AS category_system,
     resource_content ->> '$.resource.category[0].coding[0].code' AS category_code,
     resource_content ->> '$.resource.category[0].coding[0].display' AS category_display,
@@ -151,9 +175,6 @@ SELECT
     resource_content ->> '$.resource.valueQuantity.unit' AS value_unit,
     resource_content ->> '$.resource.valueString' AS value_string,
     resource_content ->> '$.resource.valueCodeableConcept.coding[0].code' AS value_codeable_concept_code,
-    resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
-
-    resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
     resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
 FROM
     observation_resources;
