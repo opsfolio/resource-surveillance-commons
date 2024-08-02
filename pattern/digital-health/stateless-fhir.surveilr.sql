@@ -94,7 +94,9 @@ SELECT
     resource_content ->> '$.resource.address[0].city' AS city,
     resource_content ->> '$.resource.address[0].state' AS state,
     resource_content ->> '$.resource.address[0].postalCode' AS postal_code,
-    resource_content ->> '$.resource.address[0].country' AS country
+    resource_content ->> '$.resource.address[0].country' AS country,
+    resource_content ->> '$.resource.extension[0].extension[0].valueCoding.display' AS race,
+    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity
 FROM
     patient_resources;
 
@@ -150,6 +152,9 @@ SELECT
     resource_content ->> '$.resource.valueString' AS value_string,
     resource_content ->> '$.resource.valueCodeableConcept.coding[0].code' AS value_codeable_concept_code,
     resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
+
+    resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
+    resource_content ->> '$.resource.valueCodeableConcept.coding[0].display' AS value_codeable_concept_display
 FROM
     observation_resources;
 
@@ -190,8 +195,8 @@ SELECT
     resource_content ->> '$.resource.serviceType.coding[0].system' serviceType_system,
     resource_content ->> '$.resource.hospitalization.admitSource.coding.code' admitSource_code,
     resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].code' dischargeDisposition_code,
-    resource_content ->> '$.reasonReference[0].reference' reasonReference_reference,
-    resource_content ->> '$.resourceType' resourceType
+    resource_content ->> '$.resource.reasonReference[0].reference' reasonReference_reference,
+    resource_content ->> '$.resource.resourceType' resourceType
 FROM
     Encounter_resources;
  
@@ -275,8 +280,8 @@ SELECT
     resource_content->>'$.resource.bodySite.coding[0].code' AS bodySite,
     resource_content->>'$.resource.encounter.display' AS encounter_display,
     resource_content->>'$.resource.encounter.reference' AS encounter_reference,
-    resource_content->>'$.resource.extension[0].lineage_meta_data[0].url' AS lineage_meta_data_url,
-    resource_content->>'$.resource.extension[0].lineage_meta_data[0].valueString' AS lineage_meta_data_value,
+    resource_content->>'$.resource.extension[0].lineage meta data[0].url' AS lineage_meta_data_url,
+    resource_content->>'$.resource.extension[0].lineage meta data[0].valueString' AS lineage_meta_data_value,
     resource_content->>'$.resource.performer[0].actor[0].reference' AS performer_reference,
     resource_content->>'$.resource.performer[0].actor[0].display' AS performer_display,
     resource_content->>'$.resource.identifier[0].value' AS identifier_value_0,
