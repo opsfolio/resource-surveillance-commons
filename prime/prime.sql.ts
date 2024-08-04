@@ -108,7 +108,6 @@ class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
 }
 
 class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
-  readonly cr: spa.ComponentsRenderer = new spa.ComponentsRenderer();
   readonly emitCtx = SQLa.typicalSqlEmitContext({
     sqlDialect: SQLa.sqliteDialect(),
   }) as EmitContext;
