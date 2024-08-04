@@ -51,22 +51,19 @@ export class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
   }
 }
 
-// this will be used by any callers who want to serve it as a module (e.g. tsserve.auto.ts)
-const DEFAULT = () => {
-  const pages = new SqlPages();
-  return new spa.SQLPageAide(pages)
-    .include(/\.sql$/)
-    .onNonStringContents((result, _sp, method) =>
-      SQLa.isSqlTextSupplier(result)
-        ? result.SQL(pages.emitCtx)
-        : `/* unknown result from ${method} */`
-    )
-    .emitformattedSQL()
-    .SQL()
-    .join("\n");
-};
-export default DEFAULT;
-
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(DEFAULT());
+  const pages = new SqlPages();
+  console.log(
+    new spa.SQLPageAide(pages)
+      .include(/\.sql$/)
+      .onNonStringContents((result, _sp, method) =>
+        SQLa.isSqlTextSupplier(result)
+          ? result.SQL(pages.emitCtx)
+          : `/* unknown result from ${method} */`
+      )
+      .emitformattedSQL()
+      .SQL()
+      .join("\n"),
+  );
 }

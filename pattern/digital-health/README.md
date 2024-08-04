@@ -94,8 +94,8 @@ ignored, only `sqlite3` is required because all content is in the
 other dependencies.
 
 ```bash
-# see how many files were ingested into `uniform_resource` table
-$ echo "select count(*) from uniform_resource" | sqlite3 resource-surveillance.sqlite.db
+# load the "Console" and other menu/routing utilities
+$ deno run ../../prime/prime.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 # apply the "stateless" FHIR utility views and do some exploring
 $ cat stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
@@ -134,10 +134,10 @@ $ surveilr sqlpage --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
 
 # if you want to start surveilr SQLPage in "watch" mode to re-load files automatically
-$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh
+$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.ts --watch . --watch ../../prime
 
 # if you want to start a standalone SQLPage in "watch" mode to re-load files automatically
-$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh --standalone
+$ ../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.ts --watch . --watch ../../prime --standalone
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
@@ -154,8 +154,7 @@ to automatically re-load the contents into SQLite regularly. Since it can be
 time-consuming to re-run the same command in the CLI manually each time a file
 changes, you can use _watch mode_ instead.
 
-See: [`sqlpage-watch-and-reload-sql-into-rssd.sh`](../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.sh) and
-[Using `watch-and-reload-sql-into-rssd.sh`](../../support/bin/sandbox-watch.md).
+See: [`sqlpage-watch-and-reload-sql-into-rssd.ts`](../../support/bin/sqlpage-watch-and-reload-sql-into-rssd.ts).
 
 ## TODO
 
