@@ -44,11 +44,11 @@ DROP TABLE IF EXISTS fhir_v4_bundle_resource_condition_cached;
 CREATE TABLE fhir_v4_bundle_resource_condition_cached AS 
   SELECT * FROM fhir_v4_bundle_resource_condition;
 
--- Cache for the fhir_v4_bundle_resource_ServiceRequest view.
+-- Cache for the fhir_v4_bundle_resource_service_request view.
 -- Caches detailed information about Service request resources extracted from FHIR bundles.
-DROP TABLE IF EXISTS fhir_v4_bundle_resource_ServiceRequest_cached;
-CREATE TABLE fhir_v4_bundle_resource_ServiceRequest_cached AS 
-  SELECT * FROM fhir_v4_bundle_resource_ServiceRequest;
+DROP TABLE IF EXISTS fhir_v4_bundle_resource_service_request_cached;
+CREATE TABLE fhir_v4_bundle_resource_service_request_cached AS 
+  SELECT * FROM fhir_v4_bundle_resource_service_request;
 
 
 -- Cache for the fhir_v4_bundle_resource_procedure view.

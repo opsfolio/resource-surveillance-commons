@@ -249,8 +249,8 @@ CREATE VIEW fhir_v4_bundle_resource_condition AS
 FROM
    condition_resources;
   
-DROP VIEW IF EXISTS fhir_v4_bundle_resource_ServiceRequest;
-CREATE VIEW fhir_v4_bundle_resource_ServiceRequest AS
+DROP VIEW IF EXISTS fhir_v4_bundle_resource_service_request;
+CREATE VIEW fhir_v4_bundle_resource_service_request AS
   WITH servicerequest_resources AS (
     SELECT
         resource_content
