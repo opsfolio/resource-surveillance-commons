@@ -122,7 +122,7 @@ class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
       INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
       VALUES
           ('prime', NULL, 1, '/', '/', 'Home', NULL, 'Resource Surveillance State Database (RSSD)', 'Welcome to Resource Surveillance State Database (RSSD)'),
-          ('prime', '/', 1, '/console', '/console/', 'RSSD Console', 'Console', 'Resource Surveillance State Database (RSSD) Console', 'Explore RSSD information schema, code notebooks, and SQLPage files'),
+          ('prime', '/', 999 /* fall to bottom of list if other items present */, '/console', '/console/', 'RSSD Console', 'Console', 'Resource Surveillance State Database (RSSD) Console', 'Explore RSSD information schema, code notebooks, and SQLPage files'),
           ('prime', '/console', 1, '/console/info-schema', '/console/info-schema/', 'RSSD Information Schema', 'Info Schema', 'RSSD Information Schema', 'Explore RSSD tables, columns, views, and other information schema documentation'),
           ('prime', '/console', 2, '/console/notebooks', '/console/notebooks/', 'RSSD Code Notebooks', 'Code Notebooks', 'RSSD Code Notebooks', 'Explore RSSD Code Notebooks which contain reusable SQL and other code blocks'),
           ('prime', '/console', 3, '/console/sqlpage-files', '/console/sqlpage-files/', 'RSSD SQLPage Files', 'SQLPage Files', 'RSSD SQLPage Files', 'Explore RSSD SQLPage Files which govern the content of the web-UI')
@@ -263,7 +263,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       )
       SELECT 'list' AS component, title, description
         FROM prime_navigation_cte;
-      SELECT caption as title, COALESCE(url, path) as link
+      SELECT caption as title, COALESCE(url, path) as link, description
         FROM sqlpage_aide_navigation
        WHERE namespace = 'prime' AND parent_path = '/'
        ORDER BY sibling_order;`;
@@ -280,7 +280,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       )
       SELECT 'list' AS component, title, description
         FROM console_navigation_cte;
-      SELECT caption as title, COALESCE(url, path) as link
+      SELECT caption as title, COALESCE(url, path) as link, description
         FROM sqlpage_aide_navigation
        WHERE namespace = 'prime' AND parent_path = '/console'
        ORDER BY sibling_order;`;
