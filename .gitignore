@@ -9,5 +9,8 @@ resource-surveillance.sqlite.db
 *sample*
 ingest/
 
+# sometimes we'll test local files in SQLPage but we don't want those tracked
+sqlpage/
+
 # windows security files
 *Zone.Identifier
