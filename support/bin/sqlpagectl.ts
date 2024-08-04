@@ -12,13 +12,9 @@ import {
 import { relative, resolve } from "https://deno.land/std@0.224.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 
-const DEFAULT_PORT = 9000;
-const DEFAULT_DB = Deno.env.get("SURVEILR_STATEDB_FS_PATH") ??
+const DEV_DEFAULT_PORT = 9000;
+const DEV_DEFAULT_DB = Deno.env.get("SURVEILR_STATEDB_FS_PATH") ??
   "resource-surveillance.sqlite.db";
-
-let sqlPageServerProcess: Deno.ChildProcess | null = null;
-let stopSqlPageServer: (() => Promise<void>) | null = null;
-let startSqlPageServer: (() => Promise<void>) | null = null;
 
 function timeSince(date: Date): string {
   const milliseconds = new Date().getTime() - date.getTime();
@@ -233,18 +229,26 @@ async function executeSqlite3(
  * Watches for changes in the specified files and triggers the execution of SQL scripts
  * on the SQLite database whenever a change is detected.
  *
+ * @param watch.paths - The list of paths to watch
+ * @param watch.recusive - Whether to watch the list of paths recursively
  * @param files - The list of files to watch.
  * @param db - The path to the SQLite database file.
+ * @param service
+ * @showModifiedUrlsOnChange - Query the database and see what was changed between calls
  */
 async function watchFiles(
-  watchPaths: string[],
+  watch: { paths: string[]; recursive: boolean },
   files: RegExp[],
   db: string,
+  service: {
+    readonly stop?: () => Promise<void>;
+    readonly start?: () => Promise<void>;
+  },
   showModifiedUrlsOnChange: boolean,
 ) {
   try {
     console.log(
-      dim(`👀 Watching paths ${watchPaths.join(":")} (${watchPaths.length})`),
+      dim(`👀 Watching paths ${watch.paths.join(":")} (${watch.paths.length})`),
     );
     const reload = debounce(async (event: Deno.FsEvent) => {
       for (const path of event.paths) {
@@ -252,8 +256,12 @@ async function watchFiles(
           if (file.test(path)) {
             // deno-fmt-ignore
             console.log(dim(`👀 Watch event (${event.kind}): ${brightWhite(relative(".", path))}`));
-            await stopSqlPageServer?.();
-            const result = await executeSqlite3(path, db, showModifiedUrlsOnChange);
+            await service.stop?.();
+            const result = await executeSqlite3(
+              path,
+              db,
+              showModifiedUrlsOnChange,
+            );
             if (showModifiedUrlsOnChange) {
               const spFiles = result?.sqlPageFilesModified?.sort((a, b) =>
                 b.modifiedAt.getTime() - a.modifiedAt.getTime()
@@ -267,13 +275,13 @@ async function watchFiles(
                 }
               }
             }
-            startSqlPageServer?.();
+            service.start?.();
           }
         }
       }
     }, 200);
 
-    const watcher = Deno.watchFs(watchPaths);
+    const watcher = Deno.watchFs(watch.paths, { recursive: watch.recursive });
     for await (const event of watcher) {
       if (event.kind === "modify" || event.kind === "create") {
         reload(event);
@@ -282,7 +290,7 @@ async function watchFiles(
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
       console.log(
-        brightRed(`Invalid watch path: ${watchPaths.join(":")} (${error})`),
+        brightRed(`Invalid watch path: ${watch.paths.join(":")} (${error})`),
       );
     } else {
       console.log(brightRed(`watchFiles issue: ${error} (${files}, ${db})`));
@@ -290,111 +298,115 @@ async function watchFiles(
   }
 }
 
-const { options } = await new Command()
-  .name("server-runner")
-  .version("1.0.0")
-  .description("Run a SQLPage server and reload file when content modified")
-  .option("-p, --port <port:number>", "Port to run the server on", {
-    default: DEFAULT_PORT,
-  })
-  .option("--watch <path:string>", "watch path(s)", {
-    default: ".",
-    collect: true,
-  })
-  .option(
-    "--standalone",
-    "Run standalone SQLPage instead of surveilr embedded",
-    { default: false },
-  )
-  .option(
-    "--restart-sqlpage-on-change",
-    "Restart the SQLPage server on each change",
-    { default: true },
-  )
-  .option(
-    "--show-modified-urls-on-change",
-    "After reloading sqlpage_files, show the recently modified URLs",
-    { default: false },
-  )
-  .parse(Deno.args);
+function sqlPageDevAction(options: {
+  readonly port: number;
+  readonly watch: string[];
+  readonly watchRecurse: boolean;
+  readonly standalone: boolean;
+  readonly restartSqlpageOnChange: true;
+  readonly showModifiedUrlsOnChange: boolean;
+}) {
+  const {
+    port,
+    standalone,
+    restartSqlpageOnChange,
+    showModifiedUrlsOnChange,
+  } = options;
+  const db = DEV_DEFAULT_DB;
 
-const { port, standalone, restartSqlpageOnChange, showModifiedUrlsOnChange } =
-  options;
-const db = DEFAULT_DB;
+  // Determine the command and arguments
+  const serverCommand = standalone
+    ? ["sqlpage"]
+    : ["./surveilr", "--port", String(port)];
+  const serverEnv = standalone
+    ? {
+      SQLPAGE_PORT: String(port),
+      SQLPAGE_DATABASE_URL: `sqlite://${db}?mode=ro`,
+    }
+    : undefined;
 
-// Determine the command and arguments
-const serverCommand = standalone
-  ? ["sqlpage"]
-  : ["./surveilr", "--port", String(port)];
-const serverEnv = standalone
-  ? {
-    SQLPAGE_PORT: String(port),
-    SQLPAGE_DATABASE_URL: `sqlite://${db}?mode=ro`,
-  }
-  : undefined;
-
-// Start the server process
-if (standalone) {
-  console.log(cyan(`Starting standlone SQLPage server on port ${port}...`));
-  console.log(brightYellow(`SQLPage server running with database: ${db}`));
-} else {
-  console.log(
-    cyan(`Starting surveilr embedded SQLPage server on port ${port}...`),
-  );
-}
-
-const baseUrl = `http://localhost:${port}`;
-console.log(
-  dim(`Restart SQLPage server on each change: ${restartSqlpageOnChange}`),
-);
-console.log(brightYellow(`${baseUrl}/index.sql`));
-
-// Watch for changes in SQL and TS files and execute sqlite3 on change
-watchFiles(
-  options.watch,
-  [/\.sql\.ts$/, /\.sql$/],
-  db,
-  showModifiedUrlsOnChange,
-);
-
-stopSqlPageServer = async () => {
-  if (!restartSqlpageOnChange) return;
-  if (sqlPageServerProcess) {
-    const existingPID = sqlPageServerProcess?.pid;
-    sqlPageServerProcess?.kill("SIGINT");
-    const { code } = await sqlPageServerProcess.status;
-    sqlPageServerProcess = null;
-    console.log(
-      dim(`⛔ Stopped SQLPage server with PID ${existingPID}: ${code}`),
-    );
+  // Start the server process
+  if (standalone) {
+    console.log(cyan(`Starting standlone SQLPage server on port ${port}...`));
+    console.log(brightYellow(`SQLPage server running with database: ${db}`));
   } else {
     console.log(
-      brightRed("Unable to stop SQLPage server, no process started."),
+      cyan(`Starting surveilr embedded SQLPage server on port ${port}...`),
     );
   }
-};
 
-// deno-lint-ignore require-await
-startSqlPageServer = async () => {
-  if (sqlPageServerProcess) {
-    if (!restartSqlpageOnChange) return;
-    console.log(
-      brightRed(
-        `⚠️ Unable start new SQLPage server, process is already running.`,
-      ),
-    );
-    return;
-  }
-  const sqlPageCmd = new Deno.Command(serverCommand[0], {
-    args: serverCommand.slice(1),
-    env: serverEnv,
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  sqlPageServerProcess = sqlPageCmd.spawn();
+  const baseUrl = `http://localhost:${port}`;
   console.log(
-    dim(`👍 Started SQLPage server with PID ${sqlPageServerProcess.pid}`),
+    dim(`Restart SQLPage server on each change: ${restartSqlpageOnChange}`),
   );
-};
+  console.log(brightYellow(`${baseUrl}/index.sql`));
 
-startSqlPageServer();
+  let sqlPageServerProcess: Deno.ChildProcess | null;
+  const sqlPageService = {
+    // deno-lint-ignore require-await
+    start: async () => {
+      if (sqlPageServerProcess) {
+        if (!restartSqlpageOnChange) return;
+        console.log(
+          brightRed(
+            `⚠️ Unable start new SQLPage server, process is already running.`,
+          ),
+        );
+        return;
+      }
+      const sqlPageCmd = new Deno.Command(serverCommand[0], {
+        args: serverCommand.slice(1),
+        env: serverEnv,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      sqlPageServerProcess = sqlPageCmd.spawn();
+      console.log(
+        dim(`👍 Started SQLPage server with PID ${sqlPageServerProcess.pid}`),
+      );
+    },
+
+    stop: async () => {
+      if (!restartSqlpageOnChange) return;
+      if (sqlPageServerProcess) {
+        const existingPID = sqlPageServerProcess?.pid;
+        sqlPageServerProcess?.kill("SIGINT");
+        const { code } = await sqlPageServerProcess.status;
+        sqlPageServerProcess = null;
+        console.log(
+          dim(`⛔ Stopped SQLPage server with PID ${existingPID}: ${code}`),
+        );
+      } else {
+        console.log(
+          brightRed("Unable to stop SQLPage server, no process started."),
+        );
+      }
+    },
+  };
+
+  // Watch for changes in SQL and TS files and execute sqlite3 on change
+  watchFiles(
+    { paths: options.watch, recursive: options.watchRecurse },
+    [/\.sql\.ts$/, /\.sql$/],
+    db,
+    sqlPageService,
+    showModifiedUrlsOnChange,
+  );
+
+  sqlPageService.start();
+}
+
+// deno-fmt-ignore so that commands defn is clearer
+await new Command()
+  .name("sqlpagectl")
+  .version("1.0.0")
+  .description("SQLPage controller")
+  .command("dev", "Developer (sqlpage_files) lifecycle and experience")
+    .option("-p, --port <port:number>", "Port to run SQLPage server on", { default: DEV_DEFAULT_PORT })
+    .option("-w, --watch <path:string>", "watch path(s)", { default: ".", collect: true })
+    .option("-R, --watch-recurse", "Watch subdirectories too", { default: false })
+    .option("-s, --standalone", "Run standalone SQLPage instead of surveilr embedded", { default: false })
+    .option("--restart-sqlpage-on-change", "Restart the SQLPage server on each change, needed for SQLite", { default: true })
+    .option("--show-modified-urls-on-change", "After reloading sqlpage_files, show the recently modified URLs", { default: false })
+    .action(sqlPageDevAction)
+  .parse(Deno.args ?? ["dev"]);

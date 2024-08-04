@@ -165,7 +165,17 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
           '[' || view_name || '](view.sql?name=' || view_name || ')' AS "View",
           COUNT(column_name) AS "Column Count"
       FROM console_information_schema_view
-      GROUP BY view_name;`;
+      GROUP BY view_name;
+                 
+      SELECT 'title' AS component, 'Migrations' as contents;
+      SELECT 'table' AS component, 
+            'Table' AS markdown,
+            'Column Count' as align_right,
+            TRUE as sort,
+            TRUE as search;
+      SELECT from_state, to_state, transition_reason, transitioned_at
+      FROM code_notebook_state
+      ORDER BY transitioned_at;`;
   }
 
   "console/info-schema/table.sql"() {
@@ -173,8 +183,8 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       select 'breadcrumb' as component;
       select 'Home' as title, '/' as link;
       select 'Console' as title, '../' as link;
-      select 'Information Schema' as title, '#' as link;
-      select $name || ' Table' as title;
+      select 'Information Schema' as title, 'index.sql' as link;
+      select $name || ' Table' as title, '#' as link;
 
       SELECT 'title' AS component, $name AS contents;      
       SELECT 'table' AS component;
@@ -204,7 +214,8 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       WHERE table_name = $name;
       
       SELECT 'title' AS component, 'SQL DDL' as contents, 2 as level;
-      SELECT 'text' AS component, '\`\`\`sql\n' || (SELECT sql_ddl FROM console_information_schema_table WHERE table_name = $name) || '\n\`\`\`' as contents_md;`;
+      SELECT 'code' AS component;
+      SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_table WHERE table_name = $name) as contents;`;
   }
 
   "console/info-schema/view.sql"() {
@@ -224,7 +235,8 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       WHERE view_name = $name;
       
       SELECT 'title' AS component, 'SQL DDL' as contents, 2 as level;
-      SELECT 'text' AS component, '\`\`\`sql\n' || (SELECT sql_ddl FROM console_information_schema_view WHERE view_name = $name) || '\n\`\`\`' as contents_md;`;
+      SELECT 'code' AS component;
+      SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_view WHERE view_name = $name) as contents;`;
   }
 
   "console/sqlpage-files/index.sql"() {
@@ -283,14 +295,13 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
       select 'Code Notebooks' as title, 'index.sql' as link;
       select 'Notebook ' || $notebook || ' Cell' || $cell as title, '#' as link;
 
-      SELECT 'text' as component,
-             $notebook || '.' || $cell as title,
-             '\`\`\`sql
-      ' || interpretable_code || '
-      \`\`\`' as contents_md
-       FROM code_notebook_cell
-      WHERE notebook_name = $notebook
-        AND cell_name = $cell;`;
+      SELECT 'code' as component;
+      SELECT $notebook || '.' || $cell as title,
+             COALESCE(cell_governance -> '$.language', 'sql') as language,
+             interpretable_code as contents
+        FROM code_notebook_cell
+       WHERE notebook_name = $notebook
+         AND cell_name = $cell;`;
   }
 }
 

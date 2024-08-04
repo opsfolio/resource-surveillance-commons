@@ -17,7 +17,7 @@ $ surveilr sqlpage --port 9000
 Ease development using `watch` mode:
 
 ```bash
-$ ../support/bin/sqlpage-watch-and-reload-sql-into-rssd.ts --watch . --standalone
+$ ../support/bin/sqlpagectl.ts dev --watch . --standalone
 ```
 
 The above would start a standalone SQLPage instance and automatically reload all
