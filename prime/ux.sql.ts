@@ -1,19 +1,8 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { path, SQLa, SQLPageAide as spa, ws } from "./deps.ts";
+import { SQLa } from "./deps.ts";
+import { TypicalSqlPageNotebook } from "./sqlpage-notebook.ts";
 
-class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
-  readonly emitCtx = SQLa.typicalSqlEmitContext({
-    sqlDialect: SQLa.sqliteDialect(),
-  }) as EmitContext;
-  readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<EmitContext>();
-
-  // type-safe wrapper for all SQL text generated in this library;
-  // we call it `SQL` so that VS code extensions like frigus02.vscode-sql-tagged-template-literals
-  // properly syntax-highlight code inside SQL`xyz` strings.
-  get SQL() {
-    return SQLa.SQL<EmitContext>(this.ddlOptions);
-  }
-
+class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
   infoSchemaDDL() {
     return this.SQL`
       -- console_information_schema_* tables are convenience tables
@@ -131,129 +120,6 @@ class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
       `;
   }
 
-  notebook() {
-    return this.SQL`
-      ${this.infoSchemaDDL()}
-    `.SQL(this.emitCtx);
-  }
-}
-
-class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
-  readonly emitCtx = SQLa.typicalSqlEmitContext({
-    sqlDialect: SQLa.sqliteDialect(),
-  }) as EmitContext;
-  readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<EmitContext>();
-
-  // type-safe wrapper for all SQL text generated in this library;
-  // we call it `SQL` so that VS code extensions like frigus02.vscode-sql-tagged-template-literals
-  // properly syntax-highlight code inside SQL`xyz` strings.
-  get SQL() {
-    return SQLa.SQL<EmitContext>(this.ddlOptions);
-  }
-
-  /**
-   * Assume caller's method name contains "path/path/file.sql" format, reflect
-   * the method name in the call stack and extract path components from the
-   * method name in the stack trace.
-   *
-   * @param [level=2] - The stack trace level to extract the method name from. Defaults to 2 (immediate parent).
-   * @returns An object containing the absolute path, base name, directory path, and file extension, or undefined if unable to parse.
-   */
-  sqlPagePathComponents(level = 2) {
-    // Get the stack trace using a new Error object
-    const stack = new Error().stack;
-    if (!stack) {
-      return undefined;
-    }
-
-    // Split the stack to find the method name
-    const stackLines = stack.split("\n");
-    if (stackLines.length < 3) {
-      return undefined;
-    }
-
-    // Parse the method name from the stack trace
-    const methodLine = stackLines[level].trim();
-    const methodNameMatch = methodLine.match(/at (.+?) \(/);
-    if (!methodNameMatch) {
-      return undefined;
-    }
-
-    // Get the full method name including the class name
-    const fullMethodName = methodNameMatch[1];
-
-    // Extract the method name by removing the class name
-    const className = this.constructor.name;
-    const methodName = fullMethodName.startsWith(className + ".")
-      ? fullMethodName.substring(className.length + 1)
-      : fullMethodName;
-
-    // assume methodName is now a proper sqlpage_files.path value
-    return {
-      absPath: "/" + methodName,
-      basename: path.basename(methodName),
-      path: "/" + path.dirname(methodName),
-      extension: path.extname(methodName),
-    };
-  }
-
-  breadcrumbsSQL(
-    activePath: string,
-    ...additional: ({ title: string; titleExpr?: never; link?: string } | {
-      title?: never;
-      titleExpr: string;
-      link?: string;
-    })[]
-  ) {
-    return ws.unindentWhitespace(`
-      SELECT 'breadcrumb' as component;
-      WITH RECURSIVE breadcrumbs AS (
-          SELECT 
-              COALESCE(abbreviated_caption, caption) AS title,
-              COALESCE(url, path) AS link,
-              parent_path, 0 AS level
-          FROM sqlpage_aide_navigation
-          WHERE path = '${activePath.replaceAll("'", "''")}'
-          UNION ALL
-          SELECT 
-              COALESCE(nav.abbreviated_caption, nav.caption) AS title,
-              COALESCE(nav.url, nav.path) AS link,
-              nav.parent_path, b.level + 1
-          FROM sqlpage_aide_navigation nav
-          INNER JOIN breadcrumbs b ON nav.path = b.parent_path
-      )
-      SELECT title, link FROM breadcrumbs ORDER BY level DESC;`) +
-      (additional.length
-        ? (additional.map((crumb) =>
-          `\nSELECT ${
-            crumb.title ? `'${crumb.title}'` : crumb.titleExpr
-          } AS title, '${crumb.link ?? "#"}' AS link;`
-        ))
-        : "");
-  }
-
-  /**
-   * Assume caller's method name contains "path/path/file.sql" format, reflect
-   * the method name in the call stack and assume that's the path then compute
-   * the breadcrumbs.
-   * @param additional any additional crumbs to append
-   * @returns the SQL for active breadcrumbs
-   */
-  activeBreadcrumbsSQL(
-    ...additional: ({ title: string; titleExpr?: never; link?: string } | {
-      title?: never;
-      titleExpr: string;
-      link?: string;
-    })[]
-  ) {
-    return this.breadcrumbsSQL(
-      this.sqlPagePathComponents(3)?.path ?? "/",
-      ...additional,
-    );
-  }
-}
-
-class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
   "index.sql"() {
     return this.SQL`
       WITH prime_navigation_cte AS (
@@ -439,19 +305,5 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(new ConsoleSqlNotebook().notebook());
-
-  const consolePages = new ConsoleSqlPages();
-  console.log(
-    new spa.SQLPageAide(consolePages)
-      .include(/\.sql$/, /^sqlpage/)
-      .onNonStringContents((result, _sp, method) =>
-        SQLa.isSqlTextSupplier(result)
-          ? result.SQL(consolePages.emitCtx)
-          : `/* unknown result from ${method} */`
-      )
-      .emitformattedSQL()
-      .SQL()
-      .join("\n"),
-  );
+  console.log(ConsoleSqlPages.SQL(new ConsoleSqlPages()).join("\n"));
 }

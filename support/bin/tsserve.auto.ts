@@ -18,8 +18,8 @@ Deno.serve({ port: 9022 }, async (request) => {
 
     try {
       switch (path) {
-        case 'prime/prime.sql': {
-          importedModule = await import('https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/prime.sql.ts');
+        case 'prime/ux.sql': {
+          importedModule = await import('https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts');
           mimeType = 'text/sql';
           break;
         }
@@ -28,8 +28,18 @@ Deno.serve({ port: 9022 }, async (request) => {
           mimeType = 'text/sql';
           break;
         }
+        case 'pattern/privacy/anonymize-sample/ux.sql': {
+          importedModule = await import('https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/anonymize-sample/ux.sql.ts');
+          mimeType = 'text/sql';
+          break;
+        }
+        case 'service/diabetes-research-hub/ux.sql': {
+          importedModule = await import('https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts');
+          mimeType = 'text/sql';
+          break;
+        }
         default:
-          return new Response(`Path ${path} did not match a valid route. Valid routes: [prime/prime.sql, pattern/digital-health/ux.sql]`, { status: 404 });
+          return new Response(`Path ${path} did not match a valid route. Valid routes: [prime/ux.sql, pattern/digital-health/ux.sql, pattern/privacy/anonymize-sample/ux.sql, service/diabetes-research-hub/ux.sql]`, { status: 404 });
       }
     } catch (error) {
       return new Response(

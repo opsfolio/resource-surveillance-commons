@@ -35,6 +35,7 @@ $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commo
 $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
 
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
+$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr sqlpage --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
@@ -95,49 +96,24 @@ other dependencies.
 
 ```bash
 # load the "Console" and other menu/routing utilities
-$ deno run ../../prime/prime.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
-# apply the "stateless" FHIR utility views and do some exploring
-$ cat stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ echo "select * from uniform_resource_summary" | sqlite3 resource-surveillance.sqlite.db -table
-$ echo "select * from fhir_v4_bundle_resource_summary" | sqlite3 resource-surveillance.sqlite.db -table
-
-# work with Patient resources
-$ echo "SELECT resource_content FROM fhir_v4_bundle_resource WHERE resource_type = 'Patient' LIMIT 1" | sqlite3 resource-surveillance.sqlite.db -table
-$ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient" | sqlite3 resource-surveillance.sqlite.db -table
-$ echo "select * from fhir_v4_patient_age_avg" | sqlite3 resource-surveillance.sqlite.db -table
-
-# work with Observation resources
-$ echo "SELECT resource_content FROM fhir_v4_bundle_resource WHERE resource_type = 'Observation' LIMIT 1" | sqlite3 resource-surveillance.sqlite.db -table
-$ echo "select * from fhir_v4_bundle_resource_observation" | sqlite3 resource-surveillance.sqlite.db -table
-
-# now try with `*_cached` tables ("materialized views") to notice that performance is better
-$ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ echo "select patient_id, first_name, last_name, birth_date from fhir_v4_bundle_resource_patient_cached" | sqlite3 resource-surveillance.sqlite.db -table
-$ echo "select * from fhir_v4_patient_age_avg_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT id, lastUpdated, type_code, type_system, type_display, class_code, class_system, class_display, period_start, period_end, status, subject_display, subject_reference, location, diagnosis_reference FROM fhir_v4_bundle_resource_encounter_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT observation_id, status, category_system, category_code, category_display, code_system, code, code_display, subject_reference FROM fhir_v4_bundle_resource_observation_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT id, code, code_system, code_display, lastUpdated, subject_display, subject_reference, encounter_display FROM fhir_v4_bundle_resource_condition_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT id, lastUpdated, code, code_system, code_display, category_code, category_code_system, category_code_display, intent FROM fhir_v4_bundle_resource_ServiceRequest_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT id, code, lastUpdated, subject_display, subject_reference, bodySite, encounter_display, encounter_reference FROM fhir_v4_bundle_resource_procedure_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-$ echo "SELECT id, lastUpdated, lineage_meta_data_url_0, lineage_meta_data_value_0, lineage_meta_data_url_1 FROM fhir_v4_bundle_resource_practitioner_cached" | sqlite3 resource-surveillance.sqlite.db -table
-
-# use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
+$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ surveilr sqlpage --port 9000
-# launch a browser and go to http://localhost:9000/fhir/index.sql
 
-# if you want to start surveilr SQLPage in "watch" mode to re-load files automatically
+# apply the "stateless" FHIR utility views
+$ cat stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+
+# optionally create `*_cached` tables ("materialized views") to improve performance
+$ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+
+# if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
+# browse http://localhost:9000/ to see web UI
 
 # if you want to start a standalone SQLPage in "watch" mode to re-load files automatically
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
+# browse http://localhost:9000/ to see web UI
+
+# browse http://localhost:9000/fhir/info-schema.sql to see FHIR-specific 
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and

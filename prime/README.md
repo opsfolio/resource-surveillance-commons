@@ -9,7 +9,7 @@ applications)
 You can load these into any `surveilr` RSSD:
 
 ```bash
-$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/prime.sql.ts | sqlite3 resource-surveillance.sqlite.db
+$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr sqlpage --port 9000
 # open the page at http://localhost:9000/
 ```
