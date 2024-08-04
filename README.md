@@ -4,6 +4,9 @@
 [Resource Surveillance](https://www.opsfolio.com/surveilr) (`surveilr`)
 patterns.
 
+- [`prime`](./prime) contains assets that `surveilr` uses for "Console", general
+  navigation, and other "universal helpers" (content and pages that work across
+  `surveilr`-based applications)
 - `pattern` shares common and reusable content for different industries,
   disciplines, and use cases
   - [`digital-health`](./pattern/digital-health) shares patterns for HL7 FHIR
