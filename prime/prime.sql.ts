@@ -1,5 +1,5 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SQLa, SQLPageAide as spa } from "./deps.ts";
+import { SQLa, SQLPageAide as spa, ws } from "./deps.ts";
 
 class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
   readonly emitCtx = SQLa.typicalSqlEmitContext({
@@ -16,6 +16,9 @@ class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
 
   infoSchemaDDL() {
     return this.SQL`
+      -- console_information_schema_* tables are convenience tables
+      -- to make it easier to work than pragma_table_info.
+
       -- Drop and create the table for storing general table information
       DROP TABLE IF EXISTS console_information_schema_table;
       CREATE TABLE console_information_schema_table (
@@ -97,7 +100,35 @@ class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
       FROM sqlite_master tbl
       JOIN pragma_index_list(tbl.name) idx
       JOIN pragma_index_info(idx.name) pi
-      WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';`;
+      WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';
+      
+      -- Drop and create the table for storing navigation entries
+      DROP TABLE IF EXISTS sqlpage_aide_navigation;
+      CREATE TABLE sqlpage_aide_navigation (
+          path TEXT NOT NULL, -- the "primary key" within namespace
+          caption TEXT NOT NULL, -- for human-friendly general-purpose name
+          namespace TEXT NOT NULL, -- if more than one navigation tree is required
+          parent_path TEXT, -- for defining hierarchy
+          sibling_order INTEGER, -- orders children within their parent(s)
+          url TEXT, -- for supplying links, if different from path
+          title TEXT, -- for full titles when elaboration is required, default to caption if NULL
+          abbreviated_caption TEXT, -- for breadcrumbs and other "short" form, default to caption if NULL
+          description TEXT, -- for elaboration or explanation
+          CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
+          CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
+      );
+
+      -- Create navigation content
+      INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
+      VALUES
+          ('prime', NULL, 1, '/', '/', 'Home', NULL, 'Resource Surveillance State Database (RSSD)', 'Welcome to Resource Surveillance State Database (RSSD)'),
+          ('prime', '/', 1, '/console', '/console/', 'RSSD Console', 'Console', 'Resource Surveillance State Database (RSSD) Console', 'Explore RSSD information schema, code notebooks, and SQLPage files'),
+          ('prime', '/console', 1, '/console/info-schema', '/console/info-schema/', 'RSSD Information Schema', 'Info Schema', 'RSSD Information Schema', 'Explore RSSD tables, columns, views, and other information schema documentation'),
+          ('prime', '/console', 2, '/console/notebooks', '/console/notebooks/', 'RSSD Code Notebooks', 'Code Notebooks', 'RSSD Code Notebooks', 'Explore RSSD Code Notebooks which contain reusable SQL and other code blocks'),
+          ('prime', '/console', 3, '/console/sqlpage-files', '/console/sqlpage-files/', 'RSSD SQLPage Files', 'SQLPage Files', 'RSSD SQLPage Files', 'Explore RSSD SQLPage Files which govern the content of the web-UI')
+      ON CONFLICT (namespace, parent_path, path)
+      DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
+      `;
   }
 
   notebook() {
@@ -119,29 +150,79 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
   get SQL() {
     return SQLa.SQL<EmitContext>(this.ddlOptions);
   }
+
+  breadcrumbsSQL(
+    activePath: string,
+    ...additional: ({ title: string; titleExpr?: never; link?: string } | {
+      title?: never;
+      titleExpr: string;
+      link?: string;
+    })[]
+  ) {
+    return ws.unindentWhitespace(`
+      SELECT 'breadcrumb' as component;
+      WITH RECURSIVE breadcrumbs AS (
+          SELECT 
+              COALESCE(abbreviated_caption, caption) AS title,
+              COALESCE(url, path) AS link,
+              parent_path, 0 AS level
+          FROM sqlpage_aide_navigation
+          WHERE path = '${activePath.replaceAll("'", "''")}'
+          UNION ALL
+          SELECT 
+              COALESCE(nav.abbreviated_caption, nav.caption) AS title,
+              COALESCE(nav.url, nav.path) AS link,
+              nav.parent_path, b.level + 1
+          FROM sqlpage_aide_navigation nav
+          INNER JOIN breadcrumbs b ON nav.path = b.parent_path
+      )
+      SELECT title, link FROM breadcrumbs ORDER BY level DESC;`) +
+      (additional.length
+        ? (additional.map((crumb) =>
+          `\nSELECT ${
+            crumb.title ? `'${crumb.title}'` : crumb.titleExpr
+          } AS title, '${crumb.link ?? "#"}' AS link;`
+        ))
+        : "");
+  }
 }
 
 class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
+  "index.sql"() {
+    return this.SQL`
+      WITH prime_navigation_cte AS (
+          SELECT title, description
+            FROM sqlpage_aide_navigation 
+            WHERE namespace = 'prime' AND path = '/'
+      )
+      SELECT 'list' AS component, title, description
+        FROM prime_navigation_cte;
+      SELECT caption as title, COALESCE(url, path) as link
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/'
+       ORDER BY sibling_order;`;
+  }
+
   "console/index.sql"() {
     return this.SQL`
-      SELECT
-        'list' as component,
-        'Resource Surveillance Console' as title,
-        'Here are some useful links to get you started.' as description;
-      SELECT 'SQLPage Pages' as title,
-        'sqlpage-files/' as link;
-      SELECT 'Stored SQL Notebooks' as title,
-        'notebooks/' as link;
-      SELECT 'Information Schema' as title,
-        'info-schema/' as link;`;
+      ${this.breadcrumbsSQL("/console")}
+      
+      WITH console_navigation_cte AS (
+          SELECT title, description
+            FROM sqlpage_aide_navigation 
+           WHERE namespace = 'prime' AND path = '/console'
+      )
+      SELECT 'list' AS component, title, description
+        FROM console_navigation_cte;
+      SELECT caption as title, COALESCE(url, path) as link
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/console'
+       ORDER BY sibling_order;`;
   }
 
   "console/info-schema/index.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'Information Schema' as title, '#' as link;
+      ${this.breadcrumbsSQL("/console/info-schema")}
 
       SELECT 'title' AS component, 'Tables' as contents;
       SELECT 'table' AS component, 
@@ -180,11 +261,11 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/info-schema/table.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'Information Schema' as title, 'index.sql' as link;
-      select $name || ' Table' as title, '#' as link;
+      ${
+      this.breadcrumbsSQL("/console/info-schema", {
+        titleExpr: `$name || ' Table'`,
+      })
+    }
 
       SELECT 'title' AS component, $name AS contents;      
       SELECT 'table' AS component;
@@ -220,11 +301,11 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/info-schema/view.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'Information Schema' as title, 'index.sql' as link;
-      select $name || ' View' as title, '#' as link;
+      ${
+      this.breadcrumbsSQL("/console/info-schema", {
+        titleExpr: `$name || ' View'`,
+      })
+    }
 
       SELECT 'title' AS component, $name AS contents;      
       SELECT 'table' AS component;
@@ -241,10 +322,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/sqlpage-files/index.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'SQLPage Files in DB' as title, '#' as link;
+      ${this.breadcrumbsSQL("/console/sqlpage-files")}
 
       SELECT 'title' AS component, 'SQLPage pages in sqlpage_files table' AS contents;
       SELECT 'table' AS component, 
@@ -261,11 +339,11 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/sqlpage-files/sqlpage-file.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'SQLPage Files in DB' as title, 'index.sql' as link;
-      select $path || ' Path' as title, '#' as link;
+      ${
+      this.breadcrumbsSQL("/console/sqlpage-files", {
+        titleExpr: `$path || ' Path'`,
+      })
+    }
 
       SELECT 'title' AS component, $path AS contents;
       SELECT 'text' AS component, 
@@ -274,10 +352,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/notebooks/index.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'Code Notebooks' as title, '#' as link;
+      ${this.breadcrumbsSQL("/console/notebooks")}
 
       SELECT 'title' AS component, 'Code Notebooks' AS contents;
       SELECT 'table' as component, 'Cell' as markdown, 1 as search, 1 as sort;
@@ -289,11 +364,11 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/notebooks/notebook-cell.sql"() {
     return this.SQL`
-      select 'breadcrumb' as component;
-      select 'Home' as title, '/' as link;
-      select 'Console' as title, '../' as link;
-      select 'Code Notebooks' as title, 'index.sql' as link;
-      select 'Notebook ' || $notebook || ' Cell' || $cell as title, '#' as link;
+      ${
+      this.breadcrumbsSQL("/console/notebooks", {
+        titleExpr: `'Notebook ' || $notebook || ' Cell' || $cell`,
+      })
+    }
 
       SELECT 'code' as component;
       SELECT $notebook || '.' || $cell as title,
