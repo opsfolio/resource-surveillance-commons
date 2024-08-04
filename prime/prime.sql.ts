@@ -1,5 +1,5 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SQLa, SQLPageAide as spa, ws } from "./deps.ts";
+import { path, SQLa, SQLPageAide as spa, ws } from "./deps.ts";
 
 class ConsoleSqlNotebook<EmitContext extends SQLa.SqlEmitContext> {
   readonly emitCtx = SQLa.typicalSqlEmitContext({
@@ -151,6 +151,52 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
     return SQLa.SQL<EmitContext>(this.ddlOptions);
   }
 
+  /**
+   * Assume caller's method name contains "path/path/file.sql" format, reflect
+   * the method name in the call stack and extract path components from the
+   * method name in the stack trace.
+   *
+   * @param [level=2] - The stack trace level to extract the method name from. Defaults to 2 (immediate parent).
+   * @returns An object containing the absolute path, base name, directory path, and file extension, or undefined if unable to parse.
+   */
+  sqlPagePathComponents(level = 2) {
+    // Get the stack trace using a new Error object
+    const stack = new Error().stack;
+    if (!stack) {
+      return undefined;
+    }
+
+    // Split the stack to find the method name
+    const stackLines = stack.split("\n");
+    if (stackLines.length < 3) {
+      return undefined;
+    }
+
+    // Parse the method name from the stack trace
+    const methodLine = stackLines[level].trim();
+    const methodNameMatch = methodLine.match(/at (.+?) \(/);
+    if (!methodNameMatch) {
+      return undefined;
+    }
+
+    // Get the full method name including the class name
+    const fullMethodName = methodNameMatch[1];
+
+    // Extract the method name by removing the class name
+    const className = this.constructor.name;
+    const methodName = fullMethodName.startsWith(className + ".")
+      ? fullMethodName.substring(className.length + 1)
+      : fullMethodName;
+
+    // assume methodName is now a proper sqlpage_files.path value
+    return {
+      absPath: "/" + methodName,
+      basename: path.basename(methodName),
+      path: "/" + path.dirname(methodName),
+      extension: path.extname(methodName),
+    };
+  }
+
   breadcrumbsSQL(
     activePath: string,
     ...additional: ({ title: string; titleExpr?: never; link?: string } | {
@@ -185,6 +231,26 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
         ))
         : "");
   }
+
+  /**
+   * Assume caller's method name contains "path/path/file.sql" format, reflect
+   * the method name in the call stack and assume that's the path then compute
+   * the breadcrumbs.
+   * @param additional any additional crumbs to append
+   * @returns the SQL for active breadcrumbs
+   */
+  activeBreadcrumbsSQL(
+    ...additional: ({ title: string; titleExpr?: never; link?: string } | {
+      title?: never;
+      titleExpr: string;
+      link?: string;
+    })[]
+  ) {
+    return this.breadcrumbsSQL(
+      this.sqlPagePathComponents(3)?.path ?? "/",
+      ...additional,
+    );
+  }
 }
 
 class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
@@ -205,7 +271,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/index.sql"() {
     return this.SQL`
-      ${this.breadcrumbsSQL("/console")}
+      ${this.activeBreadcrumbsSQL()}
       
       WITH console_navigation_cte AS (
           SELECT title, description
@@ -222,7 +288,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/info-schema/index.sql"() {
     return this.SQL`
-      ${this.breadcrumbsSQL("/console/info-schema")}
+      ${this.activeBreadcrumbsSQL()}
 
       SELECT 'title' AS component, 'Tables' as contents;
       SELECT 'table' AS component, 
@@ -261,11 +327,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/info-schema/table.sql"() {
     return this.SQL`
-      ${
-      this.breadcrumbsSQL("/console/info-schema", {
-        titleExpr: `$name || ' Table'`,
-      })
-    }
+      ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' Table'` })}
 
       SELECT 'title' AS component, $name AS contents;      
       SELECT 'table' AS component;
@@ -301,11 +363,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/info-schema/view.sql"() {
     return this.SQL`
-      ${
-      this.breadcrumbsSQL("/console/info-schema", {
-        titleExpr: `$name || ' View'`,
-      })
-    }
+      ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' View'` })}
 
       SELECT 'title' AS component, $name AS contents;      
       SELECT 'table' AS component;
@@ -322,7 +380,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/sqlpage-files/index.sql"() {
     return this.SQL`
-      ${this.breadcrumbsSQL("/console/sqlpage-files")}
+      ${this.activeBreadcrumbsSQL()}
 
       SELECT 'title' AS component, 'SQLPage pages in sqlpage_files table' AS contents;
       SELECT 'table' AS component, 
@@ -339,11 +397,7 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/sqlpage-files/sqlpage-file.sql"() {
     return this.SQL`
-      ${
-      this.breadcrumbsSQL("/console/sqlpage-files", {
-        titleExpr: `$path || ' Path'`,
-      })
-    }
+      ${this.activeBreadcrumbsSQL({ titleExpr: `$path || ' Path'` })}
 
       SELECT 'title' AS component, $path AS contents;
       SELECT 'text' AS component, 
@@ -352,31 +406,34 @@ class ConsoleSqlPages extends SqlPages<SQLa.SqlEmitContext> {
 
   "console/notebooks/index.sql"() {
     return this.SQL`
-      ${this.breadcrumbsSQL("/console/notebooks")}
+      ${this.activeBreadcrumbsSQL()}
 
       SELECT 'title' AS component, 'Code Notebooks' AS contents;
       SELECT 'table' as component, 'Cell' as markdown, 1 as search, 1 as sort;
-      SELECT notebook_name,
-             '[' || cell_name || '](notebook-cell.sql?notebook=' || replace(notebook_name, ' ', '%20') || '&cell=' || replace(cell_name, ' ', '%20') || ')' as Cell,
-             description
-        FROM code_notebook_cell;`;
+      SELECT c.notebook_name,
+             '[' || c.cell_name || '](notebook-cell.sql?notebook=' || replace(c.notebook_name, ' ', '%20') || '&cell=' || replace(c.cell_name, ' ', '%20') || ')' as Cell,
+             c.description,
+             k.kernel_name as kernel
+        FROM code_notebook_kernel k, code_notebook_cell c
+       WHERE k.code_notebook_kernel_id = c.notebook_kernel_id;`;
   }
 
   "console/notebooks/notebook-cell.sql"() {
     return this.SQL`
       ${
-      this.breadcrumbsSQL("/console/notebooks", {
+      this.activeBreadcrumbsSQL({
         titleExpr: `'Notebook ' || $notebook || ' Cell' || $cell`,
       })
     }
 
       SELECT 'code' as component;
-      SELECT $notebook || '.' || $cell as title,
-             COALESCE(cell_governance -> '$.language', 'sql') as language,
-             interpretable_code as contents
-        FROM code_notebook_cell
-       WHERE notebook_name = $notebook
-         AND cell_name = $cell;`;
+      SELECT $notebook || '.' || $cell || ' (' || k.kernel_name ||')' as title,
+             COALESCE(c.cell_governance -> '$.language', 'sql') as language,
+             c.interpretable_code as contents
+        FROM code_notebook_kernel k, code_notebook_cell c
+       WHERE c.notebook_name = $notebook
+         AND c.cell_name = $cell
+         AND k.code_notebook_kernel_id = c.notebook_kernel_id;`;
   }
 }
 
