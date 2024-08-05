@@ -13,5 +13,7 @@ patterns.
     and other typical healthcare use cases
   - [`privacy`](./pattern/privacy) shares patterns for anonymization and
     de-identification
+- [`service`](./service) contains assets that bespoke `surveilr`-based apps and
+  services depend on
 - [`assurance`](./assurance) contains assets that `surveilr` uses for end-to-end
   (`e2e`) tests
