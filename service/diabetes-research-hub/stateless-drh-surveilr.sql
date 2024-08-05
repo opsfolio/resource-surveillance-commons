@@ -90,8 +90,8 @@ SELECT
     metadata_id, devicename, device_id, source_platform, patient_id,
     file_name, 'file_format', file_upload_date, data_start_date,
     data_end_date, study_id
-FROM uniform_resource_cgm_file_metadata
-LIMIT 10;
+FROM uniform_resource_cgm_file_metadata;
+
 
 -- Drop and recreate the author_data view
 DROP VIEW IF EXISTS author_data;
