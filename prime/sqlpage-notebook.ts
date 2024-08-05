@@ -1,35 +1,144 @@
 import { path, SQLa, SQLPageAide as spa, ws } from "./deps.ts";
 
+// deno-lint-ignore no-explicit-any
+type Any = any;
+
+/**
+ * Type representing the initialization options for a route.
+ *
+ * @property path - The path for the route, this the search key when location routes.
+ * @property caption - The human friendly name of the route.
+ * @property namespace - The namespace for the route, defaults to 'prime'.
+ * @property parentPath - The parent path for hierarchical navigation if it's a child.
+ * @property siblingOrder - The order of this route among its siblings (for sorting).
+ * @property url - The URL for the route if different than the path when displaying in UI.
+ * @property abbreviatedCaption - A shorter version of the caption (e.g. for breadcrumbs).
+ * @property title - The title for the route (e.g. for page headings).
+ * @property description - A description of the route (e.g. for describing in lists or tooltips).
+ */
+export type RouteInit = {
+  readonly path: string;
+  readonly caption: string;
+  readonly namespace?: string;
+  readonly parentPath?: string;
+  readonly siblingOrder?: number;
+  readonly url?: string;
+  readonly abbreviatedCaption?: string;
+  readonly title?: string;
+  readonly description?: string;
+};
+
+/**
+ * Type representing a decorated route method, which includes the route
+ * initialization options and additional metadata about the method to
+ * which the route is attached.
+ *
+ * @property methodName - The name of the method.
+ * @property methodFn - The function of the method.
+ * @property methodCtx - The context of the method decorator.
+ */
+export type DecoratedRouteMethod =
+  & RouteInit
+  & {
+    readonly methodName: string;
+    readonly methodFn: Any;
+    readonly methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>;
+  };
+
+/**
+ * Decorator function for navigation routes. This decorator adds metadata to
+ * the method it decorates, which can then be used to generate navigation routes.
+ * It stores the RouteInit instance in method's class `navigation` instance.
+ *
+ * @param routeInit - The initialization options for the route.
+ * @returns A decorator function that adds metadata to the method.
+ *
+ * @example
+ * class MyNotebook extends TypicalSqlPageNotebook {
+ *   @navigation({
+ *     caption: 'Home',
+ *     title: 'Homepage',
+ *     description: 'The main page of the notebook'
+ *   })
+ *   index() {
+ *     // method implementation
+ *   }
+ * }
+ *
+ * - **Default Path**: If no path is provided, it defaults to `/${methodName}`.
+ * - **Index Path Handling**: If the path ends with `index.sql`, this part is removed to make searches easier.
+ * - **Trailing Slash Removal**: If the path is not the root (`/`) and ends with a slash, the trailing slash is removed.
+ * - **URL Generation**: If no URL is provided, a default URL is generated based on the path.
+ *
+ * Decorators in TypeScript and JavaScript are special functions that can be
+ * attached to classes, methods, accessors, properties, or parameters. They
+ * allow you to add metadata or modify behavior. In this example, the
+ * `navigation` decorator adds route metadata to methods, which can then be
+ * used for generating navigation routes.
+ */
+export function navigation(
+  routeInit: Omit<RouteInit, "path"> & Partial<Pick<RouteInit, "path">>,
+) {
+  const isRoot = (path: string) => path === "/" ? true : false;
+
+  return function (
+    methodFn: Any,
+    methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>,
+  ) {
+    const methodName = String(methodCtx.name);
+    let path = routeInit.path ?? `/${methodName}`;
+
+    // special handling for path indexes so searches are easier in table
+    if (path.endsWith("index.sql")) {
+      path = path.substring(0, path.length - "index.sql".length);
+    }
+    // the "path" is used to search/locate a nav item so shouldn't have trailing slash
+    if (!isRoot(path) && path.endsWith("/")) {
+      path = path.substring(0, path.length - 1);
+    }
+
+    const drm: DecoratedRouteMethod = {
+      ...routeInit,
+      path,
+      url: routeInit.url ??
+        (isRoot(path) ? path : (path.endsWith(".sql") ? path : `${path}/`)),
+      methodName,
+      methodFn,
+      methodCtx,
+    };
+
+    methodCtx.addInitializer(function () {
+      this.navigation.set(drm.path, drm);
+    });
+
+    // return void so that decorated function is not modified
+  };
+}
+
+export type SqlPageNotebookEmitCtx = SQLa.SqlEmitContext;
+
 /**
  * Base class with helper methods that Resource Surveillance Commons (RSC)
  * sqlpage_files "notebooks" use for typical requirements.
  */
-export class TypicalSqlPageNotebook<EmitContext extends SQLa.SqlEmitContext> {
+export class TypicalSqlPageNotebook {
+  // navigation will be automatically filled by @navigation decorators
+  readonly navigation: Map<RouteInit["path"], DecoratedRouteMethod> = new Map();
   readonly emitCtx = SQLa.typicalSqlEmitContext({
     sqlDialect: SQLa.sqliteDialect(),
-  }) as EmitContext;
-  readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<EmitContext>();
+  }) as SqlPageNotebookEmitCtx;
+  readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<
+    SqlPageNotebookEmitCtx
+  >();
 
   // type-safe wrapper for all SQL text generated in this library;
   // we call it `SQL` so that VS code extensions like frigus02.vscode-sql-tagged-template-literals
   // properly syntax-highlight code inside SQL`xyz` strings.
   get SQL() {
-    return SQLa.SQL<EmitContext>(this.ddlOptions);
+    return SQLa.SQL<SqlPageNotebookEmitCtx>(this.ddlOptions);
   }
 
-  upsertNavSQL(
-    ...nav: {
-      readonly path: string;
-      readonly caption: string;
-      readonly namespace?: string;
-      readonly parentPath?: string;
-      readonly siblingOrder?: number;
-      readonly url?: string;
-      readonly abbreviatedCaption?: string;
-      readonly title?: string;
-      readonly description?: string;
-    }[]
-  ) {
+  upsertNavSQL(...nav: RouteInit[]) {
     const literal = (text?: string | number) =>
       typeof text === "number"
         ? text
@@ -40,7 +149,7 @@ export class TypicalSqlPageNotebook<EmitContext extends SQLa.SqlEmitContext> {
     return this.SQL`
       INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
       VALUES
-          ${nav.map(n => `(${[n.namespace ?? 'prime', n.parentPath ?? '/', n.siblingOrder ?? 1, n.path, n.url, n.caption, n.abbreviatedCaption, n.title, n.description].map(v => literal(v)).join(', ')})`).join(",\n          ")}
+          ${nav.map(n => `(${[n.namespace ?? 'prime', n.parentPath, n.siblingOrder ?? 1, n.path, n.url, n.caption, n.abbreviatedCaption, n.title, n.description].map(v => literal(v)).join(', ')})`).join(",\n    ")}
       ON CONFLICT (namespace, parent_path, path)
       DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;`
   }
@@ -193,9 +302,7 @@ export class TypicalSqlPageNotebook<EmitContext extends SQLa.SqlEmitContext> {
    * @param sources list of one or more instances of TypicalSqlPageNotebook subclasses
    * @returns an array of strings which are the SQL statements
    */
-  static SQL<Source extends TypicalSqlPageNotebook<SQLa.SqlEmitContext>>(
-    ...sources: Source[]
-  ) {
+  static SQL<Source extends TypicalSqlPageNotebook>(...sources: Source[]) {
     return new spa.SQLPageAide(...sources)
       .includeUpserts(/\.sql$/)
       .includeSql(/DQL$/, /DML$/, /DDL$/)

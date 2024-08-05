@@ -1,57 +1,39 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SQLa, SqlPageNotebook as spn } from "./deps.ts";
+import { SqlPageNotebook as spn } from "./deps.ts";
+
+// custom decorator that makes navigation for this notebook type-safe
+function fhirNav(route: Omit<spn.RouteInit, "path" | "parentPath">) {
+  return spn.navigation({
+    ...route,
+    parentPath: "/fhir",
+  });
+}
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
+export class FhirSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
-    return this.upsertNavSQL({
-      path: "/fhir",
-      caption: "FHIR Examples",
-      url: "/fhir/", // maps to /fhir/index.sql
-      description: "Learn how to query injested FHIR content using SQL"
-    }, {
-      path: "/fhir/info-schema.sql",
-      parentPath: "/fhir",
-      caption: "FHIR-specific Tables and Views",
-      description: "Information Schema documentation for FHIR-specific database objects",
-      siblingOrder: 1,
-    }, {
-      path: "/fhir/uniform-resource-summary.sql",
-      parentPath: "/fhir",
-      caption: "Uniform Resources Summary",
-      description: "uniform_resource row statistics (may be slow, be patient after clicking)",
-      siblingOrder: 2,
-    }, {
-      path: "/fhir/bundles-summary.sql",
-      parentPath: "/fhir",
-      caption: "FHIR Bundles Summary",
-      description: "count of types of FHIR resources available across all bundles (may be slow, be patient after clicking)",
-      siblingOrder: 3,
-    }, {
-      path: "/fhir/patients.sql",
-      parentPath: "/fhir",
-      caption: "Patient Resources",
-      description: "Patient resources found in FHIR bundles (may be slow, be patient after clicking)",
-      siblingOrder: 10,
-    }, {
-      path: "/fhir/observations.sql",
-      parentPath: "/fhir",
-      caption: "Observation Resources",
-      description: "Observation resources found in FHIR bundles (may be slow, be patient after clicking)",
-      siblingOrder: 10,
-    })
+    return this.SQL`
+      -- delete all /fhir-related entries and recreate them in case routes are changed
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/fhir%';
+      ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
+    `;
   }
 
+  @spn.navigation({
+    parentPath: "/",
+    caption: "FHIR Examples",
+    description: "Learn how to query injested FHIR content using SQL",
+  })
   "fhir/index.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
 
       WITH navigation_cte AS (
-          SELECT title, description
+          SELECT COALESCE(title, caption) as title, description
             FROM sqlpage_aide_navigation 
            WHERE namespace = 'prime' AND path = '/fhir'
       )
@@ -63,6 +45,12 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
        ORDER BY sibling_order;`;
   }
 
+  @fhirNav({
+    caption: "FHIR-specific Tables and Views",
+    description:
+      "Information Schema documentation for FHIR-specific database objects",
+    siblingOrder: 1,
+  })
   "fhir/info-schema.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -91,9 +79,15 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
       FROM console_information_schema_view
       WHERE view_name like 'fhir%'
       GROUP BY view_name;
-    `
+    `;
   }
 
+  @fhirNav({
+    caption: "Uniform Resources Summary",
+    description:
+      "uniform_resource row statistics (may be slow, be patient after clicking)",
+    siblingOrder: 2,
+  })
   "fhir/uniform-resource-summary.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -103,6 +97,12 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
       SELECT * from uniform_resource_summary;`;
   }
 
+  @fhirNav({
+    caption: "FHIR Bundles Summary",
+    description:
+      "count of types of FHIR resources available across all bundles (may be slow, be patient after clicking)",
+    siblingOrder: 3,
+  })
   "fhir/bundles-summary.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -118,6 +118,12 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
       ${this.activePageSource()}`;
   }
 
+  @fhirNav({
+    caption: "Patient Resources",
+    description:
+      "Patient resources found in FHIR bundles (may be slow, be patient after clicking)",
+    siblingOrder: 10,
+  })
   "fhir/patients.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -134,6 +140,12 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
       ${this.activePageSource()}`;
   }
 
+  @fhirNav({
+    caption: "Observation Resources",
+    description:
+      "Observation resources found in FHIR bundles (may be slow, be patient after clicking)",
+    siblingOrder: 10,
+  })
   "fhir/observations.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -153,5 +165,5 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook<SQLa.SqlEmitContext
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(FhirSqlPages.SQL(new FhirSqlPages()).join("\n"));
+  console.log(spn.TypicalSqlPageNotebook.SQL(new FhirSqlPages()).join("\n"));
 }

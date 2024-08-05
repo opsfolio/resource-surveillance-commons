@@ -1,8 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SQLa } from "./deps.ts";
-import { TypicalSqlPageNotebook } from "./sqlpage-notebook.ts";
+import { navigation, TypicalSqlPageNotebook } from "./sqlpage-notebook.ts";
 
-class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
+class ConsoleSqlPages extends TypicalSqlPageNotebook {
   infoSchemaDDL() {
     return this.SQL`
       -- console_information_schema_* tables are convenience tables
@@ -107,23 +106,20 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
           CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
       );
 
-      -- Create navigation content
-      INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
-      VALUES
-          ('prime', NULL, 1, '/', '/', 'Home', NULL, 'Resource Surveillance State Database (RSSD)', 'Welcome to Resource Surveillance State Database (RSSD)'),
-          ('prime', '/', 999 /* fall to bottom of list if other items present */, '/console', '/console/', 'RSSD Console', 'Console', 'Resource Surveillance State Database (RSSD) Console', 'Explore RSSD information schema, code notebooks, and SQLPage files'),
-          ('prime', '/console', 1, '/console/info-schema', '/console/info-schema/', 'RSSD Information Schema', 'Info Schema', 'RSSD Information Schema', 'Explore RSSD tables, columns, views, and other information schema documentation'),
-          ('prime', '/console', 2, '/console/notebooks', '/console/notebooks/', 'RSSD Code Notebooks', 'Code Notebooks', 'RSSD Code Notebooks', 'Explore RSSD Code Notebooks which contain reusable SQL and other code blocks'),
-          ('prime', '/console', 3, '/console/sqlpage-files', '/console/sqlpage-files/', 'RSSD SQLPage Files', 'SQLPage Files', 'RSSD SQLPage Files', 'Explore RSSD SQLPage Files which govern the content of the web-UI')
-      ON CONFLICT (namespace, parent_path, path)
-      DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
+      -- all @navigation decorated entries are automatically added to this.navigation
+      ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
       `;
   }
 
+  @navigation({
+    caption: "Home",
+    title: "Resource Surveillance State Database (RSSD)",
+    description: "Welcome to Resource Surveillance State Database (RSSD)",
+  })
   "index.sql"() {
     return this.SQL`
       WITH prime_navigation_cte AS (
-          SELECT title, description
+          SELECT COALESCE(title, caption) as title, description
             FROM sqlpage_aide_navigation 
             WHERE namespace = 'prime' AND path = '/'
       )
@@ -135,6 +131,15 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
        ORDER BY sibling_order;`;
   }
 
+  @navigation({
+    parentPath: "/",
+    caption: "RSSD Console",
+    abbreviatedCaption: "Console",
+    title: "Resource Surveillance State Database (RSSD) Console",
+    description:
+      "Explore RSSD information schema, code notebooks, and SQLPage files",
+    siblingOrder: 999,
+  })
   "console/index.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -152,6 +157,14 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
        ORDER BY sibling_order;`;
   }
 
+  @navigation({
+    parentPath: "/console",
+    caption: "RSSD Information Schema",
+    abbreviatedCaption: "Info Schema",
+    description:
+      "Explore RSSD tables, columns, views, and other information schema documentation",
+    siblingOrder: 1,
+  })
   "console/info-schema/index.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -191,6 +204,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
       ORDER BY transitioned_at;`;
   }
 
+  // no @navigation since this is a "utility" page (not navigable)
   "console/info-schema/table.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' Table'` })}
@@ -227,6 +241,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
       SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_table WHERE table_name = $name) as contents;`;
   }
 
+  // no @navigation since this is a "utility" page (not navigable)
   "console/info-schema/view.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' View'` })}
@@ -244,6 +259,14 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
       SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_view WHERE view_name = $name) as contents;`;
   }
 
+  @navigation({
+    parentPath: "/console",
+    caption: "RSSD SQLPage Files",
+    abbreviatedCaption: "SQLPage Files",
+    description:
+      "RSSD SQLPage Files', 'Explore RSSD SQLPage Files which govern the content of the web-UI",
+    siblingOrder: 3,
+  })
   "console/sqlpage-files/index.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -261,6 +284,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
       ORDER BY path;`;
   }
 
+  // no @navigation since this is a "utility" page (not navigable)
   "console/sqlpage-files/sqlpage-file.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$path || ' Path'` })}
@@ -270,6 +294,14 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
              '\`\`\`sql\n' || (select contents FROM sqlpage_files where path = $path) || '\n\`\`\`' as contents_md;`;
   }
 
+  @navigation({
+    parentPath: "/console",
+    caption: "RSSD Code Notebooks",
+    abbreviatedCaption: "Code Notebooks",
+    description:
+      "Explore RSSD Code Notebooks which contain reusable SQL and other code blocks",
+    siblingOrder: 2,
+  })
   "console/notebooks/index.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
@@ -284,6 +316,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
        WHERE k.code_notebook_kernel_id = c.notebook_kernel_id;`;
   }
 
+  // no @navigation since this is a "utility" page (not navigable)
   "console/notebooks/notebook-cell.sql"() {
     return this.SQL`
       ${
@@ -305,5 +338,5 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook<SQLa.SqlEmitContext> {
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(ConsoleSqlPages.SQL(new ConsoleSqlPages()).join("\n"));
+  console.log(TypicalSqlPageNotebook.SQL(new ConsoleSqlPages()).join("\n"));
 }
