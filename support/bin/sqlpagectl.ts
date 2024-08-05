@@ -192,9 +192,12 @@ async function executeSqlite3(
       brightGreen(`cat ${relative(".", file)} | sqlite3 ${db}`),
     );
   } else {
+    // if you change the name of this file, update watchFiles(...) call and gitignore
+    const errorSqlScriptFName = `ERROR-${crypto.randomUUID()}.sql`;    
+    Deno.writeTextFile(errorSqlScriptFName, sqlScript);
     console.error(
       dim(`❌`),
-      brightRed(`Failed to execute ${relative(".", file)} (${sqlResult.code})`),
+      brightRed(`Failed to execute ${relative(".", file)} (${sqlResult.code}) [see ${errorSqlScriptFName}]`),
     );
   }
   const stdOut = sqlResult.stdout().trim();
@@ -387,7 +390,7 @@ function sqlPageDevAction(options: {
   // Watch for changes in SQL and TS files and execute sqlite3 on change
   watchFiles(
     { paths: options.watch, recursive: options.watchRecurse },
-    [/\.sql\.ts$/, /\.sql$/],
+    [/\.sql\.ts$/, /(^ERROR-).*\.sql$/],
     db,
     sqlPageService,
     showModifiedUrlsOnChange,
