@@ -37,7 +37,7 @@ $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commo
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
 $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ surveilr sqlpage --port 9000
+$ surveilr web-ui --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
 ```
 

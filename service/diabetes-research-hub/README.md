@@ -78,7 +78,7 @@ Note: Try this option outside this repository
      
    ```
    ```bash
-   surveilr sqlpage --port 9000 
+   surveilr web-ui --port 9000 
    ```
    Then, open a browser and navigate to [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
 
