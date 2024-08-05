@@ -38,9 +38,8 @@ The `drh-deidentification.sql` performs the deidentification of the columns in t
    - Command: `surveilr transform csv`    
 
    3.3 **Verify the Transformed Data**
-
-   - Type the command `ls` to list the files.
-   - You can also check the folder directly to see the transformed database.
+   
+   - Plese check the folder directly to see the transformed database.
 
 4. **Steps for De-identification**
 
