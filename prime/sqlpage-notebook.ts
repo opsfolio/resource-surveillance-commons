@@ -115,6 +115,35 @@ export function navigation(
   };
 }
 
+/**
+ * Decorator function for navigation routes in the `prime` namespace. This is
+ * just a type-safe convenience wrapper to ensure proper namespace is used.
+ */
+export function navigationPrime(
+  route:
+    & Omit<RouteInit, "path" | "namespace">
+    & Partial<Pick<RouteInit, "path">>,
+) {
+  return navigation({
+    ...route,
+    namespace: "prime",
+  });
+}
+
+/**
+ * Decorator function for top-level navigation routes in the `prime` namespace.
+ * This is just a type-safe convenience wrapper to ensure proper parentPath is
+ * used.
+ */
+export function navigationPrimeTopLevel(
+  route: Omit<RouteInit, "path" | "parentPath" | "namespace">,
+) {
+  return navigationPrime({
+    ...route,
+    parentPath: "/",
+  });
+}
+
 export type SqlPageNotebookEmitCtx = SQLa.SqlEmitContext;
 
 /**
@@ -149,7 +178,7 @@ export class TypicalSqlPageNotebook {
     return this.SQL`
       INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
       VALUES
-          ${nav.map(n => `(${[n.namespace ?? 'prime', n.parentPath, n.siblingOrder ?? 1, n.path, n.url, n.caption, n.abbreviatedCaption, n.title, n.description].map(v => literal(v)).join(', ')})`).join(",\n    ")}
+          ${nav.map(n => `(${[n.namespace, n.parentPath, n.siblingOrder ?? 1, n.path, n.url, n.caption, n.abbreviatedCaption, n.title, n.description].map(v => literal(v)).join(', ')})`).join(",\n    ")}
       ON CONFLICT (namespace, parent_path, path)
       DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;`
   }

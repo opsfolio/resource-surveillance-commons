@@ -3,7 +3,7 @@ import { SqlPageNotebook as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function fhirNav(route: Omit<spn.RouteInit, "path" | "parentPath">) {
-  return spn.navigation({
+  return spn.navigationPrime({
     ...route,
     parentPath: "/fhir",
   });
@@ -23,8 +23,7 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook {
     `;
   }
 
-  @spn.navigation({
-    parentPath: "/",
+  @spn.navigationPrimeTopLevel({
     caption: "FHIR Examples",
     description: "Learn how to query injested FHIR content using SQL",
   })

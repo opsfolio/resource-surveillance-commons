@@ -1,7 +1,17 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { navigation, TypicalSqlPageNotebook } from "./sqlpage-notebook.ts";
+import * as spn from "./sqlpage-notebook.ts";
 
-class ConsoleSqlPages extends TypicalSqlPageNotebook {
+// custom decorator that makes navigation for this notebook type-safe
+function consoleNav(
+  route: Omit<spn.RouteInit, "path" | "parentPath" | "namespace">,
+) {
+  return spn.navigationPrime({
+    ...route,
+    parentPath: "/console",
+  });
+}
+
+class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   infoSchemaDDL() {
     return this.SQL`
       -- console_information_schema_* tables are convenience tables
@@ -111,7 +121,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
       `;
   }
 
-  @navigation({
+  @spn.navigationPrime({
     caption: "Home",
     title: "Resource Surveillance State Database (RSSD)",
     description: "Welcome to Resource Surveillance State Database (RSSD)",
@@ -131,8 +141,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
        ORDER BY sibling_order;`;
   }
 
-  @navigation({
-    parentPath: "/",
+  @spn.navigationPrimeTopLevel({
     caption: "RSSD Console",
     abbreviatedCaption: "Console",
     title: "Resource Surveillance State Database (RSSD) Console",
@@ -157,8 +166,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
        ORDER BY sibling_order;`;
   }
 
-  @navigation({
-    parentPath: "/console",
+  @consoleNav({
     caption: "RSSD Information Schema",
     abbreviatedCaption: "Info Schema",
     description:
@@ -204,7 +212,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
       ORDER BY transitioned_at;`;
   }
 
-  // no @navigation since this is a "utility" page (not navigable)
+  // no @consoleNav since this is a "utility" page (not navigable)
   "console/info-schema/table.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' Table'` })}
@@ -241,7 +249,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
       SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_table WHERE table_name = $name) as contents;`;
   }
 
-  // no @navigation since this is a "utility" page (not navigable)
+  // no @consoleNav since this is a "utility" page (not navigable)
   "console/info-schema/view.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' View'` })}
@@ -259,8 +267,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
       SELECT 'sql' as language, (SELECT sql_ddl FROM console_information_schema_view WHERE view_name = $name) as contents;`;
   }
 
-  @navigation({
-    parentPath: "/console",
+  @consoleNav({
     caption: "RSSD SQLPage Files",
     abbreviatedCaption: "SQLPage Files",
     description:
@@ -284,7 +291,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
       ORDER BY path;`;
   }
 
-  // no @navigation since this is a "utility" page (not navigable)
+  // no @consoleNav since this is a "utility" page (not navigable)
   "console/sqlpage-files/sqlpage-file.sql"() {
     return this.SQL`
       ${this.activeBreadcrumbsSQL({ titleExpr: `$path || ' Path'` })}
@@ -294,8 +301,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
              '\`\`\`sql\n' || (select contents FROM sqlpage_files where path = $path) || '\n\`\`\`' as contents_md;`;
   }
 
-  @navigation({
-    parentPath: "/console",
+  @consoleNav({
     caption: "RSSD Code Notebooks",
     abbreviatedCaption: "Code Notebooks",
     description:
@@ -316,7 +322,7 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
        WHERE k.code_notebook_kernel_id = c.notebook_kernel_id;`;
   }
 
-  // no @navigation since this is a "utility" page (not navigable)
+  // no @consoleNav since this is a "utility" page (not navigable)
   "console/notebooks/notebook-cell.sql"() {
     return this.SQL`
       ${
@@ -338,5 +344,5 @@ class ConsoleSqlPages extends TypicalSqlPageNotebook {
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(TypicalSqlPageNotebook.SQL(new ConsoleSqlPages()).join("\n"));
+  console.log(spn.TypicalSqlPageNotebook.SQL(new ConsoleSqlPages()).join("\n"));
 }
