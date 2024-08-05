@@ -98,7 +98,7 @@ Note: Try this option outside this repository
       ├── study-files
       │   ├── author.csv
       │   ├── publication.csv
-      │   └── ...many other study files      ├
+      │   └── ...many other study files      
       ├── stateless-drh.surveilr.sql
       
       ```
@@ -115,7 +115,7 @@ Note: Try this option outside this repository
       After ingestion, you will only work with these files:
 
       ```      
-      ├── stateless-fhir.surveilr.sql 
+      ├── stateless-drh.surveilr.sql 
       └── resource-surveillance.sqlite.db            # SQLite database
       ```
 
@@ -129,7 +129,7 @@ Note: Try this option outside this repository
       $ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
       $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
-      # if de-identifcation is to be performed use 
+      # Apply de-identification
       $ cat de-identification/drh-deidentification.sql | sqlite3 resource-surveillance.sqlite.db
 
       # apply the "stateless"  utility views
@@ -147,7 +147,7 @@ Note: Try this option outside this repository
       ```
 
       Once you apply `drh-deidentification.sql` and
-      `stateless-fhir.surveilr.sql` you can ignore those files and all content will be
+      `stateless-drh.surveilr.sql` you can ignore those files and all content will be
       accessed through views or `*.cached` tables in
       `resource-surveillance.sqlite.db`. At this point you can rename the SQLite
       database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
