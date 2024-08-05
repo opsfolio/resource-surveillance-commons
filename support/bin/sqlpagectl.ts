@@ -317,7 +317,7 @@ function sqlPageDevAction(options: {
   // Determine the command and arguments
   const serverCommand = standalone
     ? ["sqlpage"]
-    : ["./surveilr", "--port", String(port)];
+    : ["surveilr", "sqlpage", "--port", String(port)];
   const serverEnv = standalone
     ? {
       SQLPAGE_PORT: String(port),
