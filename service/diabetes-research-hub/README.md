@@ -116,6 +116,10 @@ Note: Try this option outside this repository
       # transform the csv files in the "study-files/" directory
       $ surveilr transform csv
       ```
+      ```bash
+      # Apply de-identification
+      $ surveilr anonymize --sql de-identification/drh-deidentification.sql | sqlite3 resource-surveillance.sqlite.db
+      ```
       After ingestion, you will only work with these files:
 
       ```      
@@ -132,9 +136,7 @@ Note: Try this option outside this repository
       # load the "Console" and other menu/routing utilities
       $ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
       $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
-      # Apply de-identification
-      $ cat de-identification/drh-deidentification.sql | sqlite3 resource-surveillance.sqlite.db
+      
 
       # apply the "stateless"  utility views
       $ cat stateless-drh.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
