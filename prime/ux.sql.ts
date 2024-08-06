@@ -271,7 +271,7 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
     caption: "RSSD SQLPage Files",
     abbreviatedCaption: "SQLPage Files",
     description:
-      "RSSD SQLPage Files', 'Explore RSSD SQLPage Files which govern the content of the web-UI",
+      "Explore RSSD SQLPage Files which govern the content of the web-UI",
     siblingOrder: 3,
   })
   "console/sqlpage-files/index.sql"() {
@@ -299,6 +299,22 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       SELECT 'title' AS component, $path AS contents;
       SELECT 'text' AS component, 
              '\`\`\`sql\n' || (select contents FROM sqlpage_files where path = $path) || '\n\`\`\`' as contents_md;`;
+  }
+
+  @consoleNav({
+    caption: "RSSD SQLPage Navigation",
+    abbreviatedCaption: "SQLPage Navigation",
+    description:
+      "See all the navigation entries for the web-UI; TODO: need to improve this to be able to get details for each navigation entry as a table",
+    siblingOrder: 3,
+  })
+  "console/sqlpage-nav/index.sql"() {
+    return this.SQL`
+      ${this.activeBreadcrumbsSQL()}
+
+      SELECT 'title' AS component, 'SQLPage navigation in sqlpage_aide_navigation table' AS contents;
+      SELECT 'table' AS component, TRUE as sort, TRUE as search;
+      SELECT path, caption, description FROM sqlpage_aide_navigation ORDER BY namespace, parent_path, path, sibling_order;`;
   }
 
   @consoleNav({
