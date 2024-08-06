@@ -104,14 +104,18 @@ Note: Try this option outside this repository
       ```
 
       Now
-      [Download `surveilr` binary](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
+      [Download `surveilr` ](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
       into this directory, then ingest and query the data:
 
       ```bash
       # ingest the files in the "study-files/" directory, creating resource-surveillance.sqlite.db
-      $ ./surveilr ingest files -r study-files/
+      $ surveilr ingest files -r study-files/
       ```
-
+      
+      ```bash
+      # transform the csv files in the "study-files/" directory
+      $ surveilr transform csv
+      ```
       After ingestion, you will only work with these files:
 
       ```      

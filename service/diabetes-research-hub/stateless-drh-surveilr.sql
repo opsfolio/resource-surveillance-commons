@@ -144,3 +144,11 @@ CREATE VIEW site_data AS
 SELECT
     study_id, site_id, site_name, site_type
 FROM uniform_resource_site;
+
+
+-- SQLPage query to count tables matching the pattern 'uniform_resource_cgm_tracing%'
+DROP VIEW IF EXISTS number_of_cgm_tracing_files_view;
+CREATE VIEW number_of_cgm_tracing_files_view AS
+SELECT COUNT(*) AS table_count
+FROM sqlite_master
+WHERE type = 'table' AND name LIKE 'uniform_resource_cgm_tracing%';
