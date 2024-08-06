@@ -99,7 +99,7 @@ Note: Try this option outside this repository
       │   ├── author.csv
       │   ├── publication.csv
       │   └── ...many other study files      
-      ├── stateless-drh.surveilr.sql
+      ├── stateless-drh-surveilr.sql
       
       ```
 
@@ -123,7 +123,7 @@ Note: Try this option outside this repository
       After ingestion, you will only work with these files:
 
       ```      
-      ├── stateless-drh.surveilr.sql 
+      ├── stateless-drh-surveilr.sql 
       └── resource-surveillance.sqlite.db            # SQLite database
       ```
 
@@ -139,7 +139,7 @@ Note: Try this option outside this repository
       
 
       # apply the "stateless"  utility views
-      $ cat stateless-drh.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+      $ cat stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db
       
       # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
       $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
@@ -153,7 +153,7 @@ Note: Try this option outside this repository
       ```
 
       Once you apply `drh-deidentification.sql` and
-      `stateless-drh.surveilr.sql` you can ignore those files and all content will be
+      `stateless-drh-surveilr.sql` you can ignore those files and all content will be
       accessed through views or `*.cached` tables in
       `resource-surveillance.sqlite.db`. At this point you can rename the SQLite
       database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
