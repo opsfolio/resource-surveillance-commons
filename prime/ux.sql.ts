@@ -17,45 +17,8 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       -- console_information_schema_* tables are convenience tables
       -- to make it easier to work than pragma_table_info.
 
-      -- Drop and create the table for storing general table information
-      DROP TABLE IF EXISTS console_information_schema_table;
-      CREATE TABLE console_information_schema_table (
-          table_name TEXT,
-          column_name TEXT,
-          data_type TEXT,
-          is_primary_key TEXT,
-          is_not_null TEXT,
-          default_value TEXT,
-          sql_ddl TEXT
-      );
-
-      -- Drop and create the table for storing view information
-      DROP TABLE IF EXISTS console_information_schema_view;
-      CREATE TABLE console_information_schema_view (
-          view_name TEXT,
-          column_name TEXT,
-          data_type TEXT,
-          sql_ddl TEXT
-      );
-
-      -- Drop and create the table for storing table column foreign keys
-      DROP TABLE IF EXISTS console_information_schema_table_col_fkey;
-      CREATE TABLE console_information_schema_table_col_fkey (
-          table_name TEXT,
-          column_name TEXT,
-          foreign_key TEXT
-      );
-
-      -- Drop and create the table for storing table column indexes
-      DROP TABLE IF EXISTS console_information_schema_table_col_index;
-      CREATE TABLE console_information_schema_table_col_index (
-          table_name TEXT,
-          column_name TEXT,
-          index_name TEXT
-      );
-
-      -- Populate the table with table-specific information
-      INSERT INTO console_information_schema_table
+      DROP VIEW IF EXISTS console_information_schema_table;
+      CREATE VIEW console_information_schema_table AS
       SELECT 
           tbl.name AS table_name,
           col.name AS column_name,
@@ -69,7 +32,8 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';
 
       -- Populate the table with view-specific information
-      INSERT INTO console_information_schema_view
+      DROP VIEW IF EXISTS console_information_schema_view;
+      CREATE VIEW console_information_schema_view AS
       SELECT 
           vw.name AS view_name,
           col.name AS column_name,
@@ -80,7 +44,8 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       WHERE vw.type = 'view' AND vw.name NOT LIKE 'sqlite_%';
 
       -- Populate the table with table column foreign keys
-      INSERT INTO console_information_schema_table_col_fkey
+      DROP VIEW IF EXISTS console_information_schema_table_col_fkey;
+      CREATE VIEW console_information_schema_table_col_fkey AS
       SELECT 
           tbl.name AS table_name,
           f."from" AS column_name,
@@ -90,7 +55,8 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';
 
       -- Populate the table with table column indexes
-      INSERT INTO console_information_schema_table_col_index
+      DROP VIEW IF EXISTS console_information_schema_table_col_index;
+      CREATE VIEW console_information_schema_table_col_index AS
       SELECT 
           tbl.name AS table_name,
           pi.name AS column_name,
