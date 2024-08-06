@@ -342,7 +342,142 @@ class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   }
 }
 
+// custom decorator that makes navigation for this notebook type-safe
+function urNav(route: Omit<spn.RouteInit, "path" | "parentPath">) {
+  return spn.navigationPrime({
+    ...route,
+    parentPath: "/ur",
+  });
+}
+
+class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
+  // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
+  // or `DDL` as general SQL before doing any upserts into sqlpage_files.
+  navigationDML() {
+    return this.SQL`
+      -- delete all /fhir-related entries and recreate them in case routes are changed
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/fhir%';
+      ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
+    `;
+  }
+
+  @spn.navigationPrimeTopLevel({
+    caption: "Uniform Resource",
+    description: "Explore ingested resources",
+  })
+  "ur/index.sql"() {
+    return this.SQL`
+      ${this.activeBreadcrumbsSQL()}
+
+      WITH navigation_cte AS (
+          SELECT COALESCE(title, caption) as title, description
+            FROM sqlpage_aide_navigation 
+           WHERE namespace = 'prime' AND path = '/ur'
+      )
+      SELECT 'list' AS component, title, description
+        FROM navigation_cte;
+      SELECT caption as title, COALESCE(url, path) as link, description
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/ur'
+       ORDER BY sibling_order;`;
+  }
+
+  @urNav({
+    caption: "Uniform Resource Tables and Views",
+    description:
+      "Information Schema documentation for ingested Uniform Resource database objects",
+    siblingOrder: 99,
+  })
+  "ur/info-schema.sql"() {
+    return this.SQL`
+      ${this.activeBreadcrumbsSQL()}
+
+      SELECT 'title' AS component, 'Uniform Resource Tables and Views' as contents;
+      SELECT 'table' AS component, 
+            'Name' AS markdown,
+            'Column Count' as align_right,
+            TRUE as sort,
+            TRUE as search;
+
+      SELECT 
+          'Table' as "Type",
+          '[' || table_name || '](/console/info-schema/table.sql?name=' || table_name || ')' AS "Name",
+          COUNT(column_name) AS "Column Count"
+      FROM console_information_schema_table
+      WHERE table_name = 'uniform_resource' OR table_name like 'ur_%'
+      GROUP BY table_name
+
+      UNION ALL
+
+      SELECT 
+          'View' as "Type",
+          '[' || view_name || '](/console/info-schema/view.sql?name=' || view_name || ')' AS "Name",
+          COUNT(column_name) AS "Column Count"
+      FROM console_information_schema_view
+      WHERE view_name like 'ur_%'
+      GROUP BY view_name;
+    `;
+  }
+
+  @urNav({
+    caption: "Uniform Resources (Files)",
+    description: "Files ingested into the `uniform_resource`",
+    siblingOrder: 1,
+  })
+  "ur/uniform-resource-files.sql"() {
+    return this.SQL`
+      ${this.activeBreadcrumbsSQL()}
+      ${this.activePageTitle()}
+
+      -- make sure this matches the WHERE clause below
+      SET total_rows = (SELECT COUNT(*) FROM uniform_resource WHERE ingest_fs_path_id IS NOT NULL);
+
+      -- initialize pagination
+      SET limit = COALESCE($limit, 50);
+      SET offset = COALESCE($offset, 0);
+      SET total_pages = ($total_rows + $limit - 1) / $limit;
+      SET current_page = ($offset / $limit) + 1;
+
+      -- Display uniform_resource table with pagination
+      SELECT 'table' AS component,
+            'Uniform Resources' AS title,
+            "Size (bytes)" as align_right,
+            TRUE AS sort,
+            TRUE AS search;
+      SELECT 
+          ur.nature AS "Nature",
+          p.root_path as "Path",
+          pe.file_path_rel AS "File",
+          ur.size_bytes AS "Size (bytes)",
+          ur.content_fm_body_attrs AS "Content FM Body Attributes"
+      FROM uniform_resource ur
+      LEFT JOIN device d ON ur.device_id = d.device_id
+      LEFT JOIN ur_ingest_session_fs_path p ON ur.ingest_fs_path_id = p.ur_ingest_session_fs_path_id
+      LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
+      WHERE ur.ingest_fs_path_id IS NOT NULL
+      ORDER BY ur.uniform_resource_id
+      LIMIT $limit
+      OFFSET $offset;
+
+      -- Pagination controls
+      SELECT 'text' AS component, 
+             (SELECT CASE WHEN $offset > 0 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END) || ' ' || 
+             '(Page ' || $current_page || ' of ' || $total_pages || ") " ||
+             (SELECT CASE WHEN (SELECT COUNT(*) FROM uniform_resource) > ($offset + $limit) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END) 
+             AS contents_md;
+    `;
+  }
+
+  // TODO: add other types of Uniform Resources like IMAP, PLM, etc.
+  // TODO: add other pages to view Uniform Resources by nature (e.g. JSON vs. Markdown)
+}
+
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(spn.TypicalSqlPageNotebook.SQL(new ConsoleSqlPages()).join("\n"));
+  console.log(
+    spn.TypicalSqlPageNotebook.SQL<spn.TypicalSqlPageNotebook>(
+      new ConsoleSqlPages(),
+      new UniformResourceSqlPages(),
+    ).join("\n"),
+  );
 }
