@@ -167,6 +167,85 @@ export class TypicalSqlPageNotebook {
     return SQLa.SQL<SqlPageNotebookEmitCtx>(this.ddlOptions);
   }
 
+  /**
+   * Generates SQL pagination logic including initialization, debugging variables,
+   * and rendering pagination controls for SQLPage.
+   *
+   * @param config - The configuration object for pagination.
+   * @param config.varName - Optional function to customize variable names.
+   * @param config.tableOrViewName - The name of the table or view to paginate. This is required if `countSQL` is not provided.
+   * @param config.countSQL - Custom SQL supplier to count the total number of rows. This is required if `tableOrViewName` is not provided.
+   *
+   * @returns An object containing methods to initialize pagination variables,
+   *          debug variables, and render pagination controls.
+   *
+   * @example
+   * const paginationConfig = {
+   *   varName: (name) => `custom_${name}`,
+   *   tableOrViewName: 'my_table'
+   * };
+   * const paginationInstance = pagination(paginationConfig);
+   * - required: paginationInstance.init() should be placed into a SQLa template to initialize SQLPage pagination;
+   * - optional: paginationInstance.debugVars() should be placed into a SQLa template to view var values in web UI;
+   * - required: paginationInstance.renderSimpleMarkdown() should be placed into SQLa template to show the next/prev pagination component in simple markdown;
+   */
+  pagination(
+    config:
+      & { varName?: (name: string) => string }
+      & ({ readonly tableOrViewName: string; readonly countSQL?: never } | {
+        readonly tableOrViewName?: never;
+        readonly countSQL: SQLa.SqlTextSupplier<SqlPageNotebookEmitCtx>;
+      }),
+  ) {
+    // `n` renders the variable name for definition, $ renders var name for accessor
+    const n = config.varName ?? ((name) => name);
+    const $ = config.varName ?? ((name) => `$${n(name)}`);
+    return {
+      init: () => {
+        const countSQL = config.countSQL
+          ? config.countSQL
+          : this.SQL`SELECT COUNT(*) FROM ${config.tableOrViewName}`;
+        return this.SQL`
+          SET ${n("total_rows")} = (${countSQL.SQL(this.emitCtx)});
+          SET ${n("limit")} = COALESCE(${$("limit")}, 50);
+          SET ${n("offset")} = COALESCE(${$("offset")}, 0);
+          SET ${n("total_pages")} = (${$("total_rows")} + ${
+          $("limit")
+        } - 1) / ${$("limit")};
+          SET ${n("current_page")} = (${$("offset")} / ${$("limit")}) + 1;`;
+      },
+
+      debugVars: () => {
+        return this.SQL`
+          SELECT 'text' AS component, 
+              '- Start Row: ' || ${$("offset")} || '\n' ||
+              '- Rows per Page: ' || ${$("limit")} || '\n' ||
+              '- Total Rows: ' || ${$("total_rows")} || '\n' ||
+              '- Current Page: ' || ${$("current_page")} || '\n' ||
+              '- Total Pages: ' || ${$("total_pages")} as contents_md;`;
+      },
+
+      renderSimpleMarkdown: () => {
+        return this.SQL`
+          SELECT 'text' AS component, 
+              (SELECT CASE WHEN ${
+          $("current_page")
+        } > 1 THEN '[Previous](?limit=' || ${$("limit")} || '&offset=' || (${
+          $("offset")
+        } - ${$("limit")}) || ')' ELSE '' END) || ' ' || 
+              '(Page ' || ${$("current_page")} || ' of ' || ${
+          $("total_pages")
+        } || ") " ||
+              (SELECT CASE WHEN ${$("current_page")} < ${
+          $("total_pages")
+        } THEN '[Next](?limit=' || ${$("limit")} || '&offset=' || (${
+          $("offset")
+        } + ${$("limit")}) || ')' ELSE '' END) 
+              AS contents_md;`;
+      },
+    };
+  }
+
   upsertNavSQL(...nav: RouteInit[]) {
     const literal = (text?: string | number) =>
       typeof text === "number"

@@ -361,6 +361,24 @@ class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
     `;
   }
 
+  // any SQL such as views or tables needed to support the SQLPage content;
+  // SQL views are required to support pagination, grids, tables, etc.
+  supportDDL() {
+    return this.SQL`
+      DROP VIEW IF EXISTS uniform_resource_file;
+      CREATE VIEW uniform_resource_file AS
+        SELECT ur.uniform_resource_id,
+               ur.nature,
+               p.root_path AS source_path,
+               pe.file_path_rel,
+               ur.size_bytes
+        FROM uniform_resource ur
+        LEFT JOIN ur_ingest_session_fs_path p ON ur.ingest_fs_path_id = p.ur_ingest_session_fs_path_id
+        LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
+        WHERE ur.ingest_fs_path_id IS NOT NULL;
+    `;
+  }
+
   @spn.navigationPrimeTopLevel({
     caption: "Uniform Resource",
     description: "Explore ingested resources",
@@ -421,22 +439,18 @@ class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
 
   @urNav({
     caption: "Uniform Resources (Files)",
-    description: "Files ingested into the `uniform_resource`",
+    description: "Files ingested into the `uniform_resource` table",
     siblingOrder: 1,
   })
   "ur/uniform-resource-files.sql"() {
+    const viewName = `uniform_resource_file`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
       ${this.activePageTitle()}
-
-      -- make sure this matches the WHERE clause below
-      SET total_rows = (SELECT COUNT(*) FROM uniform_resource WHERE ingest_fs_path_id IS NOT NULL);
-
-      -- initialize pagination
-      SET limit = COALESCE($limit, 50);
-      SET offset = COALESCE($offset, 0);
-      SET total_pages = ($total_rows + $limit - 1) / $limit;
-      SET current_page = ($offset / $limit) + 1;
+      
+      -- sets up $limit, $offset, and other variables (use pagination.debugVars() to see values in web-ui)
+      ${pagination.init()}
 
       -- Display uniform_resource table with pagination
       SELECT 'table' AS component,
@@ -444,27 +458,11 @@ class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
             "Size (bytes)" as align_right,
             TRUE AS sort,
             TRUE AS search;
-      SELECT 
-          ur.nature AS "Nature",
-          p.root_path as "Path",
-          pe.file_path_rel AS "File",
-          ur.size_bytes AS "Size (bytes)",
-          ur.content_fm_body_attrs AS "Content FM Body Attributes"
-      FROM uniform_resource ur
-      LEFT JOIN device d ON ur.device_id = d.device_id
-      LEFT JOIN ur_ingest_session_fs_path p ON ur.ingest_fs_path_id = p.ur_ingest_session_fs_path_id
-      LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
-      WHERE ur.ingest_fs_path_id IS NOT NULL
-      ORDER BY ur.uniform_resource_id
-      LIMIT $limit
+      SELECT * FROM ${viewName} ORDER BY uniform_resource_id
+       LIMIT $limit
       OFFSET $offset;
 
-      -- Pagination controls
-      SELECT 'text' AS component, 
-             (SELECT CASE WHEN $offset > 0 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END) || ' ' || 
-             '(Page ' || $current_page || ' of ' || $total_pages || ") " ||
-             (SELECT CASE WHEN (SELECT COUNT(*) FROM uniform_resource) > ($offset + $limit) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END) 
-             AS contents_md;
+      ${pagination.renderSimpleMarkdown()}
     `;
   }
 
