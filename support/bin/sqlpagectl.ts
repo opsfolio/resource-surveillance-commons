@@ -199,6 +199,12 @@ async function executeSqlite3(
       dim(`❌`),
       brightRed(`Failed to execute ${relative(".", file)} (${sqlResult.code}) [see ${errorSqlScriptFName}]`),
     );
+    if(!file.endsWith(".sql")) {
+      console.error(
+        dim(`❗`),
+        brightYellow(`Reminder: ${relative(".", file)} must be executable in order to generate SQL.`),
+      );  
+    }
   }
   const stdOut = sqlResult.stdout().trim();
   if (stdOut.length) console.log(dim(stdOut));
