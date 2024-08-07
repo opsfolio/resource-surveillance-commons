@@ -47,9 +47,6 @@ SET email = anonymize_email(email);
 UPDATE uniform_resource_author
 SET email = anonymize_email(email);
 
-UPDATE uniform_resource_participant
-SET age = generalize_age(CAST(age AS INTEGER));
-
 
 
 -- Create a temporary table
