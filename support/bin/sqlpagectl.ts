@@ -193,17 +193,25 @@ async function executeSqlite3(
     );
   } else {
     // if you change the name of this file, update watchFiles(...) call and gitignore
-    const errorSqlScriptFName = `ERROR-${crypto.randomUUID()}.sql`;    
+    const errorSqlScriptFName = `ERROR-${crypto.randomUUID()}.sql`;
     Deno.writeTextFile(errorSqlScriptFName, sqlScript);
     console.error(
       dim(`❌`),
-      brightRed(`Failed to execute ${relative(".", file)} (${sqlResult.code}) [see ${errorSqlScriptFName}]`),
+      brightRed(
+        `Failed to execute ${
+          relative(".", file)
+        } (${sqlResult.code}) [see ${errorSqlScriptFName}]`,
+      ),
     );
-    if(!file.endsWith(".sql")) {
+    if (!file.endsWith(".sql")) {
       console.error(
         dim(`❗`),
-        brightYellow(`Reminder: ${relative(".", file)} must be executable in order to generate SQL.`),
-      );  
+        brightYellow(
+          `Reminder: ${
+            relative(".", file)
+          } must be executable in order to generate SQL.`,
+        ),
+      );
     }
   }
   const stdOut = sqlResult.stdout().trim();

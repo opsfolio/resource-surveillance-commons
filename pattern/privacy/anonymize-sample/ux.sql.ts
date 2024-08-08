@@ -30,7 +30,7 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
       SELECT 'Tables' as title,
         'health_table_list.sql' as link,
         'List of the tables' as description;        
-      `;      
+      `;
   }
 
   "health_device_summary.sql"() {
@@ -40,7 +40,6 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
       select 
       'text' as component,
       '[Back to Home](health/index.sql)' as contents_md;`;
-      
   }
 
   "health/health_converted_file_list.sql"() {
@@ -86,10 +85,10 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
         select *        
         from cgmfilemetadata_view ; 
         `;
-    }
+  }
 
   "health/study_data.sql"() {
-      return this.SQL`      
+    return this.SQL`      
         SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
         SELECT * from study_data;
         select 
@@ -99,7 +98,7 @@ class SqlPages<EmitContext extends SQLa.SqlEmitContext> {
   }
 
   "health/cgmfilemetadata.sql"() {
-        return this.SQL`      
+    return this.SQL`      
           SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
           SELECT * from cgmfilemetadata_view;
           select 

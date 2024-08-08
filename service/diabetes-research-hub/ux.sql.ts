@@ -2,7 +2,7 @@
 import { SqlPageNotebook as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
-function drhNav(route: Omit<spn.RouteInit, "path" | "parentPath">) {
+function drhNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
     parentPath: "/drh",
@@ -23,7 +23,6 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     `;
   }
 
-
   @spn.navigationPrimeTopLevel({
     caption: "DRH Home",
     description: "Welcome to Diabetes Research Hub",
@@ -32,133 +31,127 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
 
-       select 
+       select
                     'card'                      as component,
                     'Welcome to the Diabetes Research Hub' as title,
                     1                           as columns;
 
-              select 
+              select
                     'About' as title,
                     'blue'                        as color,
                     'light-blue'                  as background_color,
                     'The Diabetes Research Hub (DRH) addresses a growing need for a centralized platform to manage and analyze continuous glucose monitor (CGM) data.Our primary focus is to collect data from studies conducted by various researchers. Initially, we are concentrating on gathering CGM data, with plans to collect additional types of data in the future.' as description,
                     'info-circle'                 as icon;
 
-                    select 
+                    select
                     'card'                     as component,
                     'Features ' as title,
                     5                       as columns;
-              select 
+              select
               'Researcher and Associated Information'  as title,
               '/drh/researcher-related-data/index.sql' as link,
               'This section provides detailed information about the individuals , institutions and labs involved in the research study.' as description,
               'file'                as icon,
-              'green'                    as color;  
+              'green'                    as color;
                 ;
 
-              select 
+              select
               'Research Study Details'  as title,
               '/drh/study-related-data/index.sql' as link,
               'This section provides detailed information about the study , the participants and sites involved in the research study.' as description,
               'file'                as icon,
-              'green'                    as color;  
+              'green'                    as color;
                 ;
-          
-              select 
+
+              select
               'Author and Publication Details'  as title,
               '/drh/author-pub-data/index.sql' as link,
               'Information about research publications and the authors involved in the studies are also collected, contributing to the broader understanding and dissemination of research findings.' as description,
               'file'                as icon,
-              'green'                    as color;  
+              'green'                    as color;
                 ;
 
-              
 
-              select 
+
+              select
               'CGM Meta Data and Associated information'  as title,
               '/drh/cgm-associated-data/index.sql' as link,
               'This section provides detailed information about the CGM device used, the relationship between the participant''s raw CGM tracing file and related metadata, and other pertinent information.' as description,
               'file'                as icon,
-              'green'                    as color;  
+              'green'                    as color;
                 ;
 
 
-                SELECT 
+                SELECT
                 'PHI De-Identification Results' AS title,
                 '/drh/deidentification-log/index.sql' AS link,
                 'Explore the results of PHI de-identification and review which columns have been modified.' AS description,
                 'file' AS icon,
-                'green' AS color;   
-                ;  
+                'green' AS color;
+                ;
 
        `;
   }
 
-  
-  
-
   @drhNav({
     caption: "Researcher And Associated Information",
     abbreviatedCaption: "Researcher And Associated Information",
-    description:
-      "Researcher And Associated Information",
-      siblingOrder: 4,
+    description: "Researcher And Associated Information",
+    siblingOrder: 4,
   })
   "drh/researcher-related-data/index.sql"() {
-     return this.SQL`
+    return this.SQL`
        ${this.activeBreadcrumbsSQL()}
-       ${this.activePageTitle()} 
-    
-      select 
-        'text' as component,         
-        'The Diabetes Research Hub collaborates with a diverse group of researchers or investigators dedicated to advancing diabetes research. This section provides detailed information about the individuals and institutions involved in the research studies.' as contents;
-        
+       ${this.activePageTitle()}
 
-      select 
+      select
+        'text' as component,
+        'The Diabetes Research Hub collaborates with a diverse group of researchers or investigators dedicated to advancing diabetes research. This section provides detailed information about the individuals and institutions involved in the research studies.' as contents;
+
+
+      select
         'text' as component,
         'Researcher / Investigator ' as title;
-      select 
+      select
         'These are scientific professionals and medical experts who design and conduct studies related to diabetes management and treatment. Their expertise ranges from clinical research to data analysis, and they are crucial in interpreting results and guiding future research directions.Principal investigators lead the research projects, overseeing the study design, implementation, and data collection. They ensure the research adheres to ethical standards and provides valuable insights into diabetes management.' as contents;
       SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
       SELECT * from drh_investigator_data;
 
-      select 
+      select
         'text' as component,
         'Institution' as title;
-      select 
+      select
         'The researchers and investigators are associated with various institutions, including universities, research institutes, and hospitals. These institutions provide the necessary resources, facilities, and support for conducting high-quality research. Each institution brings its unique strengths and expertise to the collaborative research efforts.' as contents;
       SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
       SELECT * from drh_institution_data;
 
 
-      select 
+      select
         'text' as component,
         'Lab' as title;
-      select 
+      select
         'Within these institutions, specialized labs are equipped with state-of-the-art technology to conduct diabetes research. These labs focus on different aspects of diabetes studies, such as glucose monitoring, metabolic analysis, and data processing. They play a critical role in executing experiments, analyzing samples, and generating data that drive research conclusions.' as contents;
       SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
       SELECT * from drh_lab_data;
 
-    
+
 
      `;
   }
 
-
   @drhNav({
     caption: "Study and Participant Information",
     abbreviatedCaption: "Study and Participant Information",
-    description:
-      "Study and Participant Information",
-      siblingOrder: 5,
+    description: "Study and Participant Information",
+    siblingOrder: 5,
   })
   "drh/study-related-data/index.sql"() {
     const viewName = `drh_participant_data`;
     const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
     ${this.activeBreadcrumbsSQL()}
-    ${this.activePageTitle()} 
-      select 
+    ${this.activePageTitle()}
+      select
     'text' as component,
     '
     In Continuous Glucose Monitoring (CGM) research, studies are designed to evaluate the effectiveness, accuracy, and impact of CGM systems on diabetes management. Each study aims to gather comprehensive data on glucose levels, treatment efficacy, and patient outcomes to advance our understanding of diabetes care.
@@ -179,7 +172,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
     SELECT * from drh_study_data;
 
-    select 
+    select
         'text' as component,
         '
   ## Participant Information
@@ -208,16 +201,16 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
         ${pagination.init()}
 
       -- Display uniform_resource table with pagination
-      SELECT 'table' AS component,            
+      SELECT 'table' AS component,
             TRUE AS sort,
             TRUE AS search;
-      SELECT * FROM ${viewName} 
+      SELECT * FROM ${viewName}
        LIMIT $limit
       OFFSET $offset;
 
       ${pagination.renderSimpleMarkdown()}
 
-        select 
+        select
             'text' as component,
             '
 
@@ -237,8 +230,8 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
         SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
         SELECT * from drh_site_data;
 
-          
-              
+
+
         `;
   }
 
@@ -253,15 +246,15 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
       ${this.activeBreadcrumbsSQL()}
       ${this.activePageTitle()}
-      
-     
+
+
       ${pagination.init()}
 
       -- Display uniform_resource table with pagination
-      SELECT 'table' AS component,            
+      SELECT 'table' AS component,
             TRUE AS sort,
             TRUE AS search;
-      SELECT * FROM ${viewName} 
+      SELECT * FROM ${viewName}
        LIMIT $limit
       OFFSET $offset;
 
@@ -269,24 +262,22 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     `;
   }
 
-
   @drhNav({
     caption: "Author Publication Information",
     abbreviatedCaption: "Author Publication Information",
-    description:
-      "Author Publication Information",
-      siblingOrder: 7,
+    description: "Author Publication Information",
+    siblingOrder: 7,
   })
   "drh/author-pub-data/index.sql"() {
     return this.SQL`
     ${this.activeBreadcrumbsSQL()}
-    ${this.activePageTitle()} 
+    ${this.activePageTitle()}
 
-    select 
+    select
     'text' as component,
     '
 
-## Authors 
+## Authors
 
 This section contains information about the authors involved in study publications. Each author plays a crucial role in contributing to the research, and their details are important for recognizing their contributions.
 
@@ -303,7 +294,7 @@ This section contains information about the authors involved in study publicatio
 
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
     SELECT * from drh_author_data;
-    select 
+    select
     'text' as component,
     '
 ## Publications Overview
@@ -324,38 +315,37 @@ This section provides information about the publications resulting from a study.
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
     SELECT * from drh_publication_data;
 
-          
+
         `;
   }
 
   @drhNav({
     caption: "PHI DeIdentification Results",
     abbreviatedCaption: "PHI DeIdentification Results",
-    description:
-      "PHI DeIdentification Results",
-      siblingOrder: 8,
+    description: "PHI DeIdentification Results",
+    siblingOrder: 8,
   })
   "drh/deidentification-log/index.sql"() {
-    return this.SQL` 
+    return this.SQL`
     ${this.activeBreadcrumbsSQL()}
-    ${this.activePageTitle()} 
+    ${this.activePageTitle()}
 
     /*
-    select 
+    select
     'breadcrumb' as component;
-    select 
+    select
         'Home' as title,
         'index.sql'    as link;
-    select 
+    select
         'DeIdentificationResults' as title;
         */
 
-    select 
+    select
       'text' as component,
       'DeIdentification Results' as title;
-     select 
+     select
       'The DeIdentification Results section provides a view of the outcomes from the de-identification process ' as contents;
-     
+
 
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
     SELECT device_id,orchestration_session_exec_id,input_text as "deidentified column", orch_started_at,orch_finished_at ,diagnostics_md from drh_vw_orchestration_deidentify;
@@ -365,29 +355,28 @@ This section provides information about the publications resulting from a study.
   @drhNav({
     caption: "CGM File MetaData Information",
     abbreviatedCaption: "CGM File MetaData Information",
-    description:
-      "CGM File MetaData Information",
-      siblingOrder: 9,
+    description: "CGM File MetaData Information",
+    siblingOrder: 9,
   })
   "drh/cgm-associated-data/index.sql"() {
     const viewName = `drh_cgmfilemetadata_view`;
     const pagination = this.pagination({ tableOrViewName: viewName });
-    return this.SQL`    
+    return this.SQL`
     ${this.activeBreadcrumbsSQL()}
-    ${this.activePageTitle()} 
+    ${this.activePageTitle()}
 
-    /*select 
+    /*select
 'breadcrumb' as component;
-select 
+select
     'Home' as title,
     'index.sql'    as link;
-select 
+select
     'CGM File Meta Data' as title;
     */
 
 
 
-      select 
+      select
 'text' as component,
 '
 
@@ -413,10 +402,10 @@ CGM file metadata provides essential information about the Continuous Glucose Mo
 ${pagination.init()}
 
 -- Display uniform_resource table with pagination
-SELECT 'table' AS component,            
+SELECT 'table' AS component,
       TRUE AS sort,
       TRUE AS search;
-SELECT * FROM ${viewName} 
+SELECT * FROM ${viewName}
  LIMIT $limit
 OFFSET $offset;
 
@@ -424,9 +413,6 @@ ${pagination.renderSimpleMarkdown()}
 
         `;
   }
-
-
-
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
