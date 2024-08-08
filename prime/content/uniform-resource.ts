@@ -111,7 +111,10 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
             'Uniform Resources' AS title,
             "Size (bytes)" as align_right,
             TRUE AS sort,
-            TRUE AS search;
+            TRUE AS search,
+            TRUE AS hover,
+            TRUE AS striped_rows,
+            TRUE AS small;
       SELECT * FROM ${viewName} ORDER BY uniform_resource_id
        LIMIT $limit
       OFFSET $offset;
