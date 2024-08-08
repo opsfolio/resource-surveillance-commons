@@ -79,8 +79,8 @@ CREATE VIEW drh_study_data AS
 SELECT
     study_id, study_name, start_date, end_date, treatment_modalities,
     funding_source, nct_number, study_description
-FROM uniform_resource_study
-LIMIT 10;
+FROM uniform_resource_study;
+
 
 -- Drop and recreate the cgmfilemetadata_view view
 DROP VIEW IF EXISTS drh_cgmfilemetadata_view;
@@ -239,3 +239,49 @@ FROM
     ur_ingest_session isession
     JOIN ur_ingest_session_fs_path fspath ON isession.ur_ingest_session_id = fspath.ingest_session_id
     JOIN ur_ingest_session_fs_path_entry entry ON fspath.ur_ingest_session_fs_path_id = entry.ingest_fs_path_id;
+
+
+DROP VIEW IF EXISTS drh_raw_cgm_table_lst;
+CREATE VIEW drh_raw_cgm_table_lst AS
+SELECT name, tbl_name as table_name
+FROM sqlite_master
+WHERE type = 'table' AND name LIKE 'uniform_resource_cgm_tracing%';
+
+DROP VIEW IF EXISTS drh_number_cgm_count;
+CREATE VIEW drh_number_cgm_count AS
+SELECT count(*) as number_of_cgm_raw_files
+FROM sqlite_master
+WHERE type = 'table' AND name LIKE 'uniform_resource_cgm_tracing%';
+
+
+DROP VIEW IF EXISTS drh_participant_file_names;
+CREATE VIEW IF NOT EXISTS drh_participant_file_names AS
+SELECT
+  patient_id,
+  GROUP_CONCAT(file_name, ', ') AS file_names
+FROM
+  uniform_resource_cgm_file_metadata
+GROUP BY
+  patient_id;
+
+DROP VIEW IF EXISTS drh_study_vanity_metrics_details;
+CREATE VIEW drh_study_vanity_metrics_details AS
+SELECT s.study_id, 
+       s.study_name, 
+       s.study_description, 
+       s.start_date, 
+       s.end_date, 
+       s.nct_number, 
+       COUNT(DISTINCT p.participant_id) AS total_number_of_participants, 
+       ROUND(AVG(p.age), 2) AS average_age, 
+       (CAST(SUM(CASE WHEN p.gender = 'F' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 AS percentage_of_females, 
+       GROUP_CONCAT(DISTINCT i.investigator_name) AS investigators 
+FROM uniform_resource_study s 
+LEFT JOIN uniform_resource_participant p ON s.study_id = p.study_id 
+LEFT JOIN uniform_resource_investigator i ON s.study_id = i.study_id 
+GROUP BY s.study_id, s.study_name, s.study_description, s.start_date, s.end_date, s.nct_number;
+
+
+DROP TABLE IF EXISTS raw_cgm_data_lst_cached;
+CREATE TABLE raw_cgm_data_lst_cached AS 
+  SELECT * FROM drh_raw_cgm_table_lst;
