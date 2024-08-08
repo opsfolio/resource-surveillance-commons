@@ -11,13 +11,6 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
       link: "/",
       menu_item: [
         { link: "/", title: "Home" },
-        {
-          title: "Console",
-          submenu: [
-            { link: "blog.sql", title: "Blog" },
-            { link: "//github.com/lovasoa/sqlpage", title: "Github" },
-          ],
-        },
       ],
       javascript: [
         "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js",
@@ -48,12 +41,39 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
       DEFAULT: (key: string, value: unknown) => `${literal(value)} AS ${key}`,
       menu_item: (key: string, items: Record<string, unknown>[]) =>
         items.map((item) => `${literal(JSON.stringify(item))} AS ${key}`),
-      javascript: (key: string, scripts: string[]) =>
-        scripts.map((s) => `${literal(s)} AS ${key}`),
+      javascript: (key: string, scripts: string[]) => {
+        const items = scripts.map((s) => `${literal(s)} AS ${key}`);
+        items.push(
+          `json_object(
+                'link', '/console',
+                'title', 'Console',
+                'submenu', (
+                    SELECT json_group_array(
+                        json_object(
+                            'title', title,
+                            'link', link,
+                            'description', description
+                        )
+                    )
+                    FROM (
+                        SELECT
+                            COALESCE(abbreviated_caption, caption) as title,
+                            COALESCE(url, path) as link,
+                            description
+                        FROM sqlpage_aide_navigation
+                        WHERE namespace = 'prime' AND parent_path = '/console'
+                        ORDER BY sibling_order
+                    )
+                )
+            ) as menu_item`,
+        );
+        return items;
+      },
       footer: () =>
         // TODO: add "open in IDE" feature like in other Shahid apps
-        literal(`Resource Surveillance Web UI 📄`) +
-        `'[' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
+        literal(`Resource Surveillance Web UI (v`) +
+        ` || sqlpage.version() || ') ' || ` +
+        `'📄 [' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
     };
     const shell = this.defaultShell();
     const sqlSelectExpr = Object.entries(shell).flatMap(([k, v]) => {
