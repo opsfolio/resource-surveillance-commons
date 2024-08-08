@@ -37,36 +37,38 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
         : value
         ? this.emitCtx.sqlTextEmitOptions.quotedLiteral(value)[1]
         : "NULL";
+    const selectNavMenuItems = (rootPath: string, caption: string) =>
+      `json_object(
+              'link', '${rootPath}',
+              'title', ${literal(caption)},
+              'submenu', (
+                  SELECT json_group_array(
+                      json_object(
+                          'title', title,
+                          'link', link,
+                          'description', description
+                      )
+                  )
+                  FROM (
+                      SELECT
+                          COALESCE(abbreviated_caption, caption) as title,
+                          COALESCE(url, path) as link,
+                          description
+                      FROM sqlpage_aide_navigation
+                      WHERE namespace = 'prime' AND parent_path = '${rootPath}'
+                      ORDER BY sibling_order
+                  )
+              )
+          ) as menu_item`;
+
     const handlers = {
       DEFAULT: (key: string, value: unknown) => `${literal(value)} AS ${key}`,
       menu_item: (key: string, items: Record<string, unknown>[]) =>
         items.map((item) => `${literal(JSON.stringify(item))} AS ${key}`),
       javascript: (key: string, scripts: string[]) => {
         const items = scripts.map((s) => `${literal(s)} AS ${key}`);
-        items.push(
-          `json_object(
-                'link', '/console',
-                'title', 'Console',
-                'submenu', (
-                    SELECT json_group_array(
-                        json_object(
-                            'title', title,
-                            'link', link,
-                            'description', description
-                        )
-                    )
-                    FROM (
-                        SELECT
-                            COALESCE(abbreviated_caption, caption) as title,
-                            COALESCE(url, path) as link,
-                            description
-                        FROM sqlpage_aide_navigation
-                        WHERE namespace = 'prime' AND parent_path = '/console'
-                        ORDER BY sibling_order
-                    )
-                )
-            ) as menu_item`,
-        );
+        items.push(selectNavMenuItems("/ur", "Uniform Resource"));
+        items.push(selectNavMenuItems("/console", "Console"));
         return items;
       },
       footer: () =>
