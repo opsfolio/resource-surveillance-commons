@@ -3,8 +3,110 @@ import { path, SQLa, SQLPageAide as spa, ws } from "./deps.ts";
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
+type TypicalSqlPagesFileRecord = spa.SqlPagesFileRecord<TypicalSqlPageNotebook>;
+
 /**
- * Type representing the initialization options for a route.
+ * Type representing the initialization options for shell component configuration.
+ *
+ * @property path - The path for the page
+ * @property shellStmts - The `SELECT 'shell' as component` SQL statements
+ * @property breadcrumbsFromNavStmts - The `SELECT 'breadcrumbs' as component` SQL statements when we want automatic breadcrumbs from page's navigation decorator
+ * @property pageTitleFromNavStmts - The `SELECT 'text' as component` SQL statements when we want automatic title from navigation decorator
+ */
+export type PathShellConfig = {
+  readonly path: string;
+  readonly shellStmts:
+    | "do-not-include"
+    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+  readonly breadcrumbsFromNavStmts:
+    | "no"
+    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+  readonly pageTitleFromNavStmts:
+    | "no"
+    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+};
+
+/**
+ * Type representing a decorated shell method, which includes the shell
+ * initialization options and additional metadata about the method to
+ * which the shell config is attached.
+ *
+ * @property methodName - The name of the method.
+ * @property methodFn - The function of the method.
+ * @property methodCtx - The context of the method decorator.
+ */
+export type DecoratedShellMethod =
+  & Partial<PathShellConfig>
+  & {
+    readonly methodName: string;
+    readonly methodFn: Any;
+    readonly methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>;
+  };
+
+/**
+ * Decorator function for shell configuration. This decorator adds metadata to
+ * the method it decorates, which can then be used to generate SQLPage shell components.
+ * It stores the ShellInit instance in method's class `shell` instance.
+ *
+ * @param shellInit - The initialization options for the shell config.
+ * @returns A decorator function that adds metadata to the method.
+ *
+ * @example
+ * class MyNotebook extends TypicalSqlPageNotebook {
+ *   @shell({ ... })
+ *   "index.sql"() {
+ *     // method implementation
+ *   }
+ * }
+ *
+ * - **Default Path**: If no path is provided, it defaults to methodName.
+ */
+export function shell(
+  shellInit: { readonly eliminate?: boolean } & Partial<PathShellConfig>,
+) {
+  const isRoot = (path: string) => path === "/" ? true : false;
+
+  return function (
+    methodFn: Any,
+    methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>,
+  ) {
+    const methodName = String(methodCtx.name);
+    if (shellInit.eliminate) {
+      methodCtx.addInitializer(function () {
+        this.shellEliminated.add(methodName);
+      });
+      return;
+    }
+
+    let path = shellInit.path ?? `/${methodName}`;
+
+    // special handling for path indexes so searches are easier in table
+    if (path.endsWith("index.sql")) {
+      path = path.substring(0, path.length - "index.sql".length);
+    }
+    // the "path" is used to search/locate a nav item so shouldn't have trailing slash
+    if (!isRoot(path) && path.endsWith("/")) {
+      path = path.substring(0, path.length - 1);
+    }
+
+    const drm: DecoratedShellMethod = {
+      ...shellInit,
+      path,
+      methodName,
+      methodFn,
+      methodCtx,
+    };
+
+    methodCtx.addInitializer(function () {
+      this.shellDecorated.set(methodName, drm);
+    });
+
+    // return void so that decorated function is not modified
+  };
+}
+
+/**
+ * Type representing the configuration options for a navigation route.
  *
  * @property path - The path for the route, this the search key when location routes.
  * @property caption - The human friendly name of the route.
@@ -16,7 +118,7 @@ type Any = any;
  * @property title - The title for the route (e.g. for page headings).
  * @property description - A description of the route (e.g. for describing in lists or tooltips).
  */
-export type RouteInit = {
+export type RouteConfig = {
   readonly path: string;
   readonly caption: string;
   readonly namespace?: string;
@@ -38,19 +140,47 @@ export type RouteInit = {
  * @property methodCtx - The context of the method decorator.
  */
 export type DecoratedRouteMethod =
-  & RouteInit
+  & RouteConfig
   & {
     readonly methodName: string;
     readonly methodFn: Any;
-    readonly methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>;
+    readonly methodCtx: ClassMethodDecoratorContext<
+      TypicalSqlPageNotebook
+    >;
   };
+
+/**
+ * Given a method name like "x/y/abc.sql" return the navigation path of the
+ * method name; there's special handling for "/x/index.sql" being replaced by
+ * `/x`.
+ * @param methodName the method name from a Class source
+ * @param isRoot how to check whether it's the root or not
+ */
+export function methodNameNavPath(
+  methodName: string,
+  isRoot = (path: string) => path === "/" ? true : false,
+) {
+  let path = `/${methodName}`;
+
+  // special handling for path indexes so searches are easier in table
+  if (path.endsWith("index.sql")) {
+    path = path.substring(0, path.length - "index.sql".length);
+  }
+
+  // the "path" is used to search/locate a nav item so shouldn't have trailing slash
+  if (!isRoot(path) && path.endsWith("/")) {
+    path = path.substring(0, path.length - 1);
+  }
+
+  return path;
+}
 
 /**
  * Decorator function for navigation routes. This decorator adds metadata to
  * the method it decorates, which can then be used to generate navigation routes.
  * It stores the RouteInit instance in method's class `navigation` instance.
  *
- * @param routeInit - The initialization options for the route.
+ * @param route - The initialization options for the route.
  * @returns A decorator function that adds metadata to the method.
  *
  * @example
@@ -77,7 +207,7 @@ export type DecoratedRouteMethod =
  * used for generating navigation routes.
  */
 export function navigation(
-  routeInit: Omit<RouteInit, "path"> & Partial<Pick<RouteInit, "path">>,
+  route: Omit<RouteConfig, "path"> & Partial<Pick<RouteConfig, "path">>,
 ) {
   const isRoot = (path: string) => path === "/" ? true : false;
 
@@ -86,21 +216,11 @@ export function navigation(
     methodCtx: ClassMethodDecoratorContext<TypicalSqlPageNotebook>,
   ) {
     const methodName = String(methodCtx.name);
-    let path = routeInit.path ?? `/${methodName}`;
-
-    // special handling for path indexes so searches are easier in table
-    if (path.endsWith("index.sql")) {
-      path = path.substring(0, path.length - "index.sql".length);
-    }
-    // the "path" is used to search/locate a nav item so shouldn't have trailing slash
-    if (!isRoot(path) && path.endsWith("/")) {
-      path = path.substring(0, path.length - 1);
-    }
-
+    const path = route.path ?? methodNameNavPath(methodName);
     const drm: DecoratedRouteMethod = {
-      ...routeInit,
+      ...route,
       path,
-      url: routeInit.url ??
+      url: route.url ??
         (isRoot(path) ? path : (path.endsWith(".sql") ? path : `${path}/`)),
       methodName,
       methodFn,
@@ -121,8 +241,8 @@ export function navigation(
  */
 export function navigationPrime(
   route:
-    & Omit<RouteInit, "path" | "namespace">
-    & Partial<Pick<RouteInit, "path">>,
+    & Omit<RouteConfig, "path" | "namespace">
+    & Partial<Pick<RouteConfig, "path">>,
 ) {
   return navigation({
     ...route,
@@ -136,7 +256,7 @@ export function navigationPrime(
  * used.
  */
 export function navigationPrimeTopLevel(
-  route: Omit<RouteInit, "path" | "parentPath" | "namespace">,
+  route: Omit<RouteConfig, "path" | "parentPath" | "namespace">,
 ) {
   return navigationPrime({
     ...route,
@@ -151,8 +271,12 @@ export type SqlPageNotebookEmitCtx = SQLa.SqlEmitContext;
  * sqlpage_files "notebooks" use for typical requirements.
  */
 export class TypicalSqlPageNotebook {
+  readonly shellEliminated: Set<string> = new Set();
+  readonly shellDecorated: Map<PathShellConfig["path"], DecoratedShellMethod> =
+    new Map();
   // navigation will be automatically filled by @navigation decorators
-  readonly navigation: Map<RouteInit["path"], DecoratedRouteMethod> = new Map();
+  readonly navigation: Map<RouteConfig["path"], DecoratedRouteMethod> =
+    new Map();
   readonly emitCtx = SQLa.typicalSqlEmitContext({
     sqlDialect: SQLa.sqliteDialect(),
   }) as SqlPageNotebookEmitCtx;
@@ -217,7 +341,7 @@ export class TypicalSqlPageNotebook {
 
       debugVars: () => {
         return this.SQL`
-          SELECT 'text' AS component, 
+          SELECT 'text' AS component,
               '- Start Row: ' || ${$("offset")} || '\n' ||
               '- Rows per Page: ' || ${$("limit")} || '\n' ||
               '- Total Rows: ' || ${$("total_rows")} || '\n' ||
@@ -227,12 +351,12 @@ export class TypicalSqlPageNotebook {
 
       renderSimpleMarkdown: () => {
         return this.SQL`
-          SELECT 'text' AS component, 
+          SELECT 'text' AS component,
               (SELECT CASE WHEN ${
           $("current_page")
         } > 1 THEN '[Previous](?limit=' || ${$("limit")} || '&offset=' || (${
           $("offset")
-        } - ${$("limit")}) || ')' ELSE '' END) || ' ' || 
+        } - ${$("limit")}) || ')' ELSE '' END) || ' ' ||
               '(Page ' || ${$("current_page")} || ' of ' || ${
           $("total_pages")
         } || ") " ||
@@ -240,13 +364,13 @@ export class TypicalSqlPageNotebook {
           $("total_pages")
         } THEN '[Next](?limit=' || ${$("limit")} || '&offset=' || (${
           $("offset")
-        } + ${$("limit")}) || ')' ELSE '' END) 
+        } + ${$("limit")}) || ')' ELSE '' END)
               AS contents_md;`;
       },
     };
   }
 
-  upsertNavSQL(...nav: RouteInit[]) {
+  upsertNavSQL(...nav: RouteConfig[]) {
     const literal = (text?: string | number) =>
       typeof text === "number"
         ? text
@@ -260,6 +384,30 @@ export class TypicalSqlPageNotebook {
           ${nav.map(n => `(${[n.namespace, n.parentPath, n.siblingOrder ?? 1, n.path, n.url, n.caption, n.abbreviatedCaption, n.title, n.description].map(v => literal(v)).join(', ')})`).join(",\n    ")}
       ON CONFLICT (namespace, parent_path, path)
       DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;`
+  }
+
+  shellConfig(spfr: TypicalSqlPagesFileRecord) {
+    if (this.shellEliminated.has(spfr.path)) return null;
+
+    const defaults: PathShellConfig = {
+      path: spfr.path,
+      shellStmts: () =>
+        `SELECT 'dynamic' AS component, sqlpage.run_sql('shell/shell.sql') AS properties;`,
+      breadcrumbsFromNavStmts: () =>
+        this.breadcrumbsSQL(methodNameNavPath(spfr.path)),
+      pageTitleFromNavStmts: "no",
+    };
+
+    const result = this.shellDecorated.get(spfr.path);
+    if (result) {
+      // if a @shell() decorates a method, that's got the "overrides"
+      return {
+        ...defaults,
+        ...result,
+      };
+    } else {
+      return defaults;
+    }
   }
 
   /**
@@ -320,7 +468,7 @@ export class TypicalSqlPageNotebook {
     return ws.unindentWhitespace(`
         SELECT 'breadcrumb' as component;
         WITH RECURSIVE breadcrumbs AS (
-            SELECT 
+            SELECT
                 COALESCE(abbreviated_caption, caption) AS title,
                 COALESCE(url, path) AS link,
                 parent_path, 0 AS level,
@@ -330,7 +478,7 @@ export class TypicalSqlPageNotebook {
       activePath.replaceAll("'", "''")
     }'
             UNION ALL
-            SELECT 
+            SELECT
                 COALESCE(nav.abbreviated_caption, nav.caption) AS title,
                 COALESCE(nav.url, nav.path) AS link,
                 nav.parent_path, b.level + 1, nav.namespace
@@ -379,7 +527,7 @@ export class TypicalSqlPageNotebook {
     const activePPC = this.sqlPagePathComponents(3);
     return this.SQL`
           SELECT 'title' AS component, (SELECT COALESCE(title, caption)
-              FROM sqlpage_aide_navigation 
+              FROM sqlpage_aide_navigation
              WHERE namespace = 'prime' AND path = ${
       literal(activePPC?.absPath ?? "/")
     }) as contents;
@@ -396,7 +544,7 @@ export class TypicalSqlPageNotebook {
     const activePPC = this.sqlPagePathComponents(3);
     const methodName = activePPC?.methodName.replaceAll("'", "''") ?? "??";
     return this.SQL`
-        SELECT 'text' AS component, 
+        SELECT 'text' AS component,
                '[View ${methodName}](/console/sqlpage-files/sqlpage-file.sql?path=${methodName})' as contents_md;
   `;
   }
@@ -411,9 +559,32 @@ export class TypicalSqlPageNotebook {
    * @returns an array of strings which are the SQL statements
    */
   static SQL<Source extends TypicalSqlPageNotebook>(...sources: Source[]) {
-    return new spa.SQLPageAide(...sources)
-      .includeUpserts(/\.sql$/)
+    return new spa.SQLPageAide<
+      TypicalSqlPageNotebook,
+      Any,
+      Any[],
+      TypicalSqlPagesFileRecord
+    >(...sources)
+      .includeUpserts(/\.sql$/, /\.json$/)
       .includeSql(/DQL$/, /DML$/, /DDL$/)
+      .withSqlPagesFileRecordTransformer((spfr) => {
+        const shell = spfr.source.instance.shellConfig(spfr);
+        if (shell) {
+          return {
+            ...spfr,
+            // deno-fmt-ignore
+            content: ws.unindentWhitespace(`
+              ${shell.shellStmts !== "do-not-include" ? shell.shellStmts(spfr): "-- not including shell"}
+              ${shell.breadcrumbsFromNavStmts !== "no" ? shell.breadcrumbsFromNavStmts(spfr): "-- not including breadcrumbs from sqlpage_aide_navigation"}
+              ${shell.pageTitleFromNavStmts !== "no" ? shell.pageTitleFromNavStmts(spfr) : "-- not including page title from sqlpage_aide_navigation"}
+
+              ${spfr.content}
+            `),
+          };
+        } else {
+          return spfr;
+        }
+      })
       .onNonStringUpsertContents((result, _sp, method) =>
         SQLa.isSqlTextSupplier(result)
           ? result.SQL(sources[0].emitCtx)

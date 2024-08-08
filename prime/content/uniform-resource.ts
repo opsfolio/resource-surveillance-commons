@@ -1,12 +1,13 @@
 import * as spn from "../sqlpage-notebook.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
-function urNav(route: Omit<spn.RouteInit, "path" | "parentPath">) {
+export function urNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
     parentPath: "/ur",
   });
 }
+
 export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
@@ -42,11 +43,9 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
   })
   "ur/index.sql"() {
     return this.SQL`
-      ${this.activeBreadcrumbsSQL()}
-
       WITH navigation_cte AS (
           SELECT COALESCE(title, caption) as title, description
-            FROM sqlpage_aide_navigation 
+            FROM sqlpage_aide_navigation
            WHERE namespace = 'prime' AND path = '/ur'
       )
       SELECT 'list' AS component, title, description
@@ -59,21 +58,20 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
 
   @urNav({
     caption: "Uniform Resource Tables and Views",
-    description: "Information Schema documentation for ingested Uniform Resource database objects",
+    description:
+      "Information Schema documentation for ingested Uniform Resource database objects",
     siblingOrder: 99,
   })
   "ur/info-schema.sql"() {
     return this.SQL`
-      ${this.activeBreadcrumbsSQL()}
-
       SELECT 'title' AS component, 'Uniform Resource Tables and Views' as contents;
-      SELECT 'table' AS component, 
+      SELECT 'table' AS component,
             'Name' AS markdown,
             'Column Count' as align_right,
             TRUE as sort,
             TRUE as search;
 
-      SELECT 
+      SELECT
           'Table' as "Type",
           '[' || table_name || '](/console/info-schema/table.sql?name=' || table_name || ')' AS "Name",
           COUNT(column_name) AS "Column Count"
@@ -83,7 +81,7 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
 
       UNION ALL
 
-      SELECT 
+      SELECT
           'View' as "Type",
           '[' || view_name || '](/console/info-schema/view.sql?name=' || view_name || ')' AS "Name",
           COUNT(column_name) AS "Column Count"
@@ -98,13 +96,13 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
     description: "Files ingested into the `uniform_resource` table",
     siblingOrder: 1,
   })
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
   "ur/uniform-resource-files.sql"() {
     const viewName = `uniform_resource_file`;
     const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
-      ${this.activeBreadcrumbsSQL()}
       ${this.activePageTitle()}
-      
+
       -- sets up $limit, $offset, and other variables (use pagination.debugVars() to see values in web-ui)
       ${pagination.init()}
 
@@ -121,5 +119,4 @@ export class UniformResourceSqlPages extends spn.TypicalSqlPageNotebook {
       ${pagination.renderSimpleMarkdown()}
     `;
   }
-
 }
