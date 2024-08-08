@@ -11,6 +11,14 @@ function fhirNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
+ *
+ * TODO: in TypicalSqlPageNotebook.SQL() call at the bottom of this code it
+ * probably makese sense to just add all dependent notebooks into the sources
+ * list like so:
+ *
+ *   TypicalSqlPageNotebook.SQL(new X(), new Y(), ..., new FhirSqlPages())
+ *
+ * where X, Y, etc. are in <RSC-repo>/prime/content/mod.ts
  */
 export class FhirSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
