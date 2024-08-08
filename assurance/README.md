@@ -4,4 +4,4 @@ These are SQL scripts executed against `surveilr` after ingesting or orchestrati
 
 1. File Ingestions
    - Run `surveilr ingest files --stats` and to confirm, check [this](./ingest-files.sql)
-   - Multitenancy with `parties` and `orgs`, same command as above, but this [file](./ingest-files-multitenancy.sql).
+   - Multitenancy with `parties` and `orgs`, execute `surveilr ingest files --tenant-name "timur" --tenant-id "tenant_2"` but this [file](./ingest-files-multitenancy.sql).
