@@ -6,7 +6,6 @@ surveilr.exe
 resource-surveillance.sqlite.db
 
 # when testing in this repo, we might have ingest samples / exemplars
-*sample*
 ingest/
 
 # sometimes we'll test local files in SQLPage but we don't want those tracked
