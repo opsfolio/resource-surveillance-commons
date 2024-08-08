@@ -50,6 +50,10 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
         items.map((item) => `${literal(JSON.stringify(item))} AS ${key}`),
       javascript: (key: string, scripts: string[]) =>
         scripts.map((s) => `${literal(s)} AS ${key}`),
+      footer: () =>
+        // TODO: add "open in IDE" feature like in other Shahid apps
+        literal(`Resource Surveillance Web UI 📄`) +
+        `'[' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
     };
     const shell = this.defaultShell();
     const sqlSelectExpr = Object.entries(shell).flatMap(([k, v]) => {
@@ -58,6 +62,8 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
           return handlers.menu_item(k, v as Record<string, unknown>[]);
         case "javascript":
           return handlers.javascript(k, v as string[]);
+        case "footer":
+          return handlers.footer();
         default:
           return handlers.DEFAULT(k, v);
       }
