@@ -2,7 +2,7 @@
 import {
   console as c,
   shell as sh,
-  uniformResource as ur,
+  uniformResource as ur, 
 } from "./content/mod.ts";
 import * as spn from "./sqlpage-notebook.ts";
 
