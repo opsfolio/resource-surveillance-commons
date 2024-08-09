@@ -87,18 +87,16 @@ DROP VIEW IF EXISTS inbox;
 CREATE VIEW inbox AS
 SELECT 
   mcd.message_uid as id,
-  pdd.direct_address AS "from",
+  mcd.content_from AS "from",
+  mcd.recipient AS "to",
   mcd.content_subject AS subject,
   mcd.content_body AS content,
   mcd.content_date AS date,
-  attachment_count as attachmen_count
+  attachment_count as attachment_count
   
 FROM 
-  mail_content_detail mcd
-JOIN 
-  phimail_delivery_detail pdd 
-ON 
-  mcd.message_uid = pdd.message_uid;  
+  mail_content_detail mcd;
+
 
 
 DROP VIEW IF EXISTS patient_detail;
