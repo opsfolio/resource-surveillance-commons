@@ -9,11 +9,11 @@ export function consoleNav(
     parentPath: "/console",
   });
 }
- 
+
 export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   infoSchemaDDL() {
     return this.SQL`
-      -- console_information_schema_* views are convenience views
+      -- console_information_schema_* tables are convenience tables
       -- to make it easier to work than pragma_table_info.
 
       DROP VIEW IF EXISTS console_information_schema_table;

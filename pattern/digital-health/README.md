@@ -78,7 +78,7 @@ into this directory, then ingest and query the data:
 
 ```bash
 # ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
-$ surveilr ingest files -r ingest/
+$ ./surveilr ingest files -r ingest/
 ```
 
 After ingestion, you will only work with these files:
@@ -95,7 +95,7 @@ ignored, only `sqlite3` is required because all content is in the
 other dependencies.
 
 ```bash
-# load the "Console" and other menu/routing utilities (be sure `deno` v1.40 or above is installed)
+# load the "Console" and other menu/routing utilities
 $ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
