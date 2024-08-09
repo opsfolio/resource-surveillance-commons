@@ -15,3 +15,6 @@ These are SQL scripts executed against `surveilr` after ingesting or orchestrati
             ingest imap -f "Inbox" -b 20 -e="yes" microsoft-365 -i="4961b791-3590-470a-94d2-77079a4faa95" -s="" -t=""
         ```
     - Then execute the [file](./ingest-imap.sql).
+3. PLM Ingestion
+   1. Github: Run `surveilr ingest plm -e="yes" -b 100 github -o "rust-lang" -r "libc"`, then execute this [file](./ingest-plm-github.sql)
+   2. Gitlab:  Run `surveilr ingest plm gitlab --host "gitlab.kitware.com" -o "utils" -p "rust-gitlab"` then execute this [file](./ingest-plm-github.sql)
