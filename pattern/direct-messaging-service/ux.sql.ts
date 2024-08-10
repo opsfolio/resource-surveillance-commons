@@ -65,15 +65,36 @@ export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
+  // @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  // "dms/email-detail.sql"() {
+  //   return this.SQL`
+  //   SELECT 'table' as component;
+  //   SELECT 'From: ' || "from" as "from" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
+  //   SELECT 'To: ' || "to" as "to" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
+  //   SELECT 'Date: ' || "date" as "date" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
+  //   SELECT 'Subject: ' || "subject" as "subject" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
+  //   SELECT "content" from  inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+  //   `;
+  // }
   @spn.shell({ breadcrumbsFromNavStmts: "no" })
   "dms/email-detail.sql"() {
     return this.SQL`
+    ${this.activeBreadcrumbsSQL({ titleExpr: `$id` })}
+     SELECT 'list' AS component;
+      select 'From: ' || "from" as "description" from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
+      union ALL
+      select 'To: ' || "to"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
+      union ALL
+      select 'Subject: ' || "subject"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
+      union ALL
+      select 'Date: ' || "date"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+
+
+
+
+
     SELECT 'table' as component;
-    SELECT 'From: ' || "from" as "from" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-    SELECT 'To: ' || "to" as "to" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-    SELECT 'Date: ' || "date" as "date" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-    SELECT 'Subject: ' || "subject" as "subject" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-    SELECT "content" from  inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+    SELECT "content" FROM inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
     `;
   }
 
