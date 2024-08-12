@@ -2,6 +2,8 @@
 -- surveilr_version - Returns the current version of `suvrveilr` that's being executed
 -- surveilr_orchestration_context_session_id - The active context, if present. It returns the ID of the current session
 -- surveilr_orchestration_nature_id(<nature_type>), e.g surveilr_orchestration_nature_id('v&v') - Returns the ID of the orchestration nature if present, else it is null.
+-- surveilr_ensure_orchestration_nature(<nature_id>, <nature>)
+-- surveilr_get_orchestration_session_info(<session_id>) - returns the orchestration_session_entry_id for the current session
 -- De Identification Functions
 -- anonymize_name: replaces any name or name-like string with a randomized pseudonym.
 -- mask: Obscures sensitive information by replacing characters with a specified delimiter (default is '*'). Example: mask('1234567890') -> '****567890'.
@@ -49,22 +51,27 @@ SET
     content_digest = hash(content_digest),
     nature = anonymize_name(nature);
 
-INSERT OR IGNORE INTO orchestration_nature (orchestration_nature_id, nature)
-VALUES ('deidentify', 'De-identification');
--- TODO: create ensure_orchestration_nature('deidentify', 'De-identification'): do the INSERT or IGNORE
 -- TODO: current_party 
 
 SELECT surveilr_device_id() AS device_id;
-SELECT surveilr_orchestration_nature_id('De-identification') AS orchestration_nature_id;
+SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
 SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id;
 
 
-CREATE TEMPORARY TABLE temp_session_info AS
+DROP VIEW IF EXISTS orchestration_session_info;
+
+CREATE VIEW orchestration_session_info AS
+WITH session_cte AS (
+    SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id
+)
 SELECT
-    orchestration_session_id,
-    (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = orchestration_session_id LIMIT 1) AS orchestration_session_entry_id
-FROM orchestration_session
-LIMIT 1;
+    session_cte.orchestration_session_id,
+    json_extract(
+        surveilr_get_orchestration_session_info(session_cte.orchestration_session_id), 
+        '$.orchestration_session_entry_id'
+    ) AS orchestration_session_entry_id
+FROM session_cte;
+
 
 INSERT OR IGNORE INTO orchestration_session_exec (
     orchestration_session_exec_id,
@@ -79,7 +86,7 @@ INSERT OR IGNORE INTO orchestration_session_exec (
     narrative_md
 )
 SELECT
-    'ORCHSESSEXID-' || ((SELECT COUNT(*) FROM orchestration_session_exec) + 1),
+    ulid(),
     'De-identification',
     s.orchestration_session_id,
     s.orchestration_session_entry_id,
@@ -92,7 +99,7 @@ SELECT
         ELSE NULL 
     END,
     'username in email is masked'
-FROM temp_session_info s;
+FROM orchestration_session_info s;
 
 INSERT OR IGNORE INTO orchestration_session_exec (
     orchestration_session_exec_id,
@@ -107,8 +114,7 @@ INSERT OR IGNORE INTO orchestration_session_exec (
     narrative_md
 )
 SELECT
-    -- TODO: change ORCHSESSEXID to ulid() and all other id generation
-    'ORCHSESSEXID-' || ((SELECT COUNT(*) FROM orchestration_session_exec) + 1),
+    ulid(),
     'De-identification',
     s.orchestration_session_id,
     s.orchestration_session_entry_id,
@@ -121,26 +127,8 @@ SELECT
         ELSE NULL 
     END,
     'username in email is masked'
-FROM temp_session_info s;
+FROM orchestration_session_info s;
 
--- Drop the temporary table when done
-DROP TABLE temp_session_info;
-
--- Handle exceptions, errors if any in an external mechanism (not possible through SQLITE)
--- Example:
--- ROLLBACK;
--- INSERT INTO orchestration_session_exec 
--- (orchestration_session_exec_id, exec_nature, session_id, exec_code, exec_status, input_text, output_text, exec_error_text, narrative_md)
--- VALUES (
---     'orc-exec-id-' || hex(randomblob(16)),
---     'De-identification',
---     (SELECT orchestration_session_id FROM orchestration_session LIMIT 1),
---     'UPDATE commands executed',
---     1,
---     'Data from uniform_resource_investigator, uniform_resource_author tables',
---     'Error occurred during de-identification',
---     'Detailed error message here',
---     'Error during update'
--- );
+DROP VIEW orchestration_session_info;
 
 -- TODO: explain how to do vaccuumiing to ensure that all deleted data is removed from the RSSD
