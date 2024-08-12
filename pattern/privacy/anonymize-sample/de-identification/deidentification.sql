@@ -1,12 +1,26 @@
+-- Below are the list of functions surveilr currently exposes for orchestaration and deidentification purposes
+-- surveilr_version - Returns the current version of `suvrveilr` that's being executed
+-- surveilr_orchestration_context_session_id - The active context, if present. It returns the ID of the current session
+-- surveilr_orchestration_nature_id(<nature_type>), e.g surveilr_orchestration_nature_id('v&v') - Returns the ID of the orchestration nature if present, else it is null.
+-- De Identification Functions
+--  anonymize_name: Randomize any name or string like field
+-- mask: mask sensitive information with delimeter, default is '*'. TODO: accept a delimeter e.g mask('data', '#').
+-- generalize_age: change the age
+-- anonymize_email: changes the host of the email address, e.g baasit@surveilr.com -> doe@surveilr.com
+-- mask_financial: mask any financial data
+-- anonymize_date
+-- mask_phone: changes phone number to something like: 798-***-***
+-- mask_dob
+-- mask_address
+-- hash: create a SHA1 hash of the data
+
+-- TODO: explain how to ingest into IMAP, write script to put synthetic data into the 
 -- Perform De-identification
 UPDATE ur_ingest_session_imap_account
 SET
     email = anonymize_email(email),
     password = mask(password),
-    host = anonymize_name(host),
-    created_by = anonymize_name(created_by),
-    updated_by = anonymize_name(updated_by),
-    deleted_by = anonymize_name(deleted_by);
+    host = anonymize_name(host);
 
 UPDATE ur_ingest_session_imap_acct_folder
 SET
@@ -23,6 +37,8 @@ SET
 
 INSERT OR IGNORE INTO orchestration_nature (orchestration_nature_id, nature)
 VALUES ('deidentify', 'De-identification');
+-- TODO: create ensure_orchestration_nature('deidentify', 'De-identification'): do the INSERT or IGNORE
+-- TODO: current_party 
 
 SELECT surveilr_device_id() AS device_id;
 SELECT surveilr_orchestration_nature_id('De-identification') AS orchestration_nature_id;
@@ -36,7 +52,6 @@ SELECT
 FROM orchestration_session
 LIMIT 1;
 
--- Insert into orchestration_session_exec for uniform_resource_investigator
 INSERT OR IGNORE INTO orchestration_session_exec (
     orchestration_session_exec_id,
     exec_nature,
@@ -65,7 +80,6 @@ SELECT
     'username in email is masked'
 FROM temp_session_info s;
 
--- Insert into orchestration_session_exec for uniform_resource_author
 INSERT OR IGNORE INTO orchestration_session_exec (
     orchestration_session_exec_id,
     exec_nature,
@@ -79,6 +93,7 @@ INSERT OR IGNORE INTO orchestration_session_exec (
     narrative_md
 )
 SELECT
+    -- TODO: change ORCHSESSEXID to ulid() and all other id generation
     'ORCHSESSEXID-' || ((SELECT COUNT(*) FROM orchestration_session_exec) + 1),
     'De-identification',
     s.orchestration_session_id,
@@ -113,3 +128,5 @@ DROP TABLE temp_session_info;
 --     'Detailed error message here',
 --     'Error during update'
 -- );
+
+-- TODO: explain how to do vaccuumiing to ensure that all deleted data is removed from the RSSD
