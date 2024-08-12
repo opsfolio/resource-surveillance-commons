@@ -26,7 +26,7 @@
 
 -- Load Synthetic Data into the Database
 -- Download synthetic data using 'curl' and pipe it directly into your RSSD:
--- 'curl <URL_TO_YOUR_SYNTHETIC_DATA> | sqlite3 resource-surveillance.sqlite.db'
+-- 'curl https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/anonymize-sample/de-identification/sample-imap-rssd.sql | sqlite3 resource-surveillance.sqlite.db'
 
 -- Run the De-identification Script
 -- Execute the de-identification process using 'surveilr orchestrate':
