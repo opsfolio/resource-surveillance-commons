@@ -1,5 +1,3 @@
---Code needs to be modified for orchestrate table entries
-
 -- Create a temporary table to define the expected schema
 CREATE TEMP TABLE expected_schema (
     table_name TEXT,
@@ -21,7 +19,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 -- uniform_resource_lab table
 ('uniform_resource_lab', 'lab_id', 'TEXT', 1, 1),
 ('uniform_resource_lab', 'lab_name', 'TEXT', 0, 1),
-('uniform_resource_lab', 'lab_pi', 'TEXT', 0, 0),
+('uniform_resource_lab', 'lab_pi', 'TEXT', 0, 1),
 ('uniform_resource_lab', 'institution_id', 'TEXT', 0, 0),
 ('uniform_resource_lab', 'study_id', 'TEXT', 0, 0),
 
@@ -38,7 +36,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 -- uniform_resource_site table
 ('uniform_resource_site', 'site_id', 'TEXT', 1, 1),
 ('uniform_resource_site', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_site', 'site_name', 'TEXT', 0, 0),
+('uniform_resource_site', 'site_name', 'TEXT', 0, 1),
 ('uniform_resource_site', 'site_type', 'TEXT', 0, 0),
 
 -- uniform_resource_participant table
@@ -82,52 +80,63 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_cgm_file_metadata', 'devicename', 'TEXT', 0, 0),
 ('uniform_resource_cgm_file_metadata', 'device_id', 'TEXT', 0, 0),
 ('uniform_resource_cgm_file_metadata', 'source_platform', 'TEXT', 0, 0),
-('uniform_resource_cgm_file_metadata', 'patient_id', 'TEXT', 0, 0),
-('uniform_resource_cgm_file_metadata', 'file_name', 'TEXT', 0, 0),
-('uniform_resource_cgm_file_metadata', 'file_format', 'TEXT', 0, 0),
+('uniform_resource_cgm_file_metadata', 'patient_id', 'TEXT', 0, 1),
+('uniform_resource_cgm_file_metadata', 'file_name', 'TEXT', 0, 1),
+('uniform_resource_cgm_file_metadata', 'file_format', 'TEXT', 0, 1),
 ('uniform_resource_cgm_file_metadata', 'file_upload_date', 'TEXT', 0, 1),
 ('uniform_resource_cgm_file_metadata', 'data_start_date', 'TEXT', 0, 1),
 ('uniform_resource_cgm_file_metadata', 'data_end_date', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 0);
+('uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 1);
 
 
--- Validate the schema: Check for missing and additional columns in tables starting with "uniform_resource_"
+-- Schema Validation
 
 
-WITH device_info AS (
-    SELECT device_id FROM device LIMIT 1
+--track the not null columns in each table
+-- Step 1: Create the drh_tbl_nonnull_defn table
+CREATE TABLE IF NOT EXISTS drh_tbl_nonnull_defn (
+    table_name TEXT,
+    column_name TEXT
+);
+
+-- Retrieve tables and find the not null columns based on the schema defined 
+WITH Tables AS (
+    SELECT name AS table_name
+    FROM sqlite_master
+    WHERE type = 'table' 
+      AND name LIKE 'uniform_resource_%'
+      AND name NOT LIKE 'uniform_resource_cgm_tracing%' 
+      AND name != 'uniform_resource_transform'
 ),
-orch_nature_info AS (
-    SELECT orchestration_nature_id FROM orchestration_nature WHERE nature = 'Verification and Validation' LIMIT 1
+
+NotNullColumns AS (
+    SELECT
+        t.table_name,
+        e.column_name
+    FROM 
+        Tables t
+    JOIN 
+        expected_schema e
+    ON 
+        t.table_name = e.table_name
+    WHERE
+        e.not_null = 1
 )
-INSERT INTO orchestration_session (orchestration_session_id, device_id, orchestration_nature_id, version, args_json, diagnostics_json, diagnostics_md) 
-SELECT
-    'orc-session-id-' || hex(randomblob(16)) AS orchestration_session_id,
-    d.device_id,
-    o.orchestration_nature_id,
-    '1.0',
-    '{"parameters": "Verification&Validation"}',
-    '{"status": "started"}',
-    'Started Verification Validation process'
-FROM device_info d, orch_nature_info o;
 
+-- Insert the retrieved NOT NULL columns into drh_tbl_nonnull_defn
+INSERT INTO drh_tbl_nonnull_defn (table_name, column_name)
+SELECT table_name, column_name FROM NotNullColumns;
 
--- Retrieve the new session ID
-WITH session_info AS (
-    SELECT orchestration_session_id FROM orchestration_session LIMIT 1
-)
-INSERT INTO orchestration_session_entry (orchestration_session_entry_id, session_id, ingest_src, ingest_table_name, elaboration)
-SELECT
-    'ORCSESENDEID-' || hex(randomblob(16)) AS orchestration_session_entry_id,
-    orchestration_session_id,
-    'Verification&Validation',
-    NULL,
-    '{"description": "Verifcation Validation In process"}'
-FROM session_info;
+-- Validate the schema: Check for missing and additional columns in tables"
 
+CREATE TABLE IF NOT EXISTS drh_log_validation_issues (
+    v_vtype TEXT,
+    table_name TEXT,
+    column_name TEXT,
+    record_number INTEGER,
+    issue TEXT
+);
 
--- Schema Validation: Check for missing columns
---.output validation_verification.txt
 WITH SchemaValidationMissingColumns AS (
     SELECT 
         'Schema Validation: Missing Columns' AS heading,
@@ -157,10 +166,46 @@ WITH SchemaValidationMissingColumns AS (
     WHERE 
         a.column_name IS NULL
 )
-SELECT * FROM SchemaValidationMissingColumns;
+--SELECT * FROM SchemaValidationMissingColumns;
+-- Insert into drh_log_validation_issues table
+INSERT INTO drh_log_validation_issues (v_vtype, table_name, column_name, record_number, issue)
+SELECT 
+    heading as v_vtype,
+    table_name,
+    column_name,
+    column_type as record_number,
+    status as issue
+FROM SchemaValidationMissingColumns;
+-- Insert into orchestration_session_issue table
+/*INSERT INTO orchestration_session_issue (
+    orchestration_session_issue_id, 
+    session_id, 
+    session_entry_id, 
+    issue_type, 
+    issue_message, 
+    issue_row, 
+    issue_column, 
+    invalid_value, 
+    remediation, 
+    elaboration
+)
+SELECT 
+    -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
+    'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
+    (SELECT surveilr_orchestration_context_session_id()) AS session_id,  -- Replace with actual session ID or dynamic value if needed
+    (select orchestration_session_entry_id from orchestration_session_entry where session_id =(SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,  -- Replace with actual session entry ID or dynamic value if needed
+    heading as issue_type,
+    status as issue_message,
+    NULL AS issue_row,  -- Set as NULL if not applicable
+    column_name AS issue_column,
+    NULL AS invalid_value,  -- Set as NULL if not applicable
+    'Please add the missing column as per the expected schema.' AS remediation,
+    NULL AS elaboration  -- Set as NULL or provide elaboration if needed
+FROM SchemaValidationMissingColumns;*/
 
 -- Line break
 SELECT '\n' AS blank_line;
+
 
 -- Schema Validation: Check for additional columns
 WITH SchemaValidationAdditionalColumns AS (
@@ -192,378 +237,47 @@ WITH SchemaValidationAdditionalColumns AS (
     WHERE 
         e.column_name IS NULL
 )
-SELECT * FROM SchemaValidationAdditionalColumns;
+--SELECT * FROM SchemaValidationAdditionalColumns;
 
--- Line break
-SELECT '\n' AS blank_line;
-
--- Schema Validation: Check for type mismatches
-
-
--- Line break
-SELECT '\n' AS blank_line;
-
--- Step 1: Retrieve tables with names like 'uniform_resource%'
-WITH Tables AS (
-    SELECT name AS table_name
-    FROM sqlite_master
-    WHERE type = 'table' AND
-    name NOT LIKE 'uniform_resource_cgm_tracing%' AND
-    name != 'uniform_resource_transform' AND
-    name LIKE 'uniform_resource_%'
-),
--- Step 2: Retrieve NOT NULL columns from these tables
-NotNullColumns AS (
-    SELECT
-        t.table_name,
-        e.column_name
-    FROM 
-        Tables t
-    JOIN 
-        expected_schema e
-    ON 
-        t.table_name = e.table_name
-    WHERE
-        e.not_null = 1
+INSERT INTO drh_log_validation_issues (v_vtype, table_name, column_name, record_number, issue)
+SELECT 
+    heading as v_vtype,
+    table_name,
+    column_name,
+    column_type as record_number,
+    status as issue
+FROM SchemaValidationAdditionalColumns;
+/*
+INSERT INTO orchestration_session_issue (
+    orchestration_session_issue_id, 
+    session_id, 
+    session_entry_id, 
+    issue_type, 
+    issue_message, 
+    issue_row, 
+    issue_column, 
+    invalid_value, 
+    remediation, 
+    elaboration
 )
-select * from NotNullColumns;
-
+SELECT 
+    -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
+    'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
+    (SELECT surveilr_orchestration_context_session_id()) AS session_id,  -- Replace with actual session ID or dynamic value if needed
+    (select orchestration_session_entry_id from orchestration_session_entry where session_id =(SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,  -- Replace with actual session entry ID or dynamic value if needed
+    heading as issue_type,
+    status as issue_message,
+    NULL AS issue_row,  -- Set as NULL if not applicable
+    column_name AS issue_column,
+    NULL AS invalid_value,  -- Set as NULL if not applicable
+    'Please add the missing column as per the expected schema.' AS remediation,
+    NULL AS elaboration  -- Set as NULL or provide elaboration if needed
+FROM SchemaValidationAdditionalColumns;*/
 
 
 -- Line break
 SELECT '\n' AS blank_line;
 
--- Step 1: Generate queries to find empty or NULL values for each column in the 'uniform_resource_participant' table
-
--- Query for participant_id column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'participant_id' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN participant_id IS NULL OR participant_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    participant_id IS NULL OR participant_id = '';
-
--- Query for study_id column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'study_id' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN study_id IS NULL OR study_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    study_id IS NULL OR study_id = '';
-
--- Query for site_id column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'site_id' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN site_id IS NULL OR site_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    site_id IS NULL OR site_id = '';
-
--- Query for diagnosis_icd column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'diagnosis_icd' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN diagnosis_icd IS NULL OR diagnosis_icd = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    diagnosis_icd IS NULL OR diagnosis_icd = '';
-
--- Query for med_rxnorm column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'med_rxnorm' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN med_rxnorm IS NULL OR med_rxnorm = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    med_rxnorm IS NULL OR med_rxnorm = '';
-
--- Query for treatment_modality column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'treatment_modality' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN treatment_modality IS NULL OR treatment_modality = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    treatment_modality IS NULL OR treatment_modality = '';
-
--- Query for gender column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'gender' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN gender IS NULL OR gender = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    gender IS NULL OR gender = '';
-
--- Query for race_ethnicity column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'race_ethnicity' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN race_ethnicity IS NULL OR race_ethnicity = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    race_ethnicity IS NULL OR race_ethnicity = '';
-
--- Query for age column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'age' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN age IS NULL OR age = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    age IS NULL OR age = '';
-
--- Query for bmi column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'bmi' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN bmi IS NULL OR bmi = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    bmi IS NULL OR bmi = '';
-
--- Query for baseline_hba1c column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'baseline_hba1c' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN baseline_hba1c IS NULL OR baseline_hba1c = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    baseline_hba1c IS NULL OR baseline_hba1c = '';
-
--- Query for diabetes_type column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'diabetes_type' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN diabetes_type IS NULL OR diabetes_type = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    diabetes_type IS NULL OR diabetes_type = '';
-
--- Query for study_arm column
-SELECT 
-    'uniform_resource_participant' AS table_name, 
-    'study_arm' AS column_name, 
-    rowid AS record_id, 
-    CASE WHEN study_arm IS NULL OR study_arm = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status 
-FROM 
-    uniform_resource_participant 
-WHERE 
-    study_arm IS NULL OR study_arm = '';
-
--- Query for metadata_id column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'metadata_id' AS column_name, 
-    rowid AS record_id, 
-    metadata_id AS value,
-    CASE WHEN metadata_id IS NULL OR metadata_id = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    metadata_id IS NULL OR metadata_id = ''
-
-UNION ALL
-
--- Query for devicename column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'devicename' AS column_name, 
-    rowid AS record_id, 
-    devicename AS value,
-    CASE WHEN devicename IS NULL OR devicename = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    devicename IS NULL OR devicename = ''
-
-UNION ALL
-
--- Query for device_id column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'device_id' AS column_name, 
-    rowid AS record_id, 
-    device_id AS value,
-    CASE WHEN device_id IS NULL OR device_id = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    device_id IS NULL OR device_id = ''
-
-UNION ALL
-
--- Query for source_platform column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'source_platform' AS column_name, 
-    rowid AS record_id, 
-    source_platform AS value,
-    CASE WHEN source_platform IS NULL OR source_platform = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    source_platform IS NULL OR source_platform = ''
-
-UNION ALL
-
--- Query for patient_id column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'patient_id' AS column_name, 
-    rowid AS record_id, 
-    patient_id AS value,
-    CASE WHEN patient_id IS NULL OR patient_id = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    patient_id IS NULL OR patient_id = ''
-
-UNION ALL
-
--- Query for file_name column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'file_name' AS column_name, 
-    rowid AS record_id, 
-    file_name AS value,
-    CASE WHEN file_name IS NULL OR file_name = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    file_name IS NULL OR file_name = ''
-
-UNION ALL
-
--- Query for file_format column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'file_format' AS column_name, 
-    rowid AS record_id, 
-    file_format AS value,
-    CASE WHEN file_format IS NULL OR file_format = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    file_format IS NULL OR file_format = ''
-
-UNION ALL
-
--- Query for file_upload_date column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'file_upload_date' AS column_name, 
-    rowid AS record_id, 
-    file_upload_date AS value,
-    CASE WHEN file_upload_date IS NULL OR file_upload_date = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    file_upload_date IS NULL OR file_upload_date = ''
-
-UNION ALL
-
--- Query for data_start_date column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'data_start_date' AS column_name, 
-    rowid AS record_id, 
-    data_start_date AS value,
-    CASE WHEN data_start_date IS NULL OR data_start_date = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    data_start_date IS NULL OR data_start_date = ''
-
-UNION ALL
-
--- Query for data_end_date column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'data_end_date' AS column_name, 
-    rowid AS record_id, 
-    data_end_date AS value,
-    CASE WHEN data_end_date IS NULL OR data_end_date = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    data_end_date IS NULL OR data_end_date = ''
-
-UNION ALL
-
--- Query for study_id column
-SELECT 
-    'uniform_resource_cgm_file_metadata' AS table_name, 
-    'study_id' AS column_name, 
-    rowid AS record_id, 
-    study_id AS value,
-    CASE WHEN study_id IS NULL OR study_id = '' THEN 'Value in column is Empty or NULL' ELSE 'Value in column is Not Empty' END AS status 
-FROM 
-    uniform_resource_cgm_file_metadata 
-WHERE 
-    study_id IS NULL OR study_id = '';
-
--- Schema Validation: Check for primary key mismatches
-/*WITH SchemaValidationPrimaryKeyMismatch AS (
-    SELECT 
-        'Schema Validation: Primary Key Mismatches' AS heading,
-        e.table_name,
-        e.column_name,
-        e.column_type,
-        e.is_primary_key,
-        'Primary Key Mismatch for column: ' || e.column_name || ' in table ' || e.table_name AS status
-    FROM 
-        expected_schema e
-    LEFT JOIN (
-        SELECT 
-            m.name AS table_name,
-            p.name AS column_name,
-            p.pk AS is_primary_key
-        FROM 
-            sqlite_master m
-        JOIN 
-            pragma_table_info(m.name) p
-        WHERE 
-            m.type = 'table' AND
-            m.name not like 'uniform_resource_cgm_tracing%' AND
-            m.name != 'uniform_resource_transform' AND 
-            m.name LIKE 'uniform_resource_%'
-    ) a ON e.table_name = a.table_name AND e.column_name = a.column_name
-    WHERE 
-        a.is_primary_key IS NOT NULL
-        AND a.is_primary_key != e.is_primary_key
-)
-SELECT * FROM SchemaValidationPrimaryKeyMismatch;*/
-
--- Line break
-SELECT '\n' AS blank_line;
 
 -- Data Integrity Checks: Check for invalid dates
 WITH DataIntegrityInvalidDates AS (
@@ -579,40 +293,49 @@ WITH DataIntegrityInvalidDates AS (
             'start_date' AS column_name,
             start_date AS value
         FROM 
-            uniform_resource_study   where start_date != null or start_date !=''
+            uniform_resource_study  
         UNION ALL
         SELECT 
             'uniform_resource_study' AS table_name,
             'end_date' AS column_name,
             end_date AS value
         FROM 
-            uniform_resource_study where end_date != null or end_date !=''
+            uniform_resource_study 
         UNION ALL
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'file_upload_date' AS column_name,
             file_upload_date AS value
         FROM 
-            uniform_resource_cgm_file_metadata where file_upload_date != null or file_upload_date !=''
+            uniform_resource_cgm_file_metadata 
         UNION ALL
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'data_start_date' AS column_name,
             data_start_date AS value
         FROM 
-            uniform_resource_cgm_file_metadata where data_start_date != null or data_start_date !=''
+            uniform_resource_cgm_file_metadata 
         UNION ALL
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'data_end_date' AS column_name,
             data_end_date AS value
         FROM 
-            uniform_resource_cgm_file_metadata where data_end_date != null or data_end_date !=''
+            uniform_resource_cgm_file_metadata 
     ) 
     WHERE 
         value NOT LIKE '____-__-__'
 )
-SELECT * FROM DataIntegrityInvalidDates;
+--SELECT * FROM DataIntegrityInvalidDates;
+-- Insert invalid dates results into drh_log_validation_issues
+INSERT INTO drh_log_validation_issues (v_vtype, table_name, column_name, record_number, issue)
+SELECT 
+    heading AS v_vtype,
+    table_name,
+    column_name,
+    '0',
+    status AS issue
+FROM DataIntegrityInvalidDates;
 
 -- Line break
 SELECT '\n' AS blank_line;
@@ -630,45 +353,14 @@ WITH DataIntegrityInvalidAge AS (
     WHERE 
         typeof(age) = 'text' AND NOT age GLOB '[0-9]*'
 )
-SELECT * FROM DataIntegrityInvalidAge;
+--SELECT * FROM DataIntegrityInvalidAge;
+-- Insert invalid age values results into drh_log_validation_issues
+INSERT INTO drh_log_validation_issues (v_vtype, table_name, column_name, record_number, issue)
+SELECT 
+    heading AS v_vtype,
+    table_name,
+    column_name,
+    '0',
+    status AS issue
+FROM DataIntegrityInvalidAge;
 
-
--- Add any other data validation queries here as needed
---------------------------------------------------------------------------------------------------------------------------
-
-
--- Insert missing columns issues
-INSERT INTO orchestration_session_issue (
-    orchestration_session_issue_id, session_id, session_entry_id, issue_type, issue_message, issue_row, issue_column, invalid_value, elaboration
-)
-SELECT
-    uuid_generate_v4(), 'new_session_id', NULL, 'Schema Validation: Missing Columns', 'Missing column: ' || column_name || ' in table ' || table_name, NULL, column_name, NULL, NULL
-FROM SchemaValidationMissingColumns;
-
--- Insert additional columns issues
-INSERT INTO orchestration_session_issue (
-    orchestration_session_issue_id, session_id, session_entry_id, issue_type, issue_message, issue_row, issue_column, invalid_value, elaboration
-)
-SELECT
-    uuid_generate_v4(), 'new_session_id', NULL, 'Schema Validation: Additional Columns', 'Additional column found: ' || column_name || ' in table ' || table_name, NULL, column_name, NULL, NULL
-FROM SchemaValidationAdditionalColumns;
-
--- Insert empty or NULL values issues for uniform_resource_participant table
-INSERT INTO orchestration_session_issue (
-    orchestration_session_issue_id, session_id, session_entry_id, issue_type, issue_message, issue_row, issue_column, invalid_value, elaboration
-)
-SELECT
-    uuid_generate_v4(), 'new_session_id', NULL, 'Empty or NULL Value', 'Empty or NULL value in ' || column_name, record_id, column_name, NULL, NULL
-FROM (
-    SELECT 'uniform_resource_participant' AS table_name, 'participant_id' AS column_name, rowid AS record_id, CASE WHEN participant_id IS NULL OR participant_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status FROM uniform_resource_participant WHERE participant_id IS NULL OR participant_id = ''
-    UNION ALL
-    SELECT 'uniform_resource_participant' AS table_name, 'study_id' AS column_name, rowid AS record_id, CASE WHEN study_id IS NULL OR study_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status FROM uniform_resource_participant WHERE study_id IS NULL OR study_id = ''
-    UNION ALL
-    SELECT 'uniform_resource_participant' AS table_name, 'site_id' AS column_name, rowid AS record_id, CASE WHEN site_id IS NULL OR site_id = '' THEN 'Empty or NULL' ELSE 'Not Empty' END AS status FROM uniform_resource_participant WHERE site_id IS NULL OR site_id = ''
-    -- Add similar queries for other columns as needed
-);
-
--- Complete the orchestration session
-UPDATE orchestration_session
-SET orch_finished_at = CURRENT_TIMESTAMP
-WHERE orchestration_session_id = 'new_session_id';
