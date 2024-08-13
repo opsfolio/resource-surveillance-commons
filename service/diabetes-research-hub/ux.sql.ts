@@ -57,7 +57,17 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
               SELECT
                     'card'                  as component,
                     'Features ' as title,
-                    7                     as columns;
+                    8                     as columns;
+
+
+             SELECT
+                  'Study Files Log'  as title,
+                  '/drh/ingestion-log/index.sql' as link,
+                  'This section provides an overview of the files that have been accepted and converted into database format for research purposes' as description,
+                  'book'                as icon,
+                  'red'                    as color;
+
+              ;
 
               SELECT
                   'Researcher and Associated Information'  as title,
@@ -91,7 +101,16 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
                   'This section provides detailed information about the CGM device used, the relationship between the participant''s raw CGM tracing file and related metadata, and other pertinent information.' as description,
                   'book'                as icon,
                   'red'                    as color;
+
               ;
+
+
+              SELECT
+                  'Raw CGM Data Description' AS title,
+                  '/drh/cgm-data/index.sql' AS link,
+                  'Explore detailed information about glucose levels over time, including timestamp, and glucose value.' AS description,
+                  'book'                as icon,
+                  'red'                    as color;
 
 
               SELECT
@@ -102,17 +121,13 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
                   'red'                    as color;
               ;
 
-              SELECT
-                  'Raw CGM Data Description' AS title,
-                  '/drh/cgm-data/index.sql' AS link,
-                  'Explore detailed information about glucose levels over time, including timestamp, and glucose value.' AS description,
-                  'book'                as icon,
-                  'red'                    as color;
+
+
 
              SELECT
-                  'Study Files Log'  as title,
-                  '/drh/ingestion-log/index.sql' as link,
-                  'This section provides an overview of the files that have been accepted and converted into database format for research purposes' as description,
+                  'Verification And Validation Results'  as title,
+                  '/drh/verification-validation-log/index.sql' as link,
+                  'See Verification and Validation Results Here!' as description,
                   'book'                as icon,
                   'red'                    as color;
 
@@ -516,17 +531,11 @@ ${pagination.renderSimpleMarkdown()}
 
      ${pagination.init()}
 
--- Display uniform_resource table with pagination
-    SELECT 'table' AS component,
-            'Uniform Resources' AS title,
-            "Size (bytes)" as align_right,
-            TRUE AS sort,
-            TRUE AS search,
-            TRUE AS hover,
-            TRUE AS striped_rows,
-            TRUE AS small;
-      SELECT * FROM ${viewName} ORDER BY uniform_resource_id
-       LIMIT $limit
+      SELECT 'table' AS component,
+      TRUE AS sort,
+      TRUE AS search;
+      SELECT * FROM ${viewName}
+      LIMIT $limit
       OFFSET $offset;
 
       ${pagination.renderSimpleMarkdown()}
@@ -625,6 +634,36 @@ ${pagination.renderSimpleMarkdown()}
     FROM
         drh_study_vanity_metrics_details;
 
+    `;
+  }
+
+  @drhNav({
+    caption: "Verfication And Validation Results",
+    abbreviatedCaption: "Verfication And Validation Results",
+    description: "Verfication And Validation Results",
+    siblingOrder: 13,
+  })
+  "drh/verification-validation-log/index.sql"() {
+    const viewName = `drh_vandv_orch_issues`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
+    ${this.activePageTitle()}
+
+    SELECT
+      'text' as component,
+      '
+      Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.' as contents;
+
+     ${pagination.init()}
+
+      SELECT 'table' AS component,
+      TRUE AS sort,
+      TRUE AS search;
+      SELECT * FROM ${viewName}
+      LIMIT $limit
+      OFFSET $offset;
+
+      ${pagination.renderSimpleMarkdown()}
     `;
   }
 }

@@ -296,3 +296,29 @@ FROM uniform_resource ur
 LEFT JOIN ur_ingest_session_fs_path p ON ur.ingest_fs_path_id = p.ur_ingest_session_fs_path_id
 LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
 WHERE ur.ingest_fs_path_id IS NOT NULL;
+
+
+DROP VIEW IF EXISTS drh_vandv_orch_issues;
+CREATE VIEW drh_vandv_orch_issues AS
+SELECT
+    osi.orchestration_session_issue_id,
+    osi.session_id,
+    osi.session_entry_id,
+    osi.issue_type,
+    osi.issue_message,
+    osi.issue_row,
+    osi.issue_column,
+    osi.invalid_value,
+    osi.remediation,
+    osi.elaboration
+FROM
+    orchestration_session_issue osi
+JOIN
+    orchestration_session os
+ON
+    osi.session_id = os.orchestration_session_id
+WHERE
+    os.orchestration_nature_id = 'V&V';
+
+
+

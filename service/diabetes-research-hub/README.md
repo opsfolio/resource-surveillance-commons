@@ -126,6 +126,11 @@ Note: Try this option outside this repository
    # Apply de-identification
    $ surveilr anonymize --sql de-identification/drh-deidentification.sql | sqlite3 resource-surveillance.sqlite.db
    ```
+
+   ```bash
+   # Perform verification and validation
+   $ surveilr orchestrate  -n "v&v" -s verfication-validation/orchestrate-drh-vv.sql --save-script
+   ```
    After ingestion, you will only work with these files:
 
    ```
