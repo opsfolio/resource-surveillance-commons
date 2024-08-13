@@ -221,6 +221,7 @@ SELECT
     resource_content ->> '$.resource.serviceType.coding[0].system' serviceType_system,
     resource_content ->> '$.resource.hospitalization.admitSource.coding.code' admitSource_code,
     resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].code' dischargeDisposition_code,
+    resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].display' dischargeDisposition_display,
     resource_content ->> '$.resource.reasonReference[0].reference' reasonReference_reference,
     resource_content ->> '$.resource.resourceType' resourceType
 FROM
@@ -243,6 +244,7 @@ CREATE VIEW fhir_v4_bundle_resource_condition AS
   resource_content ->> '$.resource.code.coding[0].code' code,
   resource_content ->> '$.resource.code.coding[0].system' code_system,
   resource_content ->> '$.resource.code.coding[0].display' code_display,
+  resource_content ->> '$.resource.code.text' code_text,
   resource_content ->> '$.resource.meta.lastUpdated' lastUpdated,
   resource_content ->> '$.resource.subject.display' subject_display,
   resource_content ->> '$.resource.subject.reference' subject_reference,
@@ -300,6 +302,8 @@ WITH procedure_resources AS (
 SELECT
     resource_content->>'$.resource.id' AS id,
     resource_content->>'$.resource.code.coding[0].code' AS code,
+    resource_content->>'$.resource.code.coding[0].system' AS system,
+    resource_content->>'$.resource.code.coding[0].display' AS display,
     resource_content->>'$.resource.meta.lastUpdated' AS lastUpdated,
     resource_content->>'$.resource.subject.display' AS subject_display,
     resource_content->>'$.resource.subject.reference' AS subject_reference,
