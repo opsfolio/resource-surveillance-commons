@@ -80,7 +80,7 @@ Note: Try this option outside this repository
    5.2 **Execute the verification and validation Process**
 
    ```bash
-   surveilr anonymize --sql drh-verification-validation.sql
+   surveilr orchestrate  -n "v&v" -s drh-verification-validation.sql --save-script
    ```
 
    5.3 **Remove the verification and validation sql after the process**
@@ -134,6 +134,7 @@ Note: Try this option outside this repository
    │   ├── publication.csv
    │   └── ...many other study files      
    ├── stateless-drh-surveilr.sql
+   ├── generate-raw-cgm-web-ui-pages.sql
    ```
 
    Now
