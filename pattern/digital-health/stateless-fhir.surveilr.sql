@@ -96,7 +96,12 @@ SELECT
     resource_content ->> '$.resource.address[0].postalCode' AS postal_code,
     resource_content ->> '$.resource.address[0].country' AS country,
     resource_content ->> '$.resource.extension[0].extension[0].valueCoding.display' AS race,
+    resource_content ->> '$.resource.extension[0].extension[0].valueCoding.code' AS race_code,
+    resource_content ->> '$.resource.extension[0].extension[0].valueCoding.system' AS race_system,       
     resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity,
+    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.code' AS ethnicity_code,
+    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.system' AS ethnicity_system,
+    resource_content ->> '$.resource.communication[0].language.coding[0].code' AS language,
     resource_content ->> '$.resource.meta.lastUpdated' AS lastUpdated,
     resource_content ->> '$.resource.telecom[0].value' AS telecom,
     resource_content ->> '$.resource.identifier[0].value' AS medical_record_number  
