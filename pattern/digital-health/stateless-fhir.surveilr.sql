@@ -95,10 +95,10 @@ SELECT
     resource_content ->> '$.resource.address[0].state' AS state,
     resource_content ->> '$.resource.address[0].postalCode' AS postal_code,
     resource_content ->> '$.resource.address[0].country' AS country,
-    resource_content ->> '$.resource.extension[0].extension[0].valueCoding.display' AS race,
+    resource_content ->> '$.resource.extension[0].extension[0].valueCoding.display' AS race_display,
     resource_content ->> '$.resource.extension[0].extension[0].valueCoding.code' AS race_code,
     resource_content ->> '$.resource.extension[0].extension[0].valueCoding.system' AS race_system,       
-    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity,
+    resource_content ->> '$.resource.extension[1].extension[0].valueCoding.display' AS ethnicity_display,
     resource_content ->> '$.resource.extension[1].extension[0].valueCoding.code' AS ethnicity_code,
     resource_content ->> '$.resource.extension[1].extension[0].valueCoding.system' AS ethnicity_system,
     resource_content ->> '$.resource.communication[0].language.coding[0].code' AS language,
@@ -223,6 +223,7 @@ SELECT
     resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].code' dischargeDisposition_code,
     resource_content ->> '$.resource.hospitalization.dischargeDisposition.coding[0].display' dischargeDisposition_display,
     resource_content ->> '$.resource.reasonReference[0].reference' reasonReference_reference,
+    resource_content ->> '$.resource.participant.type.coding[0].code' participant_type_code,
     resource_content ->> '$.resource.resourceType' resourceType
 FROM
     Encounter_resources;
