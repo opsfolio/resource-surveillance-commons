@@ -302,6 +302,7 @@ WITH procedure_resources AS (
 )
 SELECT
     resource_content->>'$.resource.id' AS id,
+    resource_content->>'$.resource.text' AS text,
     resource_content->>'$.resource.code.coding[0].code' AS code,
     resource_content->>'$.resource.code.coding[0].system' AS system,
     resource_content->>'$.resource.code.coding[0].display' AS display,
