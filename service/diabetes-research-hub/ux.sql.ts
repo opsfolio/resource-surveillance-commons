@@ -477,7 +477,7 @@ ${pagination.renderSimpleMarkdown()}
             'Column Count' as align_right,
             TRUE as sort,
             TRUE as search;
-    SELECT '[' || table_name || '](data.sql?name=' || table_name || ')' AS "Table"
+    SELECT '[' || table_name || '](raw-cgm/' || table_name || '.sql)' AS "Table"
     FROM drh_raw_cgm_table_lst;
     `;
   }
@@ -485,12 +485,12 @@ ${pagination.renderSimpleMarkdown()}
   @spn.shell({ breadcrumbsFromNavStmts: "no" })
   "drh/cgm-data/data.sql"() {
     // Assume $name is passed as a request parameter
-    //const viewName = `${name}`;
-    const viewName = `uniform_resource_cgm_tracing_dclp1`;
+    const viewName = `$name`;
     const pagination = this.pagination({ tableOrViewName: viewName });
 
     return this.SQL`
     ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' Table'` })}
+
 
     SELECT 'title' AS component, $name AS contents;
 
@@ -654,7 +654,7 @@ ${pagination.renderSimpleMarkdown()}
       '
       Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.' as contents;
 
-     ${pagination.init()}
+      ${pagination.init()}
 
       SELECT 'table' AS component,
       TRUE AS sort,
@@ -664,7 +664,7 @@ ${pagination.renderSimpleMarkdown()}
       OFFSET $offset;
 
       ${pagination.renderSimpleMarkdown()}
-    `;
+      `;
   }
 }
 

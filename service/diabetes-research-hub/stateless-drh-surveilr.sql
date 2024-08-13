@@ -300,10 +300,7 @@ WHERE ur.ingest_fs_path_id IS NOT NULL;
 
 DROP VIEW IF EXISTS drh_vandv_orch_issues;
 CREATE VIEW drh_vandv_orch_issues AS
-SELECT
-    osi.orchestration_session_issue_id,
-    osi.session_id,
-    osi.session_entry_id,
+SELECT    
     osi.issue_type,
     osi.issue_message,
     osi.issue_row,

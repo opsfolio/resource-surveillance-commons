@@ -69,13 +69,39 @@ Note: Try this option outside this repository
    rm De-Identification.sql
    ```
 
-5. **Apply the Database Views to Preview in SQLPage**
+5. **Steps to perform verification and validation**
+
+   5.1 **Download the SQL File**
+
+   ```bash
+   curl -L -o drh-verification-validation.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql --ssl-no-revoke
+   ```
+
+   5.2 **Execute the verification and validation Process**
+
+   ```bash
+   surveilr anonymize --sql drh-verification-validation.sql
+   ```
+
+   5.3 **Remove the verification and validation sql after the process**
+
+   ```bash
+   rm drh-verification-validation.sql
+   ```
+
+6. **Apply the Database Views to Preview in SQLPage**
 
    ```bash
    curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/stateless-drh-surveilr.sql --ssl-no-revoke | sqlite3 resource-surveillance.sqlite.db
    ```
 
-6. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
+7. **Apply the dynamic sqlpage generation script**
+
+   ```bash
+   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/generate-raw-cgm-web-ui-pages.sql --ssl-no-revoke | sqlite3 resource-surveillance.sqlite.db
+   ```
+
+8. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
    $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
@@ -92,7 +118,8 @@ Note: Try this option outside this repository
    **Note**: Reference sample files can be found in the repository folder:
    /service/diabetes-research-hub/study-files-multiple-cgmtracing.zip
 
-   First prepare the directory with sample files and copy to this folder:
+   First, prepare the directory with sample files and copy them to this folder,
+   or extract the sample files and move them to this folder:
 
    ```bash
    $ cd service/diabetes-research-hub
@@ -135,6 +162,7 @@ Note: Try this option outside this repository
 
    ```
    ├── stateless-drh-surveilr.sql 
+   ├── generate-raw-cgm-web-ui-pages.sql 
    └── resource-surveillance.sqlite.db            # SQLite database
    ```
 
@@ -151,6 +179,9 @@ Note: Try this option outside this repository
 
    # apply the "stateless"  utility views
    $ cat stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+
+   # apply the "generate-raw-cgm-web-ui-pages.sql " 
+   $ cat generate-raw-cgm-web-ui-pages.sql | sqlite3 resource-surveillance.sqlite.db
 
    # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
    $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
