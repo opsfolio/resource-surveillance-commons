@@ -220,7 +220,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     - **BMI**: The Body Mass Index (BMI) of the participant.
     - **Baseline HbA1c**: The baseline Hemoglobin A1c level of the participant.
     - **Diabetes Type**: The type of diabetes diagnosed for the participant.
-     - **Study Arm**: The study arm or group to which the participant is assigned.
+    - **Study Arm**: The study arm or group to which the participant is assigned.
 
 
         ' as contents_md;
@@ -501,7 +501,7 @@ ${pagination.renderSimpleMarkdown()}
     siblingOrder: 11,
   })
   "drh/ingestion-log/index.sql"() {
-    const viewName = `uniform_resource_file`;
+    const viewName = `drh_study_files`;
     const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
     ${this.activePageTitle()}
@@ -511,8 +511,8 @@ ${pagination.renderSimpleMarkdown()}
       'Study Files' as title;
      SELECT
       '
-      This section provides an overview of the files that have been accepted and converted into database format for research purposes. The conversion process ensures that data from various sources is standardized, making it easier for researchers to analyze and draw meaningful insights
-     ' as contents;
+      This section provides an overview of the files that have been accepted and converted into database format for research purposes. The conversion process ensures that data from various sources is standardized, making it easier for researchers to analyze and draw meaningful insights.
+      Additionally, the corresponding database table names generated from these files are listed for reference.' as contents;
 
      ${pagination.init()}
 

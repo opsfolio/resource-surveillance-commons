@@ -285,3 +285,14 @@ GROUP BY s.study_id, s.study_name, s.study_description, s.start_date, s.end_date
 DROP TABLE IF EXISTS raw_cgm_data_lst_cached;
 CREATE TABLE raw_cgm_data_lst_cached AS 
   SELECT * FROM drh_raw_cgm_table_lst;
+
+DROP TABLE IF EXISTS drh_study_files;
+CREATE VIEW IF NOT EXISTS drh_study_files As
+       SELECT ur.uniform_resource_id,
+       ur.nature AS file_format,
+       SUBSTR(pe.file_path_rel, INSTR(pe.file_path_rel, '/') + 1, INSTR(pe.file_path_rel, '.') - INSTR(pe.file_path_rel, '/') - 1) as file_name,
+       'uniform_resource_' || SUBSTR(pe.file_path_rel, INSTR(pe.file_path_rel, '/') + 1, INSTR(pe.file_path_rel, '.') - INSTR(pe.file_path_rel, '/') - 1) AS table_name
+FROM uniform_resource ur
+LEFT JOIN ur_ingest_session_fs_path p ON ur.ingest_fs_path_id = p.ur_ingest_session_fs_path_id
+LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
+WHERE ur.ingest_fs_path_id IS NOT NULL;

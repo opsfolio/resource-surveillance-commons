@@ -89,6 +89,9 @@ Note: Try this option outside this repository
 
    ## Try it out in this repo (if you're developing SQL scripts)
 
+   **Note**: Reference sample files can be found in the repository folder:
+   /service/diabetes-research-hub/study-files-multiple-cgmtracing.zip
+
    First prepare the directory with sample files and copy to this folder:
 
    ```bash
