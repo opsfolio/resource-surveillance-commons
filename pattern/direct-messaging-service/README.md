@@ -93,12 +93,20 @@ messages are appropriately processed and stored for further analysis.
   refreshed.
 
 ## Try it out on any device without this repo (if you're just using the SQL scripts)
+```
+Prepare the directory with sample files, download direct message inbox samples, download surveilr, and create resource-surveillance.sqlite.db RSSD file that will contain queryable direct message inbox content data and attachments includng pdf and CCDA xml files.
+# prepare a working directory with files
+$ mkdir -p /tmp/direct-messages
+$ cd /tmp/direct-messages
 
-Prepare the ingest directory with received files using Message Receiving Module,
-download `surveilr`, and create `resource-surveillance.sqlite.db` RSSD file that
-will contain queryable Message Service data.
+Prepare the Sample Files for Ingestion
 
-```bash
+# download the sample direct messages zip file using the below command.
+$ wget https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip
+
+Extract the zip file into ingest folder 
+mkdir ingest && cd ingest && unzip ../ingest.zip && cd ..
+
 # download surveilr using instructions at https://docs.opsfolio.com/surveilr/how-to/installation-guide
 $ ./surveilr ingest files -r ingest/
 
@@ -126,12 +134,30 @@ reporting tools, DBeaver, DataGrip, or any other SQLite data access tools.
 
 ## Try it out in this repo (if you're developing SQL scripts)
 
-#### First prepare the directory with sample files: <br>
+### Clone the Repository
 
-A sample ingest folder has been added to the repository. Extract the folder from
-the provided ZIP file to access the sample data.
+- Clone the repository containing the necessary scripts:
+  ```bash
+  git clone https://github.com/opsfolio/resource-surveillance-commons.git
+  ```
 
-The directory should look like this now:
+### Change to the Cloned Directory
+
+- After cloning, navigate to the repository folder:
+  ```bash
+  cd resource-surveillance-commons/pattern/direct-messaging-service
+  ```
+
+### Prepare the Sample Files for Ingestion
+
+#### Extract the Zip File
+
+Before beginning the ingestion process, extract the sample files from the zip archive named `ingest.zip`.
+
+### Verify the Directory Structure
+
+Once unzipped, you should see the sample files in the ingest folder. The 'direct-messaging-service' 
+directory structure should look like this:
 
 ```
 .
@@ -146,7 +172,7 @@ The directory should look like this now:
 
 Now
 [Download `surveilr` binary](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
-into this directory, then ingest and query the data:
+into 'direct-messaging-service' directory, then ingest and query the data:
 
 ```bash
 # ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
@@ -203,3 +229,4 @@ time-consuming to re-run the same command in the CLI manually each time a file
 changes, you can use _watch mode_ instead.
 
 See: [`sqlpagectl.ts`](../../support/bin/sqlpagectl.ts).
+
