@@ -501,7 +501,7 @@ ${pagination.renderSimpleMarkdown()}
     siblingOrder: 11,
   })
   "drh/ingestion-log/index.sql"() {
-    const viewName = `drh_study_files`;
+    const viewName = `drh_study_files_table_info`;
     const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
     ${this.activePageTitle()}

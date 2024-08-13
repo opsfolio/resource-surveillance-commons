@@ -286,8 +286,8 @@ DROP TABLE IF EXISTS raw_cgm_data_lst_cached;
 CREATE TABLE raw_cgm_data_lst_cached AS 
   SELECT * FROM drh_raw_cgm_table_lst;
 
-DROP TABLE IF EXISTS drh_study_files;
-CREATE VIEW IF NOT EXISTS drh_study_files As
+DROP VIEW IF EXISTS drh_study_files_table_info;
+CREATE VIEW IF NOT EXISTS drh_study_files_table_info AS
        SELECT ur.uniform_resource_id,
        ur.nature AS file_format,
        SUBSTR(pe.file_path_rel, INSTR(pe.file_path_rel, '/') + 1, INSTR(pe.file_path_rel, '.') - INSTR(pe.file_path_rel, '/') - 1) as file_name,
