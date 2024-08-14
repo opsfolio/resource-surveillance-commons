@@ -68,79 +68,40 @@ SET
 -- SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
 -- SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id;
 
--- MOve to prime/orchestration.ts
-DROP VIEW IF EXISTS orchestration_session_info;
-
-CREATE VIEW orchestration_session_info AS
+-- This is not required unless you have additional states you need in your state machine
 WITH session_cte AS (
     SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id
 )
-SELECT
-    session_cte.orchestration_session_id,
-    json_extract(
-        surveilr_get_orchestration_session_info(session_cte.orchestration_session_id), 
-        '$.orchestration_session_entry_id'
-    ) AS orchestration_session_entry_id
+SELECT surveilr_create_session_exec(session_cte.orchestration_session_id, 'De-identification', 1, 'email column in uniform_resource_investigator', 'De-identification completed', NULL, NULL)
 FROM session_cte;
 
--- This is not required unless you have additional states you need in your state machine
-
-INSERT OR IGNORE INTO orchestration_session_exec (
-    orchestration_session_exec_id,
-    exec_nature,
-    session_id,
-    session_entry_id,
-    exec_code,
-    exec_status,
-    input_text,
-    output_text,
-    exec_error_text,
-    narrative_md
-)
-SELECT
-    ulid(),
-    'De-identification',
-    s.orchestration_session_id,
-    s.orchestration_session_entry_id,
-    'UPDATE uniform_resource_investigator SET email = anonymize_email(email) executed',
-    1,
-    'email column in uniform_resource_investigator',
-    'De-identification completed',
-    CASE 
-        WHEN (SELECT changes()) = 0 THEN 'No rows updated' 
-        ELSE NULL 
-    END,
-    'username in email is masked'
-FROM orchestration_session_info s;
-
-INSERT OR IGNORE INTO orchestration_session_exec (
-    orchestration_session_exec_id,
-    exec_nature,
-    session_id,
-    session_entry_id,
-    exec_code,
-    exec_status,
-    input_text,
-    output_text,
-    exec_error_text,
-    narrative_md
-)
-SELECT
-    ulid(),
-    'De-identification',
-    s.orchestration_session_id,
-    s.orchestration_session_entry_id,
-    'UPDATE uniform_resource_author SET email = anonymize_email(email) executed',
-    1,
-    'email column in uniform_resource_author',
-    'De-identification completed',
-    CASE 
-        WHEN (SELECT changes()) = 0 THEN 'No rows updated' 
-        ELSE NULL 
-    END,
-    'username in email is masked'
-FROM orchestration_session_info s;
+-- If you'd prefer to do it manually, here is the same example, repeated.
+-- INSERT OR IGNORE INTO orchestration_session_exec (
+--     orchestration_session_exec_id,
+--     exec_nature,
+--     session_id,
+--     session_entry_id,
+--     exec_code,
+--     exec_status,
+--     input_text,
+--     output_text,
+--     exec_error_text,
+--     narrative_md
+-- )
+-- SELECT
+--     ulid(),
+--     'De-identification',
+--     s.orchestration_session_id,
+--     s.orchestration_session_entry_id,
+--     'UPDATE uniform_resource_investigator SET email = anonymize_email(email) executed',
+--     1,
+--     'email column in uniform_resource_investigator',
+--     'De-identification completed',
+--     CASE 
+--         WHEN (SELECT changes()) = 0 THEN 'No rows updated' 
+--         ELSE NULL 
+--     END,
+--     'username in email is masked'
+-- FROM orchestration_session_info s;
 
 DROP VIEW orchestration_session_info;
-
--- TODO: explain how to do vaccuumiing to ensure that all deleted data is removed from the RSSD

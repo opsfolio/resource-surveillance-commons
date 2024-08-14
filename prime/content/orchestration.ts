@@ -16,8 +16,8 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
 
     supportDDL() {
         return this.SQL`
-            DROP VIEW IF EXISTS orchestration_sessions_by_device;
-            CREATE VIEW orchestration_sessions_by_device AS
+            DROP VIEW IF EXISTS orchestration_session_by_device;
+            CREATE VIEW orchestration_session_by_device AS
             SELECT
                 d.device_id,
                 d.name AS device_name,
@@ -51,8 +51,8 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             WHERE oss.to_state IN ('surveilr_orch_completed', 'surveilr_orch_failed') -- Consider other terminal states if applicable
             GROUP BY onature.nature;
 
-            DROP VIEW IF EXISTS scripts_per_orchestration_session;
-            CREATE VIEW scripts_per_orchestration_session AS
+            DROP VIEW IF EXISTS orchestration_session_script;
+            CREATE VIEW orchestration_session_script AS
             SELECT
                 os.orchestration_session_id,
                 onature.nature AS orchestration_nature,
@@ -80,27 +80,16 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             FROM orchestration_session_exec
             GROUP BY exec_nature;
 
-            DROP VIEW IF EXISTS issues_per_orchestration_session;
-            CREATE VIEW issues_per_orchestration_session AS
-            SELECT
-                os.orchestration_session_id,
-                onature.nature AS orchestration_nature,
-                COUNT(*) AS issue_count
-            FROM orchestration_session os
-            JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
-            JOIN orchestration_session_issue osi ON os.orchestration_session_id = osi.session_id
-            GROUP BY os.orchestration_session_id, onature.nature;
-
-            DROP VIEW IF EXISTS issue_types_and_counts;
-            CREATE VIEW issue_types_and_counts AS
+            DROP VIEW IF EXISTS orchestration_session_summary;
+            CREATE VIEW orchestration_session_summary AS
             SELECT
                 issue_type,
                 COUNT(*) AS issue_count
             FROM orchestration_session_issue
             GROUP BY issue_type;
 
-            DROP VIEW IF EXISTS issue_remediation_suggestions;
-            CREATE VIEW issue_remediation_suggestions AS
+            DROP VIEW IF EXISTS orchestration_issue_remediation;
+            CREATE VIEW orchestration_issue_remediation AS
             SELECT
                 orchestration_session_issue_id,
                 issue_type,
@@ -109,7 +98,7 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             FROM orchestration_session_issue
             WHERE remediation IS NOT NULL;
 
-            DROP VIEW IF EXISTS orchestration_logs_by_session;
+           DROP VIEW IF EXISTS orchestration_logs_by_session;
             CREATE VIEW orchestration_logs_by_session AS
             SELECT
                 os.orchestration_session_id,
@@ -118,7 +107,8 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
                 COUNT(*) AS log_count
             FROM orchestration_session os
             JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
-            JOIN orchestration_session_log osl ON os.orchestration_session_id = osl.session_id
+            JOIN orchestration_session_exec ose ON os.orchestration_session_id = ose.session_id
+            JOIN orchestration_session_log osl ON ose.orchestration_session_exec_id = osl.parent_exec_id
             GROUP BY os.orchestration_session_id, onature.nature, osl.category;
 
         `;
