@@ -70,7 +70,6 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             FROM orchestration_session_exec
             GROUP BY exec_nature;
 
-            -- View 6:  Orchestration Execution Success Rate by Type
             DROP VIEW IF EXISTS orchestration_execution_success_rate_by_type;
             CREATE VIEW orchestration_execution_success_rate_by_type AS
             SELECT
@@ -144,4 +143,39 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             ORDER BY sibling_order;
         `;
     }
+
+    @orchNav({
+        caption: "Orchestration Tables and Views",
+        description:
+          "Information Schema documentation for orchestrated objects",
+        siblingOrder: 99,
+      })
+      "orchestration/info-schema.sql"() {
+        return this.SQL`
+          SELECT 'title' AS component, 'Orchestration Tables and Views' as contents;
+          SELECT 'table' AS component,
+                'Name' AS markdown,
+                'Column Count' as align_right,
+                TRUE as sort,
+                TRUE as search;
+
+          SELECT
+              'Table' as "Type",
+              '[' || table_name || '](/console/info-schema/table.sql?name=' || table_name || ')' AS "Name",
+              COUNT(column_name) AS "Column Count"
+          FROM console_information_schema_table
+          WHERE table_name = 'orchestration_session' OR table_name like 'orchestration_%'
+          GROUP BY table_name
+
+          UNION ALL
+
+          SELECT
+              'View' as "Type",
+              '[' || view_name || '](/console/info-schema/view.sql?name=' || view_name || ')' AS "Name",
+              COUNT(column_name) AS "Column Count"
+          FROM console_information_schema_view
+          WHERE view_name like 'orchestration_%'
+          GROUP BY view_name;
+        `;
+      }
 }
