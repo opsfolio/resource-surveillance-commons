@@ -33,6 +33,10 @@ SELECT
     
     SELECT ''title'' AS component, ''' || table_name || ''' AS contents;
 
+    SELECT
+        ''text'' as component;
+    SELECT ''Note: Kindly ignore the elaboration column. It is only for tracking purpose.'' AS contents;
+
     -- Initialize pagination
     SET total_rows = (SELECT COUNT(*) FROM ''' || table_name || ''');
     SET limit = COALESCE($limit, 50);
