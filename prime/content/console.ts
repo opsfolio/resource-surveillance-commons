@@ -25,6 +25,12 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
           CASE WHEN col.pk = 1 THEN 'Yes' ELSE 'No' END AS is_primary_key,
           CASE WHEN col."notnull" = 1 THEN 'Yes' ELSE 'No' END AS is_not_null,
           col.dflt_value AS default_value,
+          '/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes' as info_schema_web_ui_path,
+          '[Content](/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_abbrev_md,
+          '[' || tbl.name || ' (table) Schema](/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_full_md,
+          '/console/content/table/' || tbl.name || '.sql' as content_web_ui_path,
+          '[Content](/console/content/table/' || tbl.name || '.sql)' as content_web_ui_link_abbrev_md,
+          '[' || tbl.name || ' (table) Content](/console/content/table/' || tbl.name || '.sql)' as content_web_ui_link_full_md,
           tbl.sql as sql_ddl
       FROM sqlite_master tbl
       JOIN pragma_table_info(tbl.name) col
@@ -37,6 +43,12 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
           vw.name AS view_name,
           col.name AS column_name,
           col.type AS data_type,
+          '/console/info-schema/view.sql?name=' || vw.name || '&stats=yes' as info_schema_web_ui_path,
+          '[Content](/console/info-schema/view.sql?name=' || vw.name || '&stats=yes)' as info_schema_link_abbrev_md,
+          '[' || vw.name || ' (view) Schema](/console/info-schema/view.sql?name=' || vw.name || '&stats=yes)' as info_schema_link_full_md,
+          '/console/content/view/' || vw.name || '.sql?stats=yes' as content_web_ui_path,
+          '[Content](/console/content/view/' || vw.name || '.sql?stats=yes)' as content_web_ui_link_abbrev_md,
+          '[' || vw.name || ' (view) Content](/console/content/view/' || vw.name || '.sql?stats=yes)' as content_web_ui_link_full_md,
           vw.sql as sql_ddl
       FROM sqlite_master vw
       JOIN pragma_table_info(vw.name) col
@@ -83,6 +95,82 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
 
       -- all @navigation decorated entries are automatically added to this.navigation
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
+      `;
+  }
+
+  infoSchemaContentDML() {
+    // deno-fmt-ignore
+    return this.SQL`
+        DELETE FROM sqlpage_files WHERE path like 'console/content/table/%';
+        DELETE FROM sqlpage_files WHERE path like 'console/content/view/%';
+        WITH tabular AS (
+            SELECT
+                tbl.type AS tabular_nature,
+                tbl.name AS tabular_name,
+                col.name AS column_name,
+                col.type AS column_data_type,
+                CASE WHEN col.pk = 1 THEN 'Yes' ELSE 'No' END AS column_is_primary_key,
+                CASE WHEN col."notnull" = 1 THEN 'Yes' ELSE 'No' END AS column_is_not_null,
+                col.dflt_value AS column_default_value,
+                '/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes' as info_schema_web_ui_path,
+                '[Content](/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_abbrev_md,
+                '[' || tbl.name || ' (' || tbl.type || ') Schema](/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_full_md,
+                '/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes' as content_web_ui_path,
+                '[Content](/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_abbrev_md,
+                '[' || tbl.name || ' (' || tbl.type || ') Content](/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_full_md,
+                tbl.sql AS object_sql_ddl
+            FROM sqlite_master tbl
+            JOIN pragma_table_info(tbl.name) col
+            WHERE tbl.name NOT LIKE 'sqlite_%'
+        )
+        INSERT INTO sqlpage_files (path, contents)
+          SELECT
+              'console/content/' || tabular_nature || '/' || tabular_name || '.sql',
+              'SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
+
+               SELECT ''breadcrumb'' AS component;
+               SELECT ''Home'' as title, ''/'' AS link;
+               SELECT ''Console'' as title, ''/console'' AS link;
+               SELECT ''Content'' as title, ''/console/content'' AS link;
+               SELECT ''' || tabular_name  || ' ' || tabular_nature || ''' as title, ''#'' AS link;
+
+               SELECT ''title'' AS component, ''' || tabular_name || ' (' || tabular_nature || ') Content'' as contents;
+
+               SET total_rows = (SELECT COUNT(*) FROM ' || tabular_name || ');
+               SET limit = COALESCE($limit, 50);
+               SET offset = COALESCE($offset, 0);
+               SET total_pages = ($total_rows + $limit - 1) / $limit;
+               SET current_page = ($offset / $limit) + 1;
+
+               SELECT ''text'' AS component, ''' || info_schema_link_full_md || ''' AS contents_md
+               SELECT ''text'' AS component,
+                  ''- Start Row: '' || $offset || ''\n'' ||
+                  ''- Rows per Page: '' || $limit || ''\n'' ||
+                  ''- Total Rows: '' || $total_rows || ''\n'' ||
+                  ''- Current Page: '' || $current_page || ''\n'' ||
+                  ''- Total Pages: '' || $total_pages as contents_md
+               WHERE $stats IS NOT NULL;
+
+               -- Display uniform_resource table with pagination
+               SELECT ''table'' AS component,
+                      TRUE AS sort,
+                      TRUE AS search,
+                      TRUE AS hover,
+                      TRUE AS striped_rows,
+                      TRUE AS small;
+              SELECT * FROM ' || tabular_name || '
+              LIMIT $limit
+              OFFSET $offset;
+
+              SELECT ''text'' AS component,
+                  (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
+                  ''(Page '' || $current_page || '' of '' || $total_pages || '') '' ||
+                  (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
+                  AS contents_md;'
+          FROM tabular
+          GROUP BY tabular_nature, tabular_name;
+
+      -- TODO: add \${this.upsertNavSQL(...)}
       `;
   }
 
@@ -137,11 +225,13 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       SELECT 'table' AS component,
             'Table' AS markdown,
             'Column Count' as align_right,
+            'Content' as markdown,
             TRUE as sort,
             TRUE as search;
       SELECT
           '[' || table_name || '](table.sql?name=' || table_name || ')' AS "Table",
-          COUNT(column_name) AS "Column Count"
+          COUNT(column_name) AS "Column Count",
+          content_web_ui_link_abbrev_md as "Content"
       FROM console_information_schema_table
       GROUP BY table_name;
 
@@ -149,11 +239,13 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       SELECT 'table' AS component,
             'View' AS markdown,
             'Column Count' as align_right,
+            'Content' as markdown,
             TRUE as sort,
             TRUE as search;
       SELECT
           '[' || view_name || '](view.sql?name=' || view_name || ')' AS "View",
-          COUNT(column_name) AS "Column Count"
+          COUNT(column_name) AS "Column Count",
+          content_web_ui_link_abbrev_md as "Content"
       FROM console_information_schema_view
       GROUP BY view_name;
 
