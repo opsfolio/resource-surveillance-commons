@@ -127,7 +127,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
              SELECT
                   'Verification And Validation Results'  as title,
                   '/drh/verification-validation-log/index.sql' as link,
-                  'See Verification and Validation Results Here!' as description,
+                  ' Verification and Validation results are available here.Click here to review the details.' as description,
                   'book'                as icon,
                   'red'                    as color;
 
@@ -387,7 +387,7 @@ This section provides information about the publications resulting from a study.
 
 
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
-    SELECT device_id,orchestration_session_exec_id,input_text as "deidentified column", orch_started_at,orch_finished_at ,diagnostics_md from drh_vw_orchestration_deidentify;
+    SELECT input_text as "deidentified column", orch_started_at,orch_finished_at ,diagnostics_md from drh_vw_orchestration_deidentify;
     `;
   }
 
