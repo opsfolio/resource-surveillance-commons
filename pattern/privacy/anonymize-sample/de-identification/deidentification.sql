@@ -1,20 +1,22 @@
--- Below are the list of functions surveilr currently exposed for orchestaration and deidentification purposes
--- surveilr_version - Returns the current version of `suvrveilr` that's being executed
--- surveilr_orchestration_context_session_id - The active context, if present. It returns the ID of the current session
--- surveilr_orchestration_nature_id(<nature_type>), e.g surveilr_orchestration_nature_id('v&v') - Returns the ID of the orchestration nature if present, else it is null.
--- surveilr_ensure_orchestration_nature(<nature_id>, <nature>)
--- surveilr_get_orchestration_session_info(<session_id>) - returns the orchestration_session_entry_id for the current session
--- De Identification Functions
--- anonymize_name: replaces any name or name-like string with a randomized pseudonym.
--- mask: Obscures sensitive information by replacing characters with a specified delimiter (default is '*'). Example: mask('1234567890') -> '****567890'.
--- generalize_age: modifies an age value to a broader range or category (e.g., '32' -> '30-35'). 
--- anonymize_email: replaces the username portion of an email address while keeping the domain, e.g baasit@surveilr.com -> doe@surveilr.com
--- mask_financial: conceals financial data, such as account numbers or transaction amounts.
--- anonymize_date: alters a date value to a less specific representation.
--- mask_phone: masks parts of a phone number while retaining its basic structure. Example: '+1 (555) 123-4567' -> '+1 (555) -*'.
--- mask_dob: 
--- mask_address
--- hash: generates a one-way cryptographic hash (SHA1) of the input data. 
+/********************************************************************************************
+* Below are the list of functions surveilr currently exposed for orchestaration and deidentification purposes
+* surveilr_version - Returns the current version of `suvrveilr` that's being executed
+* surveilr_orchestration_context_session_id - The active context, if present. It returns the ID of the current session
+* surveilr_orchestration_nature_id(<nature_type>), e.g surveilr_orchestration_nature_id('v&v') - Returns the ID of the orchestration nature if present, else it is null.
+* surveilr_ensure_orchestration_nature(<nature_id>, <nature>)
+* surveilr_get_orchestration_session_info(<session_id>) - returns the orchestration_session_entry_id for the current session
+* De Identification Functions
+* anonymize_name: replaces any name or name-like string with a randomized pseudonym.
+* mask: Obscures sensitive information by replacing characters with a specified delimiter (default is '*'). Example: mask('1234567890') -> '****567890'.
+* generalize_age: modifies an age value to a broader range or category (e.g., '32' -> '30-35'). 
+* anonymize_email: replaces the username portion of an email address while keeping the domain, e.g baasit@surveilr.com -> doe@surveilr.com
+* mask_financial: conceals financial data, such as account numbers or transaction amounts.
+* anonymize_date: alters a date value to a less specific representation.
+* mask_phone: masks parts of a phone number while retaining its basic structure. Example: '+1 (555) 123-4567' -> '+1 (555) -*'.
+* mask_dob: 
+* mask_address
+* hash: generates a one-way cryptographic hash (SHA1) of the input data. 
+ ********************************************************************************************/
 
 -- Preparing Data for De-identification
 
@@ -34,6 +36,17 @@
 -- Execute the de-identification process using 'surveilr orchestrate':
 -- 'surveilr orchestrate -n "deidentification" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/anonymize-sample/de-identification/deidentification.sql'
 
+/********************************************************************************************
+ * When `surveilr orchestrate -n "deidentification" -s <SCRIPT>` is executed,
+ * a new orchestration session is created in `orchestration_session`, 
+ * and for each script, an entry is recorded in `orchestration_session_entry` with the script's content.
+ * As each script runs, a record is made in `orchestration_session_state` with the `from_state` column set to `surveilr_orchestration_init`
+ * and the `to_state` as `surveilr_orch_progress`, marking the start of its execution. 
+ * If the script runs successfully, another record is added to `orchestration_session_state` and the`to_state` set as `surveilr_orch_compeleted`
+ * indicating that the script has completed. 
+ * If there's an error during the execution, the error is logged, and the system moves on to the next script.
+ ********************************************************************************************/
+
 -- Perform De-identification
 UPDATE ur_ingest_session_imap_account
 SET
@@ -51,13 +64,11 @@ SET
     content_digest = hash(content_digest),
     nature = anonymize_name(nature);
 
--- TODO: current_party 
+-- SELECT surveilr_device_id() AS device_id;
+-- SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
+-- SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id;
 
-SELECT surveilr_device_id() AS device_id;
-SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
-SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id;
-
-
+-- MOve to prime/orchestration.ts
 DROP VIEW IF EXISTS orchestration_session_info;
 
 CREATE VIEW orchestration_session_info AS
@@ -72,6 +83,7 @@ SELECT
     ) AS orchestration_session_entry_id
 FROM session_cte;
 
+-- This is not required unless you have additional states you need in your state machine
 
 INSERT OR IGNORE INTO orchestration_session_exec (
     orchestration_session_exec_id,
