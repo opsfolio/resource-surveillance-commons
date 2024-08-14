@@ -28,9 +28,9 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
           '/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes' as info_schema_web_ui_path,
           '[Content](/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_abbrev_md,
           '[' || tbl.name || ' (table) Schema](/console/info-schema/table.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_full_md,
-          '/console/content/table/' || tbl.name || '.sql' as content_web_ui_path,
-          '[Content](/console/content/table/' || tbl.name || '.sql)' as content_web_ui_link_abbrev_md,
-          '[' || tbl.name || ' (table) Content](/console/content/table/' || tbl.name || '.sql)' as content_web_ui_link_full_md,
+          '/console/content/table/' || tbl.name || '.sql?stats=yes' as content_web_ui_path,
+          '[Content](/console/content/table/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_abbrev_md,
+          '[' || tbl.name || ' (table) Content](/console/content/table/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_full_md,
           tbl.sql as sql_ddl
       FROM sqlite_master tbl
       JOIN pragma_table_info(tbl.name) col
