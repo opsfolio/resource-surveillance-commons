@@ -123,6 +123,41 @@ accessed through views or `*.cached` tables in
 database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
 other SQLite data access tools.
 
+##  Installing SQLite 3.46.0 on Ubuntu
+
+To install SQLite 3.46.0 on Ubuntu, follow these steps:
+
+### Update and Install Dependencies
+
+Ensure your package lists are up-to-date and install the necessary tools to build software from source:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential libreadline-dev wget
+```
+###  Download SQLite 3.46.0
+Navigate to the directory where you want to download the SQLite source code and then download it:
+```bash
+cd /usr/local/src
+sudo wget https://www.sqlite.org/2024/sqlite-autoconf-3460000.tar.gz
+```
+###  Extract the Downloaded Tarball
+```bash
+sudo tar -xzf sqlite-autoconf-3460000.tar.gz
+cd sqlite-autoconf-3460000
+```
+###  Build and Install SQLite
+Configure, build, and install SQLite:
+```bash
+sudo ./configure --prefix=/usr/local
+sudo make
+sudo make install
+```
+###  Verify the Installation
+After installation, open a new terminal and verify that SQLite 3.46.0 is installed correctly by checking its version:
+```bash
+sqlite3 --version
+```
 ## Automatically reloading SQL when it changes
 
 On sandboxes during development and editing of `.sql` or `.sql.ts` you may want
