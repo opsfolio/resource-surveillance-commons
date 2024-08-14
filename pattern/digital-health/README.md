@@ -28,7 +28,7 @@ $ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip && c
 
 # download surveilr using instructions at https://docs.opsfolio.com/surveilr/how-to/installation-guide
 # then run the ingestion of files downloaded above
-$ ./surveilr ingest files -r ingest/
+$ surveilr ingest files -r ingest/
 
 # apply the FHIR views and create cached tables directly from GitHub
 $ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
@@ -78,7 +78,7 @@ into this directory, then ingest and query the data:
 
 ```bash
 # ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
-$ ./surveilr ingest files -r ingest/
+$ surveilr ingest files -r ingest/
 ```
 
 After ingestion, you will only work with these files:

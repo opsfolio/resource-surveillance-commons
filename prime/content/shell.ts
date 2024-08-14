@@ -69,6 +69,7 @@ export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
         const items = scripts.map((s) => `${literal(s)} AS ${key}`);
         items.push(selectNavMenuItems("/ur", "Uniform Resource"));
         items.push(selectNavMenuItems("/console", "Console"));
+        items.push(selectNavMenuItems("/orchestration", "Orchestration"));
         return items;
       },
       footer: () =>

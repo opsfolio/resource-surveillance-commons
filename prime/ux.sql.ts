@@ -3,6 +3,7 @@ import {
   console as c,
   shell as sh,
   uniformResource as ur,
+  orchestration as orch,
 } from "./content/mod.ts";
 import * as spn from "./sqlpage-notebook.ts";
 
@@ -15,6 +16,7 @@ if (import.meta.main) {
       new sh.ShellSqlPages(),
       new c.ConsoleSqlPages(),
       new ur.UniformResourceSqlPages(),
+      new orch.OrchestrationSqlPages()
     ).join("\n"),
   );
 }
