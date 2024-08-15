@@ -342,7 +342,7 @@ function sqlPageDevAction(options: {
   const serverEnv = standalone
     ? {
       SQLPAGE_PORT: String(port),
-      SQLPAGE_DATABASE_URL: `sqlite://${db}?mode=ro`,
+      SQLPAGE_DATABASE_URL: `sqlite://${db}`,
     }
     : undefined;
 
