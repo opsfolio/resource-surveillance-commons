@@ -1,3 +1,4 @@
+import { ws } from "../deps.ts";
 import * as spn from "../sqlpage-notebook.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
@@ -12,7 +13,10 @@ export function consoleNav(
 
 export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   infoSchemaDDL() {
+    // deno-fmt-ignore
     return this.SQL`
+      -- ${this.tsProvenanceSqlComment(import.meta.url)}
+
       -- console_information_schema_* tables are convenience tables
       -- to make it easier to work than pragma_table_info.
 
@@ -117,7 +121,16 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
 
       -- all @navigation decorated entries are automatically added to this.navigation
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
-      `;
+
+      INSERT OR REPLACE INTO code_notebook_cell (notebook_kernel_id, code_notebook_cell_id, notebook_name, cell_name, interpretable_code, interpretable_code_hash, description) VALUES (
+        'SQL',
+        'web-ui.auto_generate_console_content_tabular_sqlpage_files',
+        'Web UI',
+        'auto_generate_console_content_tabular_sqlpage_files',
+        ${this.emitCtx.sqlTextEmitOptions.quotedLiteral(this.infoSchemaContentDML())[1]},
+        'TODO',
+        'A series of idempotent INSERT statements which will auto-generate "default" content for all tables and views'
+      );`;
   }
 
   /**
@@ -132,66 +145,70 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
    * @returns
    */
   infoSchemaContentDML() {
+    // NOTE: we're not using this.SQL`` on purpose since it seems to be mangling SQL
+    //       when it's "included" (injected) into SQLPage /action/ pages.
+    // TODO: add this same SQL block into a code_notebook_cell row too
     // deno-fmt-ignore
-    return this.SQL`
-        -- the "auto-generated" tables will be in '*.auto.sql' with redirects
-        DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
-        DELETE FROM sqlpage_files WHERE path like 'console/content/view/%.auto.sql';
-        INSERT OR REPLACE INTO sqlpage_files (path, contents)
-          SELECT
-              'console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql',
-              'SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
+    return ws.unindentWhitespace(`
+      -- ${this.tsProvenanceSqlComment(import.meta.url)}
 
-               SELECT ''breadcrumb'' AS component;
-               SELECT ''Home'' as title, ''/'' AS link;
-               SELECT ''Console'' as title, ''/console'' AS link;
-               SELECT ''Content'' as title, ''/console/content'' AS link;
-               SELECT ''' || tabular_name  || ' ' || tabular_nature || ''' as title, ''#'' AS link;
+      -- the "auto-generated" tables will be in '*.auto.sql' with redirects
+      DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
+      DELETE FROM sqlpage_files WHERE path like 'console/content/view/%.auto.sql';
+      INSERT OR REPLACE INTO sqlpage_files (path, contents)
+        SELECT
+            'console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql',
+            'SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
 
-               SELECT ''title'' AS component, ''' || tabular_name || ' (' || tabular_nature || ') Content'' as contents;
+              SELECT ''breadcrumb'' AS component;
+              SELECT ''Home'' as title, ''/'' AS link;
+              SELECT ''Console'' as title, ''/console'' AS link;
+              SELECT ''Content'' as title, ''/console/content'' AS link;
+              SELECT ''' || tabular_name  || ' ' || tabular_nature || ''' as title, ''#'' AS link;
 
-               SET total_rows = (SELECT COUNT(*) FROM ' || tabular_name || ');
-               SET limit = COALESCE($limit, 50);
-               SET offset = COALESCE($offset, 0);
-               SET total_pages = ($total_rows + $limit - 1) / $limit;
-               SET current_page = ($offset / $limit) + 1;
+              SELECT ''title'' AS component, ''' || tabular_name || ' (' || tabular_nature || ') Content'' as contents;
 
-               SELECT ''text'' AS component, ''' || info_schema_link_full_md || ''' AS contents_md
-               SELECT ''text'' AS component,
-                  ''- Start Row: '' || $offset || ''\n'' ||
-                  ''- Rows per Page: '' || $limit || ''\n'' ||
-                  ''- Total Rows: '' || $total_rows || ''\n'' ||
-                  ''- Current Page: '' || $current_page || ''\n'' ||
-                  ''- Total Pages: '' || $total_pages as contents_md
-               WHERE $stats IS NOT NULL;
+              SET total_rows = (SELECT COUNT(*) FROM ' || tabular_name || ');
+              SET limit = COALESCE($limit, 50);
+              SET offset = COALESCE($offset, 0);
+              SET total_pages = ($total_rows + $limit - 1) / $limit;
+              SET current_page = ($offset / $limit) + 1;
 
-               -- Display uniform_resource table with pagination
-               SELECT ''table'' AS component,
-                      TRUE AS sort,
-                      TRUE AS search,
-                      TRUE AS hover,
-                      TRUE AS striped_rows,
-                      TRUE AS small;
-              SELECT * FROM ' || tabular_name || '
-              LIMIT $limit
-              OFFSET $offset;
-
+              SELECT ''text'' AS component, ''' || info_schema_link_full_md || ''' AS contents_md
               SELECT ''text'' AS component,
-                  (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
-                  ''(Page '' || $current_page || '' of '' || $total_pages || '') '' ||
-                  (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
-                  AS contents_md;'
-          FROM console_content_tabular;
+                ''- Start Row: '' || $offset || ''\n'' ||
+                ''- Rows per Page: '' || $limit || ''\n'' ||
+                ''- Total Rows: '' || $total_rows || ''\n'' ||
+                ''- Current Page: '' || $current_page || ''\n'' ||
+                ''- Total Pages: '' || $total_pages as contents_md
+              WHERE $stats IS NOT NULL;
 
-        INSERT OR IGNORE INTO sqlpage_files (path, contents)
-          SELECT
-              'console/content/' || tabular_nature || '/' || tabular_name || '.sql',
-              'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql'' AS link WHERE $stats IS NULL;\n' ||
-              'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql?stats='' || $stats AS link WHERE $stats IS NOT NULL;'
-          FROM console_content_tabular;
+              -- Display uniform_resource table with pagination
+              SELECT ''table'' AS component,
+                    TRUE AS sort,
+                    TRUE AS search,
+                    TRUE AS hover,
+                    TRUE AS striped_rows,
+                    TRUE AS small;
+            SELECT * FROM ' || tabular_name || '
+            LIMIT $limit
+            OFFSET $offset;
 
-      -- TODO: add \${this.upsertNavSQL(...)} if we want each of the above to be navigable through DB rows
-      `;
+            SELECT ''text'' AS component,
+                (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
+                ''(Page '' || $current_page || '' of '' || $total_pages || '') '' ||
+                (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
+                AS contents_md;'
+        FROM console_content_tabular;
+
+      INSERT OR IGNORE INTO sqlpage_files (path, contents)
+        SELECT
+            'console/content/' || tabular_nature || '/' || tabular_name || '.sql',
+            'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql'' AS link WHERE $stats IS NULL;\n' ||
+            'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql?stats='' || $stats AS link WHERE $stats IS NOT NULL;'
+        FROM console_content_tabular;
+
+      -- TODO: add \${this.upsertNavSQL(...)} if we want each of the above to be navigable through DB rows`);
   }
 
   @spn.navigationPrime({
@@ -353,7 +370,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
             TRUE as sort,
             TRUE as search;
       SELECT
-        '[' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
+        '[🚀](/' || path || ') [📄 ' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
         LENGTH(contents) as "Size", last_modified
       FROM sqlpage_files
       ORDER BY path;`;
@@ -396,7 +413,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
             TRUE as sort,
             TRUE as search;
       SELECT
-        '[' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
+        '[🚀](/' || path || ') [📄 ' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
         LENGTH(contents) as "Size", last_modified
       FROM sqlpage_files
       WHERE path like 'console/content/%'
@@ -411,7 +428,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
             TRUE as sort,
             TRUE as search;
       SELECT
-        '[' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
+        '[🚀](/' || path || ') [📄 ' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
         LENGTH(contents) as "Size", last_modified
       FROM sqlpage_files
       WHERE path like 'console/content/%.auto.sql'
@@ -424,6 +441,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
       ${this.infoSchemaContentDML()}
 
+      -- ${this.tsProvenanceSqlComment(import.meta.url)}
       SELECT 'redirect' AS component, '/console/sqlpage-files/content.sql' as link WHERE $redirect is NULL;
       SELECT 'redirect' AS component, $redirect as link WHERE $redirect is NOT NULL;
     `;

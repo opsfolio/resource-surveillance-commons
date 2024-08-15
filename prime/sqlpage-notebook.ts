@@ -411,6 +411,38 @@ export class TypicalSqlPageNotebook {
   }
 
   /**
+   * Generates a SQL comment string indicating where the code is found,
+   * using the class name and method name from the call stack.
+   *
+   * @param importMetaURL - The URL from which the code is being executed, typically provided by `import.meta.url`.
+   * @param [level=2] - The stack trace level to extract the method name from. Defaults to 2 (immediate parent).
+   * @returns A string in the format "-- this code is found in '<class-name>.<method-name>' (importMetaURL)", or an error message if provenance can't be determined.
+   */
+  tsProvenanceSqlComment(importMetaURL: string, level = 2) {
+    // Get the stack trace using a new Error object
+    const stack = new Error().stack;
+    if (!stack) {
+      return "code provenance: stack trace is not available";
+    }
+
+    // Split the stack to find the method name
+    const stackLines = stack.split("\n");
+    if (stackLines.length < level + 1) {
+      return `code provenance: stack trace has fewer than ${level + 1} lines`;
+    }
+
+    // Parse the method name from the stack trace
+    const methodLine = stackLines[level].trim();
+    const methodNameMatch = methodLine.match(/at\s+(.*?)\s+\(/);
+    if (!methodNameMatch) {
+      return "code provenance: could not match method name in stack trace";
+    }
+
+    const fullMethodName = methodNameMatch[1];
+    return `code provenance: \`${fullMethodName}\` (${importMetaURL})`;
+  }
+
+  /**
    * Assume caller's method name contains "path/path/file.sql" format, reflect
    * the method name in the call stack and extract path components from the
    * method name in the stack trace.
