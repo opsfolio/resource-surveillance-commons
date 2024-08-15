@@ -54,6 +54,28 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       JOIN pragma_table_info(vw.name) col
       WHERE vw.type = 'view' AND vw.name NOT LIKE 'sqlite_%';
 
+      DROP VIEW IF EXISTS console_content_tabular;
+      CREATE VIEW console_content_tabular AS
+        SELECT 'table' as tabular_nature,
+               table_name as tabular_name,
+               info_schema_web_ui_path,
+               info_schema_link_abbrev_md,
+               info_schema_link_full_md,
+               content_web_ui_path,
+               content_web_ui_link_abbrev_md,
+               content_web_ui_link_full_md
+          FROM console_information_schema_table
+        UNION ALL
+        SELECT 'view' as tabular_nature,
+               view_name as tabular_name,
+               info_schema_web_ui_path,
+               info_schema_link_abbrev_md,
+               info_schema_link_full_md,
+               content_web_ui_path,
+               content_web_ui_link_abbrev_md,
+               content_web_ui_link_full_md
+          FROM console_information_schema_view;
+
       -- Populate the table with table column foreign keys
       DROP VIEW IF EXISTS console_information_schema_table_col_fkey;
       CREATE VIEW console_information_schema_table_col_fkey AS
@@ -98,34 +120,23 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
+  /**
+   * A SQLite "procedure" (SQL code block) which:
+   * - Deletes `sqlpage_files` rows where `path` is 'console/content/%/%.auto.sql'.
+   * - Generate default "content" pages in `sqlpage_files` for each table and view in the database.
+   * - If no default 'console/content/<table|view>/<table-or-view-name>.sql exists, setup redirect to the auto-generated default content page.
+   *   - if a page is inserted by another utility (custom page by an app/service) it's not replaced
+   * @returns
+   */
   infoSchemaContentDML() {
     // deno-fmt-ignore
     return this.SQL`
-        DELETE FROM sqlpage_files WHERE path like 'console/content/table/%';
-        DELETE FROM sqlpage_files WHERE path like 'console/content/view/%';
-        WITH tabular AS (
-            SELECT
-                tbl.type AS tabular_nature,
-                tbl.name AS tabular_name,
-                col.name AS column_name,
-                col.type AS column_data_type,
-                CASE WHEN col.pk = 1 THEN 'Yes' ELSE 'No' END AS column_is_primary_key,
-                CASE WHEN col."notnull" = 1 THEN 'Yes' ELSE 'No' END AS column_is_not_null,
-                col.dflt_value AS column_default_value,
-                '/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes' as info_schema_web_ui_path,
-                '[Content](/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_abbrev_md,
-                '[' || tbl.name || ' (' || tbl.type || ') Schema](/console/info-schema/' || tbl.type || '.sql?name=' || tbl.name || '&stats=yes)' as info_schema_link_full_md,
-                '/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes' as content_web_ui_path,
-                '[Content](/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_abbrev_md,
-                '[' || tbl.name || ' (' || tbl.type || ') Content](/console/content/' || tbl.type || '/' || tbl.name || '.sql?stats=yes)' as content_web_ui_link_full_md,
-                tbl.sql AS object_sql_ddl
-            FROM sqlite_master tbl
-            JOIN pragma_table_info(tbl.name) col
-            WHERE tbl.name NOT LIKE 'sqlite_%'
-        )
-        INSERT INTO sqlpage_files (path, contents)
+        -- the "auto-generated" tables will be in '*.auto.sql' with redirects
+        DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
+        DELETE FROM sqlpage_files WHERE path like 'console/content/view/%.auto.sql';
+        INSERT OR REPLACE INTO sqlpage_files (path, contents)
           SELECT
-              'console/content/' || tabular_nature || '/' || tabular_name || '.sql',
+              'console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql',
               'SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
 
                SELECT ''breadcrumb'' AS component;
@@ -167,10 +178,16 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
                   ''(Page '' || $current_page || '' of '' || $total_pages || '') '' ||
                   (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
                   AS contents_md;'
-          FROM tabular
-          GROUP BY tabular_nature, tabular_name;
+          FROM console_content_tabular;
 
-      -- TODO: add \${this.upsertNavSQL(...)}
+        INSERT OR IGNORE INTO sqlpage_files (path, contents)
+          SELECT
+              'console/content/' || tabular_nature || '/' || tabular_name || '.sql',
+              'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql'' AS link WHERE $stats IS NULL;\n' ||
+              'SELECT ''redirect'' AS component, ''/console/content/' || tabular_nature || '/' || tabular_name || '.auto.sql?stats='' || $stats AS link WHERE $stats IS NOT NULL;'
+          FROM console_content_tabular;
+
+      -- TODO: add \${this.upsertNavSQL(...)} if we want each of the above to be navigable through DB rows
       `;
   }
 
@@ -348,6 +365,30 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       SELECT 'title' AS component, $path AS contents;
       SELECT 'text' AS component,
              '\`\`\`sql\n' || (select contents FROM sqlpage_files where path = $path) || '\n\`\`\`' as contents_md;`;
+  }
+
+  @consoleNav({
+    caption: "RSSD Data Tables Content SQLPage Files",
+    abbreviatedCaption: "Content SQLPage Files",
+    description:
+      "Explore auto-generated RSSD SQLPage Files which display content within tables",
+    siblingOrder: 3,
+  })
+  "console/sqlpage-files/content.sql"() {
+    return this.SQL`
+      SELECT 'title' AS component, 'SQLPage pages generated from tables and views' AS contents;
+      SELECT 'text' AS component, 'These pages are usually auto-generated from tables and views metadata.' AS contents;
+      SELECT 'table' AS component,
+            'Path' as markdown,
+            'Size' as align_right,
+            TRUE as sort,
+            TRUE as search;
+      SELECT
+        '[' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
+        LENGTH(contents) as "Size", last_modified
+      FROM sqlpage_files
+      WHERE path like 'console/content/%'
+      ORDER BY path;`;
   }
 
   @consoleNav({
