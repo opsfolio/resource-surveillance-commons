@@ -121,7 +121,10 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   }
 
   /**
-   * A SQLite "procedure" (SQL code block) which:
+   * A SQLite "procedure" (SQL code block) which is always run when console UX is loaded
+   * and may be run "manually" via web UI upon request. Treat this SQL block as a procedure
+   * because it may be inserted into SQLPage as "commands", too.
+   *
    * - Deletes `sqlpage_files` rows where `path` is 'console/content/%/%.auto.sql'.
    * - Generate default "content" pages in `sqlpage_files` for each table and view in the database.
    * - If no default 'console/content/<table|view>/<table-or-view-name>.sql exists, setup redirect to the auto-generated default content page.
@@ -377,7 +380,16 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   "console/sqlpage-files/content.sql"() {
     return this.SQL`
       SELECT 'title' AS component, 'SQLPage pages generated from tables and views' AS contents;
-      SELECT 'text' AS component, 'These pages are usually auto-generated from tables and views metadata.' AS contents;
+      SELECT 'text' AS component, '
+        - \`*.auto.sql\` pages are auto-generated "default" content pages for each table and view defined in the database.
+        - The \`*.sql\` companions may be auto-generated redirects to their \`*.auto.sql\` pair or an app/service might override the \`*.sql\` to not redirect and supply custom content for any table or view.
+        - [View regenerate-auto.sql](/console/sqlpage-files/sqlpage-file.sql?path=console/content/action/regenerate-auto.sql)
+        ' AS contents_md;
+
+      SELECT 'button' AS component, 'center' AS justify;
+      SELECT '/console/content/action/regenerate-auto.sql' AS link, 'info' AS color, 'Regenerate all "default" table/view content pages' AS title;
+
+      SELECT 'title' AS component, 'Redirected or overriden content pages' as contents;
       SELECT 'table' AS component,
             'Path' as markdown,
             'Size' as align_right,
@@ -388,7 +400,33 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
         LENGTH(contents) as "Size", last_modified
       FROM sqlpage_files
       WHERE path like 'console/content/%'
-      ORDER BY path;`;
+            AND NOT(path like 'console/content/%.auto.sql')
+            AND NOT(path like 'console/content/action%')
+      ORDER BY path;
+
+      SELECT 'title' AS component, 'Auto-generated "default" content pages' as contents;
+      SELECT 'table' AS component,
+            'Path' as markdown,
+            'Size' as align_right,
+            TRUE as sort,
+            TRUE as search;
+      SELECT
+        '[' || path || '](sqlpage-file.sql?path=' || path || ')' AS "Path",
+        LENGTH(contents) as "Size", last_modified
+      FROM sqlpage_files
+      WHERE path like 'console/content/%.auto.sql'
+      ORDER BY path;
+      `;
+  }
+
+  @spn.shell({ eliminate: true })
+  "console/content/action/regenerate-auto.sql"() {
+    return this.SQL`
+      ${this.infoSchemaContentDML()}
+
+      SELECT 'redirect' AS component, '/console/sqlpage-files/content.sql' as link WHERE $redirect is NULL;
+      SELECT 'redirect' AS component, $redirect as link WHERE $redirect is NOT NULL;
+    `;
   }
 
   @consoleNav({
