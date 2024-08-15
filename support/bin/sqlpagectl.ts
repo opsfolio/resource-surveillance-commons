@@ -265,7 +265,11 @@ async function watchFiles(
 ) {
   try {
     console.log(
-      dim(`👀 Watching paths ${watch.paths.join(":")} ${files.map(f => f.toString()).join(', ')} (${watch.paths.length})`),
+      dim(
+        `👀 Watching paths [${watch.paths.join(" ")}] ${
+          files.map((f) => f.toString()).join(", ")
+        } (${watch.paths.length})`,
+      ),
     );
     const reload = debounce(async (event: Deno.FsEvent) => {
       for (const path of event.paths) {
