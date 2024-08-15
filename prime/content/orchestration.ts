@@ -1,21 +1,21 @@
 import * as spn from "../sqlpage-notebook.ts";
 
 export function orchNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
-    return spn.navigationPrime({
-        ...route,
-        parentPath: "/orchestration",
-    });
+  return spn.navigationPrime({
+    ...route,
+    parentPath: "/orchestration",
+  });
 }
 
 export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
-    navigationDML() {
-        return this.SQL`
+  navigationDML() {
+    return this.SQL`
           ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
         `;
-    }
+  }
 
-    supportDDL() {
-        return this.SQL`
+  supportDDL() {
+    return this.SQL`
             DROP VIEW IF EXISTS orchestration_session_by_device;
             CREATE VIEW orchestration_session_by_device AS
             SELECT
@@ -112,14 +112,14 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             GROUP BY os.orchestration_session_id, onature.nature, osl.category;
 
         `;
-    }
+  }
 
-    @spn.navigationPrimeTopLevel({
-        caption: "Orchestration",
-        description: "Explore details about all orchestration",
-    })
-    "orchestration/index.sql"() {
-        return this.SQL`
+  @spn.navigationPrimeTopLevel({
+    caption: "Orchestration",
+    description: "Explore details about all orchestration",
+  })
+  "orchestration/index.sql"() {
+    return this.SQL`
             WITH navigation_cte AS (
             SELECT COALESCE(title, caption) as title, description
                 FROM sqlpage_aide_navigation
@@ -132,16 +132,15 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
             WHERE namespace = 'prime' AND parent_path = '/orchestration'
             ORDER BY sibling_order;
         `;
-    }
+  }
 
-    @orchNav({
-        caption: "Orchestration Tables and Views",
-        description:
-          "Information Schema documentation for orchestrated objects",
-        siblingOrder: 99,
-      })
-      "orchestration/info-schema.sql"() {
-        return this.SQL`
+  @orchNav({
+    caption: "Orchestration Tables and Views",
+    description: "Information Schema documentation for orchestrated objects",
+    siblingOrder: 99,
+  })
+  "orchestration/info-schema.sql"() {
+    return this.SQL`
           SELECT 'title' AS component, 'Orchestration Tables and Views' as contents;
           SELECT 'table' AS component,
                 'Name' AS markdown,
@@ -167,5 +166,5 @@ export class OrchestrationSqlPages extends spn.TypicalSqlPageNotebook {
           WHERE view_name like 'orchestration_%'
           GROUP BY view_name;
         `;
-      }
+  }
 }

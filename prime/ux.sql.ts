@@ -1,9 +1,9 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
 import {
   console as c,
+  orchestration as orch,
   shell as sh,
   uniformResource as ur,
-  orchestration as orch,
 } from "./content/mod.ts";
 import * as spn from "./sqlpage-notebook.ts";
 
@@ -16,7 +16,7 @@ if (import.meta.main) {
       new sh.ShellSqlPages(),
       new c.ConsoleSqlPages(),
       new ur.UniformResourceSqlPages(),
-      new orch.OrchestrationSqlPages()
+      new orch.OrchestrationSqlPages(),
     ).join("\n"),
   );
 }
