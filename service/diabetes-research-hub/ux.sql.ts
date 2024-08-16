@@ -1,4 +1,9 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
+import {
+  console as c,
+  shell as sh,
+  uniformResource as ur,
+} from "../../prime/content/mod.ts";
 import { SqlPageNotebook as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
@@ -534,7 +539,7 @@ ${pagination.renderSimpleMarkdown()}
       SELECT 'table' AS component,
       TRUE AS sort,
       TRUE AS search;
-      SELECT * FROM ${viewName}
+      SELECT file_name,file_format, table_name FROM ${viewName}
       LIMIT $limit
       OFFSET $offset;
 
@@ -549,6 +554,8 @@ ${pagination.renderSimpleMarkdown()}
     siblingOrder: 12,
   })
   "drh/study-participant-dashboard/index.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
     return this.SQL`
     ${this.activePageTitle()}
 
@@ -602,6 +609,7 @@ ${pagination.renderSimpleMarkdown()}
       drh_number_cgm_count;
 
 
+
     SELECT
        '% Female' AS title,
        '' || percentage_of_females || '' AS description
@@ -633,6 +641,36 @@ ${pagination.renderSimpleMarkdown()}
         '' || investigators || '' AS description
     FROM
         drh_study_vanity_metrics_details;
+
+
+        SELECT
+       'card'     as component,
+       '' as title,
+        1         as columns;
+
+        SELECT
+        'Device Wise Raw CGM File Count' AS title,
+        GROUP_CONCAT(' ' || devicename || ': ' || number_of_files || '') AS description
+        FROM
+            drh_device_file_count_view;
+
+            SELECT
+    'text' as component,
+    '# Participant Dashboard' as contents_md;
+
+        ${pagination.init()}
+
+      -- Display uniform_resource table with pagination
+      SELECT 'table' AS component,
+            TRUE AS sort,
+            TRUE AS search;
+      SELECT participant_id,gender,age,study_arm,baseline_hba1c FROM ${viewName}
+      LIMIT $limit
+      OFFSET $offset;
+
+      ${pagination.renderSimpleMarkdown()}
+
+
 
     `;
   }
@@ -669,6 +707,19 @@ ${pagination.renderSimpleMarkdown()}
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
+// if (import.meta.main) {
+//   console.log(spn.TypicalSqlPageNotebook.SQL(new DRHSqlPages()).join("\n"));
+// }
+
 if (import.meta.main) {
-  console.log(spn.TypicalSqlPageNotebook.SQL(new DRHSqlPages()).join("\n"));
+  console.log(
+    spn.TypicalSqlPageNotebook.SQL<
+      spn.TypicalSqlPageNotebook
+    >(
+      new sh.ShellSqlPages(),
+      new c.ConsoleSqlPages(),
+      new ur.UniformResourceSqlPages(),
+      new DRHSqlPages(),
+    ).join("\n"),
+  );
 }

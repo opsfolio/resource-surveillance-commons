@@ -28,15 +28,6 @@ WHERE type = 'table'
   AND name != 'uniform_resource_transform'
   AND name != 'uniform_resource';
 
--- Drop and recreate the uniform_resource_study_nature view
-DROP VIEW IF EXISTS drh_uniform_resource_study_nature;
-CREATE VIEW drh_uniform_resource_study_nature AS
-SELECT
-    json_extract(elaboration, '$.uniform_resource_id') AS uniform_resource_id,
-    json_extract(elaboration, '$.new_table') AS new_table,
-    json_extract(elaboration, '$.from_nature') AS from_nature,
-    json_extract(elaboration, '$.to_nature') AS to_nature
-FROM uniform_resource_study;
 
 -- Drop and recreate the orch_session_view view
 DROP VIEW IF EXISTS drh_orch_session_view;
@@ -55,7 +46,7 @@ SELECT
     version, orch_started_at, orch_finished_at,
     diagnostics_json, diagnostics_md
 FROM orchestration_session
-WHERE orchestration_nature_id = 'deidentify';
+WHERE orchestration_nature_id = 'Deidentification';
 
 -- Drop and recreate the orchestration_session_entry_view view
 DROP VIEW IF EXISTS drh_orchestration_session_entry_view;
@@ -167,14 +158,12 @@ SELECT
     osex.exec_error_text,
     osex.output_text,
     osex.output_nature,
-    osex.narrative_md,
-    osex.elaboration AS exec_elaboration,
+    osex.narrative_md,    
     os.device_id,
     os.orchestration_nature_id,
     os.version,
     os.orch_started_at,
-    os.orch_finished_at,
-    os.elaboration AS session_elaboration,
+    os.orch_finished_at,    
     os.args_json,
     os.diagnostics_json,
     os.diagnostics_md
@@ -182,7 +171,7 @@ FROM
     orchestration_session_exec osex
     JOIN orchestration_session os ON osex.session_id = os.orchestration_session_id
 WHERE
-    os.orchestration_nature_id = 'deidentify';
+    os.orchestration_nature_id = 'Deidentification';
 
 -- Create a view to display the files transformed
 DROP VIEW IF EXISTS drh_vw_ingest_session_entries_status;
@@ -194,8 +183,7 @@ SELECT
     isession.behavior_json,
     isession.ingest_started_at,
     isession.ingest_finished_at,
-    isession.session_agent,
-    isession.elaboration AS session_elaboration,
+    isession.session_agent,    
     isession.created_at AS session_created_at,
     isession.created_by AS session_created_by,
     isession.updated_at AS session_updated_at,
@@ -205,8 +193,7 @@ SELECT
     isession.activity_log AS session_activity_log,
     fspath.ur_ingest_session_fs_path_id,
     fspath.ingest_session_id AS fspath_ingest_session_id,
-    fspath.root_path,
-    fspath.elaboration AS fspath_elaboration,
+    fspath.root_path,    
     fspath.created_at AS fspath_created_at,
     fspath.created_by AS fspath_created_by,
     fspath.updated_at AS fspath_updated_at,
@@ -226,8 +213,7 @@ SELECT
     entry.captured_executable,
     entry.ur_status,
     entry.ur_diagnostics,
-    entry.ur_transformations,
-    entry.elaboration AS entry_elaboration,
+    entry.ur_transformations,    
     entry.created_at AS entry_created_at,
     entry.created_by AS entry_created_by,
     entry.updated_at AS entry_updated_at,
@@ -306,8 +292,7 @@ SELECT
     osi.issue_column as 'Issue column',
     osi.remediation,
     osi.issue_row as 'Issue Row',    
-    osi.invalid_value,    
-    osi.elaboration
+    osi.invalid_value  
 FROM
     orchestration_session_issue osi
 JOIN
@@ -316,6 +301,20 @@ ON
     osi.session_id = os.orchestration_session_id
 WHERE
     os.orchestration_nature_id = 'V&V';
+
+
+DROP VIEW IF EXISTS drh_device_file_count_view;
+CREATE VIEW drh_device_file_count_view AS
+SELECT 
+    devicename, 
+    COUNT(DISTINCT file_name) AS number_of_files
+FROM 
+    uniform_resource_cgm_file_metadata
+GROUP BY 
+    devicename
+ORDER BY 
+    number_of_files DESC;
+
 
 -------------Dynamically insert the sqlpages for CGM raw tables--------------------------
 
@@ -353,9 +352,7 @@ SELECT
     SELECT ''' || table_name || ''' || '' Table'' AS title, ''#'' AS link;
     
     SELECT ''title'' AS component, ''' || table_name || ''' AS contents;
-    SELECT
-        ''text'' as component;
-    SELECT ''Note: Kindly ignore the elaboration column. It is only for tracking purpose.'' AS contents;
+    
 
     -- Initialize pagination
     SET total_rows = (SELECT COUNT(*) FROM ''' || table_name || ''');

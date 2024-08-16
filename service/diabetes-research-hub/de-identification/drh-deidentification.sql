@@ -11,9 +11,6 @@ SET email = anonymize_email(email)
 WHERE email IS NOT NULL;
 
 
--- Insert into orchestration_nature if not exists
-INSERT OR IGNORE INTO orchestration_nature (orchestration_nature_id, nature)
-VALUES ('deidentify', 'De-identification');
 
 -- Retrieve the device ID and orchestration nature ID
 WITH device_info AS (
@@ -35,15 +32,15 @@ FROM device_info d, orch_nature_info o;
 
 -- Retrieve the new session ID
 WITH session_info AS (
-    SELECT orchestration_session_id FROM orchestration_session LIMIT 1
+    SELECT orchestration_session_id FROM orchestration_session  where orchestration_nature_id ='Deidentification' LIMIT 1
 )
-INSERT OR IGNORE INTO orchestration_session_entry (orchestration_session_entry_id, session_id, ingest_src, ingest_table_name, elaboration)
+INSERT OR IGNORE INTO orchestration_session_entry (orchestration_session_entry_id, session_id, ingest_src, ingest_table_name,elaboration)
 SELECT
     'ORCSESENID-'||((SELECT COUNT(*) FROM orchestration_session_entry) + 1) AS orchestration_session_entry_id,
     orchestration_session_id,
-    'de-identification',
+    'De-identification',
     NULL,
-    '{"description": "Processing de-identification"}'
+    '{"description": "Processing De-identification"}'
 FROM session_info;
 
 -- Create a temporary table
@@ -51,7 +48,7 @@ CREATE TEMP TABLE temp_session_info AS
 SELECT
     orchestration_session_id,
     (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = orchestration_session_id LIMIT 1) AS orchestration_session_entry_id
-FROM orchestration_session
+FROM orchestration_session where orchestration_nature_id ='Deidentification'
 LIMIT 1;
 
 -- Insert into orchestration_session_exec for uniform_resource_investigator

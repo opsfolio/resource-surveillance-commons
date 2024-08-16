@@ -43,7 +43,7 @@ Note: Try this option outside this repository
 
    **Command:**
 
-   - Command: `surveilr transform csv`
+   - Command: `surveilr orchestrate  transform-csv`
 
    3.3 **Verify the Transformed Data**
 
@@ -104,7 +104,6 @@ Note: Try this option outside this repository
 8. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
-   $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
    $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
    ```
    ```bash
@@ -116,7 +115,7 @@ Note: Try this option outside this repository
    ## Try it out in this repo (if you're developing SQL scripts)
 
    **Note**: Reference sample files can be found in the repository folder:
-   /service/diabetes-research-hub/study-files-multiple-cgmtracing.zip
+   /service/diabetes-research-hub/study-files.zip
 
    First, prepare the directory with sample files and copy them to this folder,
    or extract the sample files and move them to this folder:
@@ -148,7 +147,7 @@ Note: Try this option outside this repository
 
    ```bash
    # transform the csv files in the "study-files/" directory
-   $ surveilr transform csv
+   $ surveilr orchestrate  transform-csv
    ```
    ```bash
    # Apply de-identification
@@ -162,8 +161,7 @@ Note: Try this option outside this repository
    After ingestion, you will only work with these files:
 
    ```
-   ├── stateless-drh-surveilr.sql 
-   ├── generate-raw-cgm-web-ui-pages.sql 
+   ├── stateless-drh-surveilr.sql    
    └── resource-surveillance.sqlite.db            # SQLite database
    ```
 
@@ -173,16 +171,13 @@ Note: Try this option outside this repository
    other dependencies.
 
    ```bash
-   # load the "Console" and other menu/routing utilities
-   $ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   # load the "Console" and other menu/routing utilities   
    $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 
    # apply the "stateless"  utility views
    $ cat stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db
 
-   # apply the "generate-raw-cgm-web-ui-pages.sql " 
-   $ cat generate-raw-cgm-web-ui-pages.sql | sqlite3 resource-surveillance.sqlite.db
 
    # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
    $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
