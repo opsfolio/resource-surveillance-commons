@@ -8,6 +8,15 @@ database views which shall be used in SQLPage preview. The
 `orchestrate-drh-vv.sql` performs the verification and validation on the study
 data tables.
 
+**Note: The following are required to preview the Edge UI:**
+
+1. surveilr tool
+2. sqlite3 : https://www.sqlite.org/download.html
+3. deno runtime:
+   https://docs.deno.com/runtime/manual/getting_started/installation/
+
+Steps for installation shall vary based on the operating system
+
 ## Getting Started
 
 Note: Try this option outside this repository
@@ -89,19 +98,13 @@ Note: Try this option outside this repository
    rm drh-verification-validation.sql
    ```
 
-6. **Apply the Database Views to Preview in SQLPage**
+6. **Apply the Database Views(requires `sqlite3`) to Preview in SQLPage**
 
    ```bash
    curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/stateless-drh-surveilr.sql --ssl-no-revoke | sqlite3 resource-surveillance.sqlite.db
    ```
 
-7. **Apply the dynamic sqlpage generation script**
-
-   ```bash
-   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/generate-raw-cgm-web-ui-pages.sql --ssl-no-revoke | sqlite3 resource-surveillance.sqlite.db
-   ```
-
-8. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
+7. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
    $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
