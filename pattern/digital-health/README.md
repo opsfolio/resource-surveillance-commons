@@ -56,7 +56,8 @@ First prepare the directory with sample files:
 ```bash
 $ cd pattern/digital-health
 $ wget https://synthetichealth.github.io/synthea-sample-data/downloads/latest/synthea_sample_data_fhir_latest.zip
-$ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip && cd ..
+$ wget https://synthetichealth.github.io/synthea-sample-data/downloads/10k_synthea_covid19_csv.zip
+$ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip ../10k_synthea_covid19_csv.zip && cd ..
 ```
 
 The directory should look like this now:

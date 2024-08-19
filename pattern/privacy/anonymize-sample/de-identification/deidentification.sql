@@ -3,6 +3,8 @@
 * surveilr_version - Returns the current version of `suvrveilr` that's being executed
 * surveilr_orchestration_context_session_id - The active context, if present. It returns the ID of the current session
 * surveilr_orchestration_nature_id(<nature_type>), e.g surveilr_orchestration_nature_id('v&v') - Returns the ID of the orchestration nature if present, else it is null.
+* TODO:  surveilr_assert_tabular_object(<name-of-table-or-view>)
+* TODO:  surveilr_assert_tabular_column(<name-of-table-or-view>, <a-list-of-column-names>)
 * surveilr_ensure_orchestration_nature(<nature_id>, <nature>)
 * surveilr_get_orchestration_session_info(<session_id>) - returns the orchestration_session_entry_id for the current session
 * De Identification Functions
@@ -47,6 +49,10 @@
  * If there's an error during the execution, the error is logged, and the system moves on to the next script.
  ********************************************************************************************/
 
+
+-- Use this to verify or crate a nature
+SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
+
 -- Perform De-identification
 UPDATE ur_ingest_session_imap_account
 SET
@@ -65,15 +71,12 @@ SET
     nature = anonymize_name(nature);
 
 -- SELECT surveilr_device_id() AS device_id;
--- SELECT surveilr_ensure_orchestration_nature('deidentify', 'De-identification') AS orchestration_nature_id;
 -- SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id;
 
 -- This is not required unless you have additional states you need in your state machine
-WITH session_cte AS (
-    SELECT surveilr_orchestration_context_session_id() AS orchestration_session_id
-)
-SELECT surveilr_create_session_exec(session_cte.orchestration_session_id, 'De-identification', 1, 'email column in uniform_resource_investigator', 'De-identification completed', NULL, NULL)
-FROM session_cte;
+SELECT surveilr_create_session_exec(surveilr_orchestration_context_session_id(), 'De-identification', 1, 'email column in uniform_resource_investigator', 'De-identification completed');
+
+-- for the log function, use the assert table and column name to confirm after orchestrating with csv
 
 -- If you'd prefer to do it manually, here is the same example, repeated.
 -- INSERT OR IGNORE INTO orchestration_session_exec (

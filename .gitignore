@@ -7,6 +7,7 @@ resource-surveillance.sqlite.db
 
 # when testing in this repo, we might have ingest samples / exemplars
 ingest/
+10k*
 
 # sometimes we'll test local files in SQLPage but we don't want those tracked
 sqlpage/
