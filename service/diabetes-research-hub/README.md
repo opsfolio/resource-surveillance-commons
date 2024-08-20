@@ -154,12 +154,12 @@ Note: Try this option outside this repository
    ```
    ```bash
    # Apply de-identification
-   $ surveilr anonymize --sql de-identification/drh-deidentification.sql | sqlite3 resource-surveillance.sqlite.db
+   $ cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"
    ```
 
    ```bash
    # Perform verification and validation
-   $ surveilr orchestrate  -n "v&v" -s verfication-validation/orchestrate-drh-vv.sql --save-script
+   $ cat verfication-validation/orchestrate-drh-vv.sql |surveilr orchestrate -n "v&v"
    ```
    After ingestion, you will only work with these files:
 

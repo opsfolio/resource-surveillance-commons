@@ -46,7 +46,7 @@ SELECT
     version, orch_started_at, orch_finished_at,
     diagnostics_json, diagnostics_md
 FROM orchestration_session
-WHERE orchestration_nature_id = 'Deidentification';
+WHERE orchestration_nature_id = 'deidentification';
 
 -- Drop and recreate the orchestration_session_entry_view view
 DROP VIEW IF EXISTS drh_orchestration_session_entry_view;
@@ -171,7 +171,7 @@ FROM
     orchestration_session_exec osex
     JOIN orchestration_session os ON osex.session_id = os.orchestration_session_id
 WHERE
-    os.orchestration_nature_id = 'Deidentification';
+    os.orchestration_nature_id = 'deidentification';
 
 -- Create a view to display the files transformed
 DROP VIEW IF EXISTS drh_vw_ingest_session_entries_status;
