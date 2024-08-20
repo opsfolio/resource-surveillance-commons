@@ -58,44 +58,16 @@ Note: Try this option outside this repository
 
    - Plese check the folder directly to see the transformed database.
 
-4. **Steps for De-identification**
-
-   4.1 **Download the SQL File**
+4. **Perform De-identification**
 
    ```bash
-   curl -L -o De-Identification.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/de-identification/drh-deidentification.sql --ssl-no-revoke
+   surveilr orchestrate -n "deidentification" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/de-identification/drh-deidentification.sql
    ```
 
-   4.2 **Execute the De-identification Process**
+5. **Perform verification and validation**
 
    ```bash
-   cat De-Identification.sql| surveilr orchestrate -n "deidentification"
-   ```
-
-   4.3 **Remove the de-identification sql after the de-identification**
-
-   ```bash
-   rm De-Identification.sql
-   ```
-
-5. **Steps to perform verification and validation**
-
-   5.1 **Download the SQL File**
-
-   ```bash
-   curl -L -o drh-verification-validation.sql https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql --ssl-no-revoke
-   ```
-
-   5.2 **Execute the verification and validation Process**
-
-   ```bash
-   cat drh-verification-validation.sql |surveilr orchestrate -n "v&v"
-   ```
-
-   5.3 **Remove the verification and validation sql after the process**
-
-   ```bash
-   rm drh-verification-validation.sql
+   surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql
    ```
 
 6. **Apply the Database Views(requires `sqlite3`) to Preview in SQLPage**
