@@ -69,7 +69,7 @@ Note: Try this option outside this repository
    4.2 **Execute the De-identification Process**
 
    ```bash
-   surveilr anonymize --sql De-Identification.sql
+   cat De-Identification.sql| surveilr orchestrate -n "deidentification"
    ```
 
    4.3 **Remove the de-identification sql after the de-identification**
@@ -89,7 +89,7 @@ Note: Try this option outside this repository
    5.2 **Execute the verification and validation Process**
 
    ```bash
-   surveilr orchestrate  -n "v&v" -s drh-verification-validation.sql --save-script
+   cat drh-verification-validation.sql |surveilr orchestrate -n "v&v"
    ```
 
    5.3 **Remove the verification and validation sql after the process**

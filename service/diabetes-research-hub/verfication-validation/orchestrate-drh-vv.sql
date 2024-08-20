@@ -15,7 +15,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_institution', 'city', 'TEXT', 0, 1),
 ('uniform_resource_institution', 'state', 'TEXT', 0, 1),
 ('uniform_resource_institution', 'country', 'TEXT', 0, 1),
-('uniform_resource_institution', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_lab table
 ('uniform_resource_lab', 'lab_id', 'TEXT', 1, 1),
@@ -23,7 +23,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_lab', 'lab_pi', 'TEXT', 0, 1),
 ('uniform_resource_lab', 'institution_id', 'TEXT', 0, 1),
 ('uniform_resource_lab', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_lab', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_study table
 ('uniform_resource_study', 'study_id', 'TEXT', 1, 1),
@@ -34,14 +34,14 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_study', 'funding_source', 'TEXT', 0, 1),
 ('uniform_resource_study', 'nct_number', 'TEXT', 0, 1),
 ('uniform_resource_study', 'study_description', 'TEXT', 0, 1),
-('uniform_resource_study', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_site table
 ('uniform_resource_site', 'site_id', 'TEXT', 1, 1),
 ('uniform_resource_site', 'study_id', 'TEXT', 0, 1),
 ('uniform_resource_site', 'site_name', 'TEXT', 0, 1),
 ('uniform_resource_site', 'site_type', 'TEXT', 0, 1),
-('uniform_resource_site', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_participant table
 ('uniform_resource_participant', 'participant_id', 'TEXT', 1, 1),
@@ -57,7 +57,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_participant', 'baseline_hba1c', 'TEXT', 0, 1),
 ('uniform_resource_participant', 'diabetes_type', 'TEXT', 0, 1),
 ('uniform_resource_participant', 'study_arm', 'TEXT', 0, 1),
-('uniform_resource_participant', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_investigator table
 ('uniform_resource_investigator', 'investigator_id', 'TEXT', 1, 1),
@@ -65,7 +65,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_investigator', 'email', 'TEXT', 0, 1),
 ('uniform_resource_investigator', 'institution_id', 'TEXT', 0, 1),
 ('uniform_resource_investigator', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_investigator', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_publication table
 ('uniform_resource_publication', 'publication_id', 'TEXT', 1, 1),
@@ -73,7 +73,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_publication', 'digital_object_identifier', 'TEXT', 0, 0),
 ('uniform_resource_publication', 'publication_site', 'TEXT', 0, 0),
 ('uniform_resource_publication', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_publication', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_author table
 ('uniform_resource_author', 'author_id', 'TEXT', 1, 1),
@@ -81,7 +81,7 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_author', 'email', 'TEXT', 0, 1),
 ('uniform_resource_author', 'investigator_id', 'TEXT', 0, 1),
 ('uniform_resource_author', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_author', 'elaboration', 'TEXT', 0, 0),
+
 
 -- uniform_resource_cgm_file_metadata table
 ('uniform_resource_cgm_file_metadata', 'metadata_id', 'TEXT', 1, 1),
@@ -94,10 +94,18 @@ INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_ke
 ('uniform_resource_cgm_file_metadata', 'file_upload_date', 'TEXT', 0, 1),
 ('uniform_resource_cgm_file_metadata', 'data_start_date', 'TEXT', 0, 1),
 ('uniform_resource_cgm_file_metadata', 'data_end_date', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'elaboration', 'TEXT', 0, 0);
+('uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 1);
+
 
 -- Schema Validation
+
+CREATE TEMP TABLE temp_session_info AS
+SELECT
+    orchestration_session_id,
+    (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = orchestration_session_id LIMIT 1) AS orchestration_session_entry_id
+FROM orchestration_session where orchestration_nature_id = 'V&V'
+LIMIT 1;
+
 
 -- Validate the schema to check for missing columns
 
@@ -149,16 +157,19 @@ SELECT
     -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
     --'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,  -- Replace with actual session ID or dynamic value if needed
-    (select orchestration_session_entry_id from orchestration_session_entry where session_id =(SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,  -- Replace with actual session entry ID or dynamic value if needed
-    heading as issue_type,
-    status as issue_message,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    svc.heading as issue_type,
+    svc.status as issue_message,
     NULL AS issue_row,  -- Set as NULL if not applicable
-    column_name AS issue_column,
+    svc.column_name AS issue_column,
     NULL AS invalid_value,  -- Set as NULL if not applicable
-    remediation,
+    svc.remediation,
     NULL AS elaboration  -- Set as NULL or provide elaboration if needed
-FROM SchemaValidationMissingColumns;
+FROM 
+    SchemaValidationMissingColumns svc
+JOIN 
+    temp_session_info tsi ON 1=1; 
 
 
 -- Line break
@@ -213,16 +224,18 @@ SELECT
     -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
     --'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,  -- Replace with actual session ID or dynamic value if needed
-    (select orchestration_session_entry_id from orchestration_session_entry where session_id =(SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,  -- Replace with actual session entry ID or dynamic value if needed
-    heading as issue_type,
-    status as issue_message,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    sa.heading as issue_type,
+    sa.status as issue_message,
     NULL AS issue_row,  -- Set as NULL if not applicable
-    column_name AS issue_column,
+    sa.column_name AS issue_column,
     NULL AS invalid_value,  -- Set as NULL if not applicable
-    remediation,
+    sa.remediation,
     NULL AS elaboration  -- Set as NULL or provide elaboration if needed
-FROM SchemaValidationAdditionalColumns;
+FROM SchemaValidationAdditionalColumns sa
+JOIN 
+    temp_session_info tsi ON 1=1; 
 
 
 -- Line break
@@ -277,7 +290,6 @@ WITH DataIntegrityInvalidDates AS (
     WHERE 
         value NOT LIKE '____-__-__'
 )
-
 --SELECT * FROM DataIntegrityInvalidDates;
 -- Insert invalid dates results into orchestration_session_issue
 INSERT INTO orchestration_session_issue (
@@ -294,17 +306,18 @@ INSERT INTO orchestration_session_issue (
 )
 SELECT 
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,
-    (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = (SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,
-    heading AS issue_type,
-    status AS issue_message,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    diid.heading AS issue_type,
+    diid.status AS issue_message,
     NULL AS issue_row,
-    column_name AS issue_column,
-    value AS invalid_value,
-    remediation,
+    diid.column_name AS issue_column,
+    diid.value AS invalid_value,
+    diid.remediation,
     NULL AS elaboration
-FROM DataIntegrityInvalidDates;
-
+FROM DataIntegrityInvalidDates diid
+JOIN 
+    temp_session_info tsi ON 1=1; 
 
 
 -- Line break
@@ -338,16 +351,19 @@ INSERT INTO orchestration_session_issue (
 )
 SELECT 
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,
-    (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = (SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,
-    heading AS issue_type,
-    status AS issue_message,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    d_age.heading AS issue_type,
+    d_age.status AS issue_message,
     NULL AS issue_row,
-    column_name AS issue_column,
-    value AS invalid_value,
+    d_age.column_name AS issue_column,
+    d_age.value AS invalid_value,
     'Ensure the age is numeric.' AS remediation,
     NULL AS elaboration
-FROM DataIntegrityInvalidAge;
+FROM DataIntegrityInvalidAge d_age
+JOIN 
+    temp_session_info tsi ON 1=1; 
+
 
 
 -- Generate SQL for finding empty or NULL values in table
@@ -360,7 +376,7 @@ FROM DataIntegrityInvalidAge;
         'The following rows in column ' || column_name || ' of file ' || substr(table_name, 18) || ' are either NULL or empty.' AS status,
         'Please provide values for the ' || column_name || ' column in file ' || substr(table_name, 18) ||'.The Rows are:'|| GROUP_CONCAT(rowid) AS remediation
     FROM (
-        -- Checking start_date in uniform_resource_study for empty or NULL values
+        -- uniform_resource_study for empty or NULL values
         SELECT 
             'uniform_resource_study' AS table_name,
             'study_id' AS column_name,
@@ -397,7 +413,7 @@ FROM DataIntegrityInvalidAge;
         
         UNION ALL
         
-        -- Checking end_date in uniform_resource_study for empty or NULL values
+        
         SELECT 
             'uniform_resource_study' AS table_name,
             'end_date' AS column_name,
@@ -797,7 +813,96 @@ FROM DataIntegrityInvalidAge;
         UNION ALL 
         
         
-        -- Checking file_upload_date in uniform_resource_cgm_file_metadata for empty or NULL values
+        -- uniform_resource_cgm_file_metadata 
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'metadata_id' AS column_name,
+            metadata_id AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            metadata_id IS NULL OR metadata_id = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'devicename' AS column_name,
+            devicename AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            devicename IS NULL OR devicename = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'device_id' AS column_name,
+            device_id AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            device_id IS NULL OR device_id = ''
+        
+        UNION ALL
+
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'source_platform' AS column_name,
+            source_platform AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            source_platform IS NULL OR source_platform = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'patient_id' AS column_name,
+            patient_id AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            patient_id IS NULL OR patient_id = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'file_name' AS column_name,
+            file_name AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            file_name IS NULL OR file_name = ''
+        
+        UNION ALL
+
+        
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'file_format' AS column_name,
+            file_format AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            file_format IS NULL OR file_format = ''
+        
+        UNION ALL
+
+
+
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'file_upload_date' AS column_name,
@@ -810,7 +915,7 @@ FROM DataIntegrityInvalidAge;
         
         UNION ALL
         
-        -- Checking data_start_date in uniform_resource_cgm_file_metadata for empty or NULL values
+        
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'data_start_date' AS column_name,
@@ -823,7 +928,7 @@ FROM DataIntegrityInvalidAge;
         
         UNION ALL
         
-        -- Checking data_end_date in uniform_resource_cgm_file_metadata for empty or NULL values
+
         SELECT 
             'uniform_resource_cgm_file_metadata' AS table_name,
             'data_end_date' AS column_name,
@@ -833,6 +938,204 @@ FROM DataIntegrityInvalidAge;
             uniform_resource_cgm_file_metadata 
         WHERE 
             data_end_date IS NULL OR data_end_date = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_cgm_file_metadata' AS table_name,
+            'study_id' AS column_name,
+            study_id AS value,
+            rowid
+        FROM 
+            uniform_resource_cgm_file_metadata  
+        WHERE 
+            study_id IS NULL OR study_id = ''
+        
+        UNION ALL
+
+        -- uniform_resource_investigator
+        SELECT 
+            'uniform_resource_investigator' AS table_name,
+            'investigator_id' AS column_name,
+            investigator_id AS value,
+            rowid
+        FROM 
+            uniform_resource_investigator 
+        WHERE 
+            investigator_id IS NULL OR investigator_id = ''
+
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_investigator' AS table_name,
+            'investigator_name' AS column_name,
+            investigator_name AS value,
+            rowid
+        FROM 
+            uniform_resource_investigator 
+        WHERE 
+            investigator_name IS NULL OR investigator_name = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_investigator' AS table_name,
+            'email' AS column_name,
+            email AS value,
+            rowid
+        FROM 
+            uniform_resource_investigator 
+        WHERE 
+            email IS NULL OR email = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_investigator' AS table_name,
+            'institution_id' AS column_name,
+            institution_id AS value,
+            rowid
+        FROM 
+            uniform_resource_investigator 
+        WHERE 
+            institution_id IS NULL OR institution_id = ''
+
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_investigator' AS table_name,
+            'study_id' AS column_name,
+            study_id AS value,
+            rowid
+        FROM 
+            uniform_resource_investigator 
+        WHERE 
+            study_id IS NULL OR study_id = ''
+
+        UNION ALL
+
+        -- uniform_resource_publication table
+
+        SELECT 
+            'uniform_resource_publication' AS table_name,
+            'publication_id' AS column_name,
+            publication_id AS value,
+            rowid
+        FROM 
+            uniform_resource_publication 
+        WHERE 
+            publication_id IS NULL OR publication_id = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_publication' AS table_name,
+            'publication_title' AS column_name,
+            publication_title AS value,
+            rowid
+        FROM 
+            uniform_resource_publication 
+        WHERE 
+            publication_title IS NULL OR publication_title = ''
+
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_publication' AS table_name,
+            'digital_object_identifier' AS column_name,
+            digital_object_identifier AS value,
+            rowid
+        FROM 
+            uniform_resource_publication 
+        WHERE 
+            digital_object_identifier IS NULL OR digital_object_identifier = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_publication' AS table_name,
+            'publication_site' AS column_name,
+            publication_site AS value,
+            rowid
+        FROM 
+            uniform_resource_publication 
+        WHERE 
+            publication_site IS NULL OR publication_site = ''
+
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_publication' AS table_name,
+            'study_id' AS column_name,
+            study_id AS value,
+            rowid
+        FROM 
+            uniform_resource_publication 
+        WHERE 
+            study_id IS NULL OR study_id = ''
+        
+        -- uniform_resource_author table
+
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_author' AS table_name,
+            'author_id' AS column_name,
+            author_id AS value,
+            rowid
+        FROM 
+            uniform_resource_author 
+        WHERE 
+            author_id IS NULL OR author_id = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_author' AS table_name,
+            'name' AS column_name,
+            name AS value,
+            rowid
+        FROM 
+            uniform_resource_author 
+        WHERE 
+            name IS NULL OR name = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_author' AS table_name,
+            'email' AS column_name,
+            email AS value,
+            rowid
+        FROM 
+            uniform_resource_author 
+        WHERE 
+            email IS NULL OR email = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_author' AS table_name,
+            'investigator_id' AS column_name,
+            investigator_id AS value,
+            rowid
+        FROM 
+            uniform_resource_author 
+        WHERE 
+            investigator_id IS NULL OR investigator_id = ''
+        
+        UNION ALL
+
+        SELECT 
+            'uniform_resource_author' AS table_name,
+            'study_id' AS column_name,
+            study_id AS value,
+            rowid
+        FROM 
+            uniform_resource_author 
+        WHERE 
+            study_id IS NULL OR study_id = ''
+
     )
     GROUP BY table_name, column_name  -- Group by table and column to concatenate row IDs
 )
@@ -853,18 +1156,18 @@ INSERT INTO orchestration_session_issue (
 )
 SELECT 
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,
-    (SELECT orchestration_session_entry_id 
-     FROM orchestration_session_entry 
-     WHERE session_id = (SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,
-    heading AS issue_type,
-    status AS issue_message,
-    issue_row,  -- No specific row for the summary issues
-    column_name AS issue_column,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    d_empty.heading AS issue_type,
+    d_empty.status AS issue_message,
+    d_empty.issue_row,  -- No specific row for the summary issues
+    d_empty.column_name AS issue_column,
     NULL AS invalid_value,  -- No specific value for the summary issues
-    remediation,
+    d_empty.remediation,
     NULL AS elaboration
-FROM DataIntegrityEmptyCells;
+FROM DataIntegrityEmptyCells d_empty
+JOIN 
+    temp_session_info tsi ON 1=1; 
 
 
 -- CTE to compute the count of records in each table
@@ -933,17 +1236,16 @@ INSERT INTO orchestration_session_issue (
 )
 SELECT 
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    (SELECT surveilr_orchestration_context_session_id()) AS session_id,
-    (SELECT orchestration_session_entry_id 
-     FROM orchestration_session_entry 
-     WHERE session_id = (SELECT surveilr_orchestration_context_session_id())) AS session_entry_id,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
     'Data Integrity Checks: Empty Tables' AS issue_type,
-    status AS issue_message,
+    ed.status AS issue_message,
     NULL AS issue_row,
     NULL AS issue_column,
     NULL AS invalid_value,
-    remediation,
+    ed.remediation,
     NULL AS elaboration
 FROM 
-    empty_tables;
-
+    empty_tables ed
+JOIN 
+    temp_session_info tsi ON 1=1; 
