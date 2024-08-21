@@ -79,7 +79,7 @@ Note: Try this option outside this repository
 7. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
-   $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
    ```
    ```bash
    surveilr web-ui --port 9000
