@@ -1,5 +1,10 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
 import { SqlPageNotebook as spn } from "./deps.ts";
+import {
+  console as c,
+  shell as sh,
+  uniformResource as ur,
+} from "../../prime/content/mod.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function dmsNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
@@ -41,7 +46,6 @@ export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
        WHERE namespace = 'prime' AND parent_path = '/dms'
        ORDER BY sibling_order;`;
   }
-
   @dmsNav({
     caption: "Inbox",
     description: ``,
@@ -64,40 +68,481 @@ export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
       from inbox
       `;
   }
-
-  // @spn.shell({ breadcrumbsFromNavStmts: "no" })
-  // "dms/email-detail.sql"() {
-  //   return this.SQL`
-  //   SELECT 'table' as component;
-  //   SELECT 'From: ' || "from" as "from" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-  //   SELECT 'To: ' || "to" as "to" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-  //   SELECT 'Date: ' || "date" as "date" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-  //   SELECT 'Subject: ' || "subject" as "subject" from inbox where CAST(id AS TEXT) = CAST($id AS TEXT);
-  //   SELECT "content" from  inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
-  //   `;
-  // }
   @spn.shell({ breadcrumbsFromNavStmts: "no" })
   "dms/email-detail.sql"() {
     return this.SQL`
-    ${this.activeBreadcrumbsSQL({ titleExpr: `$id` })}
-     SELECT 'list' AS component;
-      select 'From: ' || "from" as "description" from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
-      union ALL
-      select 'To: ' || "to"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
-      union ALL
-      select 'Subject: ' || "subject"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT)
-      union ALL
-      select 'Date: ' || "date"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
 
+    select
+    'breadcrumb' as component;
+    select
+        'Home' as title,
+        '/'    as link;
+    select
+        'Direct Protocol Email System' as title,
+        '/dms/' as link;
+    select
+        'inbox' as title,
+        '/dms/inbox.sql' as link;
+    select
+        "subject" as title from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
 
+    select
+        'datagrid' as component;
+    select
+        'From' as title,
+        "from" as "description" from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+    select
+        'To' as title,
+        "to" as "description"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+    select
+        'Subject' as title,
+        "subject" as "description"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+    select
+        'Date' as title,
+        "date" as "description"  from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
 
+    select 'datagrid' as component;
+      SELECT content AS description FROM inbox WHERE id = $id::TEXT;
+      SELECT 'table' AS component, 'attachment' AS markdown;
+      SELECT
+          CASE
+              WHEN attachment_filename LIKE '%.xml' OR attachment_mime_type = 'application/xml'
+              THEN '[' || attachment_filename || '](' || attachment_file_path || ' "download")' || ' | ' || '[View Details](/dms/patient-detail.sql?id=' || message_uid || ' "View Details")'
+              ELSE '[' || attachment_filename || '](' || attachment_file_path || ' "download")'
+          END AS "attachment"
+      FROM mail_content_attachment
+      WHERE CAST(message_uid AS TEXT) = CAST($id AS TEXT);
 
-
-    SELECT 'table' as component;
-    SELECT "content" FROM inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
     `;
   }
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  "dms/patient-detail.sql"() {
+    return this.SQL`
+    SELECT
+    'breadcrumb' as component;
+    SELECT
+        'Home' as title,
+        '/'    as link;
+    SELECT
+        'Direct Protocol Email System' as title,
+        '/dms/' as link;
+    SELECT
+        'inbox' as title,
+        '/dms/inbox.sql' as link;
+    SELECT
+        '/dms/email-detail.sql?id=' || id as link,
+        "subject" as title from inbox where CAST(id AS TEXT)=CAST($id AS TEXT);
+    SELECT
+        first_name as title from patient_detail where CAST(message_uid AS TEXT)=CAST($id AS TEXT) ;
 
+   SELECT 'html' AS component, '
+  <style>
+    .patient-summary {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .patient-summary th {
+      background-color: #f2f2f2;
+      text-align: left;
+      padding: 8px;
+      border: 1px solid #ddd;
+      width: 20%;
+    }
+    .patient-summary td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    }
+  </style>
+  <h2>' || document_title || '</h2>
+  <table class="patient-summary">
+    <tr>
+      <th>Patient</th>
+      <td>' || first_name || ' ' || last_name || '<br>
+          <b>Patient-ID</b>: ' || id || ' (SSN) <b>Date of Birth</b>: ' || substr(birthTime, 7, 2) ||
+      CASE
+        WHEN strftime('%d', birthTime) IN ('01', '21', '31') THEN 'st'
+        WHEN strftime('%d', birthTime) IN ('02', '22') THEN 'nd'
+        WHEN strftime('%d', birthTime) IN ('03', '23') THEN 'rd'
+        ELSE 'th'
+      END || ' ' ||
+      CASE
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '1' THEN 'January'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '2' THEN 'February'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '3' THEN 'March'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '4' THEN 'April'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '5' THEN 'May'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '6' THEN 'June'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '7' THEN 'July'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '8' THEN 'August'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '9' THEN 'September'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '10' THEN 'October'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '11' THEN 'November'
+        WHEN cast(substr(birthTime, 5, 2) AS text) = '12' THEN 'December'
+        ELSE 'Invalid Month'
+      END || ' ' || substr(birthTime, 1, 4) || ' <b>Gender</b>: Female</td>
+    </tr>
+    <tr>
+      <th>Guardian</th>
+      <td>' || guardian_name || ' ' || guardian_family_name || ' - ' || guardian_display_name || '</td>
+    </tr>
+    <tr>'
+    ||
+    CASE
+      WHEN performer_name != '' THEN '
+      <th>Documentation Of</th>
+      <td><b>Performer</b>: ' || performer_name || ' ' || performer_family || ' ' || performer_suffix || ' <b>Organization</b>: ' || performer_organization || '</td>
+    </tr>'
+      ELSE ''
+    END ||'
+    <tr>
+      <th>Author</th>
+      <td>' || ad.author_given_names || ' ' || ad.author_family_names || ' ' || ad.author_suffixes || ', <b>Authored On</b>: ' ||
+      CASE
+        WHEN substr(author_times, 7, 2) = '01' THEN substr(author_times, 9, 2) || 'st '
+        WHEN substr(author_times, 7, 2) = '02' THEN substr(author_times, 9, 2) || 'nd '
+        WHEN substr(author_times, 7, 2) = '03' THEN substr(author_times, 9, 2) || 'rd '
+        ELSE substr(author_times, 9, 2) || 'th '
+      END ||
+      CASE
+        WHEN substr(author_times, 5, 2) = '01' THEN 'January '
+        WHEN substr(author_times, 5, 2) = '02' THEN 'February '
+        WHEN substr(author_times, 5, 2) = '03' THEN 'March '
+        WHEN substr(author_times, 5, 2) = '04' THEN 'April '
+        WHEN substr(author_times, 5, 2) = '05' THEN 'May '
+        WHEN substr(author_times, 5, 2) = '06' THEN 'June '
+        WHEN substr(author_times, 5, 2) = '07' THEN 'July '
+        WHEN substr(author_times, 5, 2) = '08' THEN 'August '
+        WHEN substr(author_times, 5, 2) = '09' THEN 'September '
+        WHEN substr(author_times, 5, 2) = '10' THEN 'October '
+        WHEN substr(author_times, 5, 2) = '11' THEN 'November '
+        WHEN substr(author_times, 5, 2) = '12' THEN 'December '
+        ELSE 'Invalid Month'
+      END ||
+      substr(author_times, 1, 4) || '</td>
+    </tr>
+    ' ||
+    CASE
+      WHEN ad.organization_names != '' THEN '
+      <tr>
+        <th>Author</th>
+        <td>' || ad.device_manufacturers || ' - ' || ad.device_software || ', Organization: ' || ad.organization_names || ', <b>Authored On</b>: ' ||
+        CASE
+          WHEN substr(author_times, 7, 2) = '01' THEN substr(author_times, 9, 2) || 'st '
+          WHEN substr(author_times, 7, 2) = '02' THEN substr(author_times, 9, 2) || 'nd '
+          WHEN substr(author_times, 7, 2) = '03' THEN substr(author_times, 9, 2) || 'rd '
+          ELSE substr(author_times, 9, 2) || 'th '
+        END ||
+        CASE
+          WHEN substr(author_times, 5, 2) = '01' THEN 'January '
+          WHEN substr(author_times, 5, 2) = '02' THEN 'February '
+          WHEN substr(author_times, 5, 2) = '03' THEN 'March '
+          WHEN substr(author_times, 5, 2) = '04' THEN 'April '
+          WHEN substr(author_times, 5, 2) = '05' THEN 'May '
+          WHEN substr(author_times, 5, 2) = '06' THEN 'June '
+          WHEN substr(author_times, 5, 2) = '07' THEN 'July '
+          WHEN substr(author_times, 5, 2) = '08' THEN 'August '
+          WHEN substr(author_times, 5, 2) = '09' THEN 'September '
+          WHEN substr(author_times, 5, 2) = '10' THEN 'October '
+          WHEN substr(author_times, 5, 2) = '11' THEN 'November '
+          WHEN substr(author_times, 5, 2) = '12' THEN 'December '
+        END ||
+        substr(author_times, 1, 4) || '</td>
+      </tr>'
+      ELSE ''
+    END || '
+  </table>' AS html
+FROM patient_detail pd
+JOIN author_detail ad ON pd.message_uid = ad.message_uid
+WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
+
+    SELECT 'html' AS component, '
+      <style>
+        .patient-details {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          font-family: Arial, sans-serif;
+        }
+        .patient-details th, .patient-details td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+          vertical-align: top;
+        }
+        .patient-details th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+        .section-header {
+          background-color: #e6e6e6;
+        }
+        .no-border-bottom {
+          border-bottom: none;
+        }
+        .no-border-top {
+          border-top: none;
+        }
+        .patient-details th {
+            width: 20%;
+        }
+      </style>
+
+      <table class="patient-details">
+      <tr>
+      <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Document</b></th>
+      <td class="no-border-bottom" style="width:30%">
+        ID: '|| document_extension||' ('|| document_id||')<br>
+        Version:'|| version||'<br>
+        Set-ID: '|| set_id_extension||'
+      </td>
+      <th style="background-color: #f2f2f2"><b>Created On</b></th>
+      <td class="no-border-bottom"> ' ||
+      CASE
+          WHEN substr(custodian_time, 7, 2) = '01' THEN substr(custodian_time, 9, 2) || 'st '
+          WHEN substr(custodian_time, 7, 2) = '02' THEN substr(custodian_time, 9, 2) || 'nd '
+          WHEN substr(custodian_time, 7, 2) = '03' THEN substr(custodian_time, 9, 2) || 'rd '
+          ELSE substr(custodian_time, 9, 2) || 'th '
+      END ||
+      CASE
+          WHEN substr(custodian_time, 5, 2) = '01' THEN 'January '
+          WHEN substr(custodian_time, 5, 2) = '02' THEN 'February '
+          WHEN substr(custodian_time, 5, 2) = '03' THEN 'March '
+          WHEN substr(custodian_time, 5, 2) = '04' THEN 'April '
+          WHEN substr(custodian_time, 5, 2) = '05' THEN 'May '
+          WHEN substr(custodian_time, 5, 2) = '06' THEN 'June '
+          WHEN substr(custodian_time, 5, 2) = '07' THEN 'July '
+          WHEN substr(custodian_time, 5, 2) = '08' THEN 'August '
+          WHEN substr(custodian_time, 5, 2) = '09' THEN 'September '
+          WHEN substr(custodian_time, 5, 2) = '10' THEN 'October '
+          WHEN substr(custodian_time, 5, 2) = '11' THEN 'November '
+          WHEN substr(custodian_time, 5, 2) = '12' THEN 'December '
+      END ||
+      substr(custodian_time, 1, 4) || '</td>
+      </tr>
+      <tr>
+        <th style="background-color: #f2f2f2"><b>Custodian</b></th>
+        <td>'|| custodian||'</td>
+        <th style="background-color: #f2f2f2"><b>Contact Details</b></th>
+        <td>
+          Workplace: '|| custodian_address_line1||' '|| custodian_city||', '|| custodian_state||' '|| custodian_postal_code||'<br> '|| custodian_country||'<br>
+          Tel Workplace: '|| custodian_telecom||'
+        </td>
+      </tr>
+    </table>'AS html
+    FROM patient_detail
+    WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
+
+    SELECT 'html' AS component, '
+    <style>
+      .patient-details {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .patient-details th, .patient-details td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .patient-details th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      .section-header {
+        background-color: #e6e6e6;
+      }
+      .no-border-bottom {
+        border-bottom: none;
+      }
+      .no-border-top {
+        border-top: none;
+      }
+      .patient-details th {
+          width: 20%;
+      }
+    </style>
+
+    <table class="patient-details">
+
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Patient</b></th>
+        <td class="no-border-bottom" style="width:30%">'|| first_name||'  '|| last_name||'</td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details</b></th>
+        <td class="no-border-bottom">'|| address||' '|| city||', '|| state||' '|| postalCode||' '|| addr_use||'</td>
+      </tr>
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Date of Birth</b></th>
+        <td class="no-border-bottom">'|| strftime('%Y-%m-%d', substr(birthTime, 1, 4) || '-' || substr(birthTime, 5, 2) || '-' || substr(birthTime, 7, 2))||' </td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Gender</b></th>
+        <td class="no-border-bottom">'|| CASE
+        WHEN gender_code = 'F' THEN 'Female'
+        WHEN gender_code = 'M' THEN 'Male'
+        ELSE 'Other'
+      END||'</td>
+      </tr>
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Race</b></th>
+        <td class="no-border-bottom">'||race_displayName||'</td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Ethnicity</b></th>
+        <td class="no-border-bottom">'||ethnic_displayName||'</td>
+      </tr>
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Patient-IDs</b></th>
+        <td class="no-border-bottom">'||id||'</td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Language Communication</b></th>
+        <td class="no-border-bottom">'||
+        CASE
+            WHEN language_code IS NOT NULL THEN language_code
+            ELSE 'Not Given'
+        END
+        ||'</td>
+      </tr>
+
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Guardian</b></th>
+        <td class="no-border-bottom">'||guardian_name||' '||guardian_family_name||' '||guardian_display_name||'</td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details</b></th>
+        <td class="no-border-bottom">'|| guardian_address||', '|| guardian_city||' ,'|| guardian_state||', '|| guardian_zip||' ,'|| guardian_country||'</td>
+      </tr>
+
+      <tr>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Provider Organization</b></th>
+        <td class="no-border-bottom">'||provider_organization||'</td>
+        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details (Organization)</b></th>
+        <td class="no-border-bottom">'|| provider_address_line||', '|| provider_city||' ,'|| provider_state||', '|| provider_country||' ,'|| provider_zip||'</td>
+      </tr>
+
+
+    </table> 'AS html
+  FROM patient_detail
+  WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
+
+--  WITH extracted_data AS (
+--     SELECT
+--         section_title,
+--         section_data,
+--         section_code
+--     FROM
+--         patient_diagnosis
+--     WHERE
+--         CAST(message_uid AS TEXT) = CAST($id AS TEXT)
+--         AND json_valid(section_data)  -- Check if section_data is valid JSON
+-- ),
+-- detail_data AS (
+--     SELECT
+--         section_title,
+--         '<table><tr><td>' || json_extract(td.value, '$[0]') || '</td></tr></table>' AS json_data
+--     FROM
+--         extracted_data,
+--         json_each(section_data) td
+-- )
+-- SELECT
+--     'html' AS component,
+--     '<details>
+--         <summary>' || section_title || '</summary>
+--         <div>
+--             <p>' || json_data || '</p>
+--         </div>
+--     </details>' AS html
+-- FROM
+--     detail_data;
+
+
+--  WITH extracted_data AS (
+--     SELECT
+--         section_title,
+--         section_data
+--     FROM
+--         patient_diagnosis
+--     WHERE
+--         CAST(message_uid AS TEXT) = CAST($id AS TEXT)
+--         AND json_valid(section_data)  -- Ensure section_data is valid JSON
+-- ),
+-- detail_data AS (
+--     SELECT
+--         section_title,
+--         COALESCE(group_concat(
+--             '<tr><td>' || json_extract(td.value, '$.td[0]') || '</td>' ||
+--             '<td>' || json_extract(td.value, '$.td[1].content.#text') || '</td>' ||
+--             '<td>' || json_extract(td.value, '$.td[2]') || '</td></tr>', ''
+--         ),'') AS json_data
+--     FROM
+--         extracted_data,
+--         json_each(section_data) td
+--     GROUP BY
+--         section_title
+-- )
+-- SELECT
+--     'html' AS component,
+--     '<details>
+--         <summary>' || section_title || '</summary>
+--         <div>
+--             <table border="1">
+--                 <tr><th>Substance</th><th>Reaction</th><th>Status</th></tr>' || json_data || '
+--             </table>
+--         </div>
+--     </details>' AS html
+-- FROM
+--     detail_data;
+
+
+
+  select 'html' as component;
+  select '<style>
+      .patient-details table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .patient-details th, .patient-details td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .patient-details th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      .section-header {
+        background-color: #e6e6e6;
+      }
+      .no-border-bottom {
+        border-bottom: none;
+      }
+      .no-border-top {
+        border-top: none;
+      }
+      .patient-details th {
+          width: 20%;
+      }
+      .accordian-head{
+        border:1px solid #ddd;
+        margin-bottom:1px;
+        display:block;
+      }
+      .accordian-head summary{
+        padding:8px 15px;
+        background: #f2f2f2;
+        font-weight:bold
+      }
+    </style>
+    <details class="accordian-head">
+  <summary>'||section_title||'</summary>
+  <div class="patient-details">
+    <div>'||table_data||'</div>
+  </div>
+</details>
+
+' as html
+FROM patient_diagnosis
+  WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
+  `;
+  }
   @dmsNav({
     caption: "Dispatched",
     description: "",
@@ -131,37 +576,21 @@ export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
             TRUE as search;
       SELECT * from phimail_delivery_detail where status!='dispatched'`;
   }
-
-  // @dmsNav({
-  //     caption: "Patient Details",
-  //     description:
-  //         "Shows the details of patient",
-  //     siblingOrder: 3,
-  // })
-  // "dms/patient-detail.sql"() {
-  //     return this.SQL`
-  //   ${this.activePageTitle()}
-
-  //   SELECT 'table' as component;
-  //   SELECT * from patient_detail`;
-  // }
-
-  // @dmsNav({
-  //     caption: "Patient Diangnostics",
-  //     description:
-  //         "Shows the patient observations",
-  //     siblingOrder: 4,
-  // })
-  // "dms/patient-diagnostic-detail.sql"() {
-  //     return this.SQL`
-  //   ${this.activePageTitle()}
-
-  //   SELECT 'table' as component;
-  //   SELECT * from patient_clinical_observation`;
-  // }
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
+// if (import.meta.main) {
+//   console.log(spn.TypicalSqlPageNotebook.SQL(new dmsSqlPages()).join("\n"));
+// }
 if (import.meta.main) {
-  console.log(spn.TypicalSqlPageNotebook.SQL(new dmsSqlPages()).join("\n"));
+  console.log(
+    spn.TypicalSqlPageNotebook.SQL<
+      spn.TypicalSqlPageNotebook
+    >(
+      new sh.ShellSqlPages(),
+      new c.ConsoleSqlPages(),
+      new ur.UniformResourceSqlPages(),
+      new dmsSqlPages(),
+    ).join("\n"),
+  );
 }
