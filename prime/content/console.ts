@@ -17,7 +17,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
       -- ${this.tsProvenanceSqlComment(import.meta.url)}
 
-      -- console_information_schema_* tables are convenience tables
+      -- console_information_schema_* are convenience views
       -- to make it easier to work than pragma_table_info.
 
       DROP VIEW IF EXISTS console_information_schema_table;
