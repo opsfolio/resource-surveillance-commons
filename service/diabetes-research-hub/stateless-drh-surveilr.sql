@@ -317,7 +317,7 @@ ORDER BY
 
 
 -------------Dynamically insert the sqlpages for CGM raw tables--------------------------
-
+/*
 WITH raw_cgm_table_name AS (
     -- Select all table names
     SELECT table_name
