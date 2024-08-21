@@ -1,0 +1,36 @@
+name: Run Deno and Push Generated SQL
+
+on:
+  push:
+    paths:
+      - 'service/diabetes-research-hub/*.sql.ts'
+
+jobs:
+  run-deno:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+
+    - name: Find and run Deno for SQL files
+      run: |
+        for file in service/diabetes-research-hub/*.sql.ts; do
+          output_file="${file%.sql.ts}.auto.sql"
+          deno run "$file" > "$output_file"
+        done
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add service/diabetes-research-hub/*.auto.sql
+        git commit -m "Auto-generated .sql files"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
