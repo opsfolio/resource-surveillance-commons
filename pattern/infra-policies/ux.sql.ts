@@ -2,75 +2,69 @@
 import { SqlPageNotebook as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
-function iaNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
+function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/ia",
+    parentPath: "/ip",
   });
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class iaSqlPages extends spn.TypicalSqlPageNotebook {
+export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
     return this.SQL`
-      -- delete all /ia-related entries and recreate them in case routes are changed
-      DELETE FROM sqlpage_aide_navigation WHERE path like '/ia%';
+      -- delete all /ip-related entries and recreate them in case routes are changed
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/ip%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
     `;
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infrastructural assurance",
-    description: "Infrastructural assurance",
+    caption: "Infra Policiese",
+    description: "Infra Policiese",
   })
-  "ia/index.sql"() {
+  "ip/index.sql"() {
     return this.SQL`
       WITH navigation_cte AS (
           SELECT COALESCE(title, caption) as title, description
             FROM sqlpage_aide_navigation
-           WHERE namespace = 'prime' AND path = '/ia'
+           WHERE namespace = 'prime' AND path = '/ip'
       )
       SELECT 'list' AS component, title, description
         FROM navigation_cte;
       SELECT caption as title, COALESCE(url, path) as link, description
         FROM sqlpage_aide_navigation
-       WHERE namespace = 'prime' AND parent_path = '/ia'
+       WHERE namespace = 'prime' AND parent_path = '/ip'
        ORDER BY sibling_order;`;
   }
 
-  @iaNav({
-    caption: "Policy",
+  @ipNav({
+    caption: "Policy Dashboard",
     description: ``,
     siblingOrder: 1,
   })
-  "ia/policy.sql"() {
-    const viewName = `policy`;
-    const pagination = this.pagination({ tableOrViewName: viewName });
+  "ip/policy_dashboard.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
-      SELECT 'table' AS component;
-      SELECT * FROM policy;
-
-       ${pagination.init()}
-
-      -- Display uniform_resource table with pagination
-      SELECT 'table' AS component,
-            TRUE AS sort,
-            TRUE AS search;
-      SELECT * FROM ${viewName}
-       LIMIT $limit
-      OFFSET $offset;
-
-      ${pagination.renderSimpleMarkdown()}
+      -- SELECT 'table' AS component;
+      -- SELECT * FROM policy_dashboard;
+      select
+    'card'             as component,
+    'Policy Dashboard' as title,
+    3                 as columns;
+    select
+    segment  as title,
+    '[' || segment || '](http://google.com)' AS "description_md"
+    FROM policy_dashboard;
       `;
   }
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(spn.TypicalSqlPageNotebook.SQL(new iaSqlPages()).join("\n"));
+  console.log(spn.TypicalSqlPageNotebook.SQL(new ipSqlPages()).join("\n"));
 }
