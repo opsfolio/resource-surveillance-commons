@@ -63,6 +63,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     3                 as columns;
     select
     segment  as title,
+    'arrow-big-right'       as icon,
     '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
     FROM policy_dashboard;
       `;
