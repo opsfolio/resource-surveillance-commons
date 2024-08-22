@@ -56,8 +56,6 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   "ip/policy_dashboard.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
-      -- SELECT 'table' AS component;
-      -- SELECT * FROM policy_dashboard;
       select
     'card'             as component,
     3                 as columns;

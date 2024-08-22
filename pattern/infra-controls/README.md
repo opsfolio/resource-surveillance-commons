@@ -1,7 +1,7 @@
-```bash
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ cat stateless-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ cat orchestrate-stateful-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
-```
+# Infra Controls
+
+The Infra Controls project is designed to manage and implement controls specific
+to various audit requirements, such as CC1001, CC1002, and others. This project
+provides a platform for defining, applying, and tracking the effectiveness of
+these controls, ensuring that your organization meets the necessary standards
+for audit compliance.

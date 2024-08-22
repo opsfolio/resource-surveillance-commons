@@ -1,7 +1,7 @@
-```bash
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ cat stateless-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ cat orchestrate-stateful-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
-```
+# Infra Audit
+
+The Infra Audit project is designed to manage and streamline audits across
+various frameworks, including HIPAA, HITRUST, AICPA, and others. This project
+provides a comprehensive platform for conducting, tracking, and reporting on
+compliance audits, ensuring that your organization meets the necessary
+regulatory requirements.
