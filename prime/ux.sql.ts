@@ -9,14 +9,11 @@ import * as spn from "./sqlpage-notebook.ts";
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(
-    spn.TypicalSqlPageNotebook.SQL<
-      spn.TypicalSqlPageNotebook
-    >(
-      new sh.ShellSqlPages(),
-      new c.ConsoleSqlPages(),
-      new ur.UniformResourceSqlPages(),
-      new orch.OrchestrationSqlPages(),
-    ).join("\n"),
+  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+    new sh.ShellSqlPages(),
+    new c.ConsoleSqlPages(),
+    new ur.UniformResourceSqlPages(),
+    new orch.OrchestrationSqlPages(),
   );
+  console.log(SQL.join("\n"));
 }

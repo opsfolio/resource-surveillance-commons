@@ -1,9 +1,25 @@
-import { path, SQLa, SQLPageAide as spa, ws } from "./deps.ts";
+import { callable as c, path, SQLa, ws } from "./deps.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
-type TypicalSqlPagesFileRecord = spa.SqlPagesFileRecord<TypicalSqlPageNotebook>;
+/**
+ * Represents the structure of a SQL page file with path and content.
+ */
+export interface SqlPagesFileRecord {
+  /**
+   * A text or string field that stores the file path or identifier. This
+   * path is used to reference the file within the SQLPage application, allowing it
+   * to be served or accessed as needed by SQLPage.
+   */
+  readonly path: string;
+  /** A CLOB-ish field that contains the content that SQLPage will serve. */
+  readonly content: string;
+  /** the method that generated the content */
+  readonly method: ReturnType<
+    c.Callables<TypicalSqlPageNotebook, Any>["filter"]
+  >[number];
+}
 
 /**
  * Type representing the initialization options for shell component configuration.
@@ -17,13 +33,13 @@ export type PathShellConfig = {
   readonly path: string;
   readonly shellStmts:
     | "do-not-include"
-    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+    | ((spfr: SqlPagesFileRecord) => string | string[]);
   readonly breadcrumbsFromNavStmts:
     | "no"
-    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+    | ((spfr: SqlPagesFileRecord) => string | string[]);
   readonly pageTitleFromNavStmts:
     | "no"
-    | ((spfr: TypicalSqlPagesFileRecord) => string | string[]);
+    | ((spfr: SqlPagesFileRecord) => string | string[]);
 };
 
 /**
@@ -283,6 +299,7 @@ export class TypicalSqlPageNotebook {
   readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<
     SqlPageNotebookEmitCtx
   >();
+  readonly formattedSQL: boolean = true;
 
   // type-safe wrapper for all SQL text generated in this library;
   // we call it `SQL` so that VS code extensions like frigus02.vscode-sql-tagged-template-literals
@@ -386,7 +403,7 @@ export class TypicalSqlPageNotebook {
       DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;`
   }
 
-  shellConfig(spfr: TypicalSqlPagesFileRecord) {
+  shellConfig(spfr: SqlPagesFileRecord) {
     if (this.shellEliminated.has(spfr.path)) return null;
 
     const defaults: PathShellConfig = {
@@ -497,6 +514,7 @@ export class TypicalSqlPageNotebook {
       link?: string;
     })[]
   ) {
+    // deno-fmt-ignore
     return ws.unindentWhitespace(`
         SELECT 'breadcrumb' as component;
         WITH RECURSIVE breadcrumbs AS (
@@ -506,9 +524,7 @@ export class TypicalSqlPageNotebook {
                 parent_path, 0 AS level,
                 namespace
             FROM sqlpage_aide_navigation
-            WHERE namespace = 'prime' AND path = '${
-      activePath.replaceAll("'", "''")
-    }'
+            WHERE namespace = 'prime' AND path = '${activePath.replaceAll("'", "''")}'
             UNION ALL
             SELECT
                 COALESCE(nav.abbreviated_caption, nav.caption) AS title,
@@ -519,11 +535,7 @@ export class TypicalSqlPageNotebook {
         )
         SELECT title, link FROM breadcrumbs ORDER BY level DESC;`) +
       (additional.length
-        ? (additional.map((crumb) =>
-          `\nSELECT ${
-            crumb.title ? `'${crumb.title}'` : crumb.titleExpr
-          } AS title, '${crumb.link ?? "#"}' AS link;`
-        ))
+        ? (additional.map((crumb) => `\nSELECT ${crumb.title ? `'${crumb.title}'` : crumb.titleExpr} AS title, '${crumb.link ?? "#"}' AS link;`))
         : "");
   }
 
@@ -581,6 +593,39 @@ export class TypicalSqlPageNotebook {
   `;
   }
 
+  async methodSqlText(
+    c: ReturnType<c.Callables<TypicalSqlPageNotebook, Any>["filter"]>[number],
+  ) {
+    const value = await c.call();
+    if (typeof value === "string") {
+      return value;
+    } else if (Array.isArray(value)) {
+      return value.join("\n");
+    } else if (SQLa.isSqlTextSupplier(value)) {
+      return value.SQL(this.emitCtx);
+    } else {
+      // deno-fmt-ignore
+      return `\n/* '${String(c.callable)}' in '${String(c.source)}' returned type ${typeof value} instead of string | string[] | SQLa.SqlTextSupplier */`;
+    }
+  }
+
+  /**
+   * Fetch a local or remote file and return the text value
+   * @param url the source
+   * @returns string
+   */
+  static async fetchText(
+    url: URL | string,
+    onError?: (response: Response, url: URL | string) => string | undefined,
+  ) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return onError?.(response, url) ??
+        `Error fetching ${url}: [${response.status}] (${response.statusText})`;
+    }
+    return response.text();
+  }
+
   /**
    * Generate SQL from "method-based" notebooks. Any method that ends in "*.sql"
    * (case sensitive) will be assumed to generate SQL that will be upserted into
@@ -590,44 +635,45 @@ export class TypicalSqlPageNotebook {
    * @param sources list of one or more instances of TypicalSqlPageNotebook subclasses
    * @returns an array of strings which are the SQL statements
    */
-  static SQL<Source extends TypicalSqlPageNotebook>(...sources: Source[]) {
-    return new spa.SQLPageAide<
-      TypicalSqlPageNotebook,
-      Any,
-      Any[],
-      TypicalSqlPagesFileRecord
-    >(...sources)
-      .includeUpserts(/\.sql$/, /\.json$/)
-      .includeSql(/DQL$/, /DML$/, /DDL$/)
-      .withSqlPagesFileRecordTransformer((spfr) => {
-        const shell = spfr.source.instance.shellConfig(spfr);
-        if (shell) {
-          return {
-            ...spfr,
-            // deno-fmt-ignore
-            content: ws.unindentWhitespace(`
+  static async SQL(...sources: TypicalSqlPageNotebook[]) {
+    const cc = c.callablesCollection<TypicalSqlPageNotebook, Any>(...sources);
+    const arbitrarySqlStmts = await Promise.all(
+      cc.filter({
+        include: [/SQL$/, /DQL$/, /DML$/, /DDL$/],
+      }).map(async (c) => await c.source.instance.methodSqlText(c)),
+    );
+    const sqlPageFileUpserts = await Promise.all(
+      cc.filter({ include: [/\.sql$/, /\.json$/] })
+        .map(
+          async (method) => {
+            const notebook = method.source.instance;
+            let spfr: SqlPagesFileRecord = {
+              method: method as Any,
+              path: String(method.callable),
+              content: await notebook.methodSqlText(method),
+            };
+            const shell = notebook.shellConfig(spfr);
+            if (shell) {
+              spfr = {
+                ...spfr,
+                // deno-fmt-ignore
+                content: ws.unindentWhitespace(`
               ${shell.shellStmts !== "do-not-include" ? shell.shellStmts(spfr): "-- not including shell"}
               ${shell.breadcrumbsFromNavStmts !== "no" ? shell.breadcrumbsFromNavStmts(spfr): "-- not including breadcrumbs from sqlpage_aide_navigation"}
               ${shell.pageTitleFromNavStmts !== "no" ? shell.pageTitleFromNavStmts(spfr) : "-- not including page title from sqlpage_aide_navigation"}
 
               ${spfr.content}
             `),
-          };
-        } else {
-          return spfr;
-        }
-      })
-      .onNonStringUpsertContents((result, _sp, method) =>
-        SQLa.isSqlTextSupplier(result)
-          ? result.SQL(sources[0].emitCtx)
-          : `/* unknown result from ${method} */`
-      )
-      .onNonStringSqlStmt((result, _sp, method) =>
-        SQLa.isSqlTextSupplier(result)
-          ? result.SQL(sources[0].emitCtx)
-          : `/* unknown result from ${method} */`
-      )
-      .emitformattedSQL()
-      .SQL();
+              };
+            }
+            const escapedPath = spfr.path.replace(/'/g, "''");
+            const escapedContent = spfr.content.replace(/'/g, "''");
+            return notebook.formattedSQL == false
+              ? `INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('${escapedPath}', '${escapedContent}', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;`
+              : `INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (\n      '${escapedPath}',\n      '${escapedContent}',\n      CURRENT_TIMESTAMP)\n  ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;`;
+          },
+        ),
+    );
+    return [...arbitrarySqlStmts, ...sqlPageFileUpserts];
   }
 }
