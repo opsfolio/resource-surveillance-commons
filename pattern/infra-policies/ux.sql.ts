@@ -68,16 +68,13 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
-  @ipNav({
-    caption: "Policy Detail",
-    description: ``,
-    siblingOrder: 1,
-  })
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
   "ip/policy_detail.sql"() {
     return this.SQL`
 
-    select 'datagrid' as component;
-      SELECT content AS description FROM policy_detail WHERE uniform_resource_id = $id::TEXT;
+    select 'card' as component,
+    1      as columns;
+      SELECT content AS description_md FROM policy_detail WHERE uniform_resource_id = $id::TEXT;
 
 
     `;
