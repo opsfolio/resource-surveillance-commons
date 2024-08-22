@@ -1,5 +1,11 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
 import { SqlPageNotebook as spn } from "./deps.ts";
+import {
+  console as c,
+  orchestration as orch,
+  shell as sh,
+  uniformResource as ur,
+} from "../../prime/content/mod.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
@@ -54,17 +60,43 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
       -- SELECT * FROM policy_dashboard;
       select
     'card'             as component,
-    'Policy Dashboard' as title,
     3                 as columns;
     select
     segment  as title,
-    '[' || segment || '](http://google.com)' AS "description_md"
+    '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
     FROM policy_dashboard;
       `;
+  }
+
+  @ipNav({
+    caption: "Policy Detail",
+    description: ``,
+    siblingOrder: 1,
+  })
+  "ip/policy_detail.sql"() {
+    return this.SQL`
+
+    select 'datagrid' as component;
+      SELECT content AS description FROM policy_detail WHERE uniform_resource_id = $id::TEXT;
+
+
+    `;
   }
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
+// if (import.meta.main) {
+//   console.log(spn.TypicalSqlPageNotebook.SQL(new ipSqlPages()).join("\n"));
+// }
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-  console.log(spn.TypicalSqlPageNotebook.SQL(new ipSqlPages()).join("\n"));
+  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+    new sh.ShellSqlPages(),
+    new c.ConsoleSqlPages(),
+    new ur.UniformResourceSqlPages(),
+    new orch.OrchestrationSqlPages(),
+    new ipSqlPages(),
+  );
+  console.log(SQL.join("\n"));
 }
