@@ -1,6 +1,8 @@
 -- --------------------------------------------------------------------------------
 -- Script to prepare convenience views to access uniform_resource.content column
--- as FHIR content, ensuring only valid JSON is processed.
+-- as FHIR content, ensuring only valid JSON is processed. It will be automatically
+-- included in `ux.sql.ts` but it can also be used independently. Be sure all SQL
+-- is idempotent.
 -- --------------------------------------------------------------------------------
 
 -- TODO: will this help performance?

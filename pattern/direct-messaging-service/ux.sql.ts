@@ -2,6 +2,7 @@
 import { SqlPageNotebook as spn } from "./deps.ts";
 import {
   console as c,
+  orchestration as orch,
   shell as sh,
   uniformResource as ur,
 } from "../../prime/content/mod.ts";
@@ -579,18 +580,13 @@ FROM patient_diagnosis
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-// if (import.meta.main) {
-//   console.log(spn.TypicalSqlPageNotebook.SQL(new dmsSqlPages()).join("\n"));
-// }
 if (import.meta.main) {
-  console.log(
-    spn.TypicalSqlPageNotebook.SQL<
-      spn.TypicalSqlPageNotebook
-    >(
-      new sh.ShellSqlPages(),
-      new c.ConsoleSqlPages(),
-      new ur.UniformResourceSqlPages(),
-      new dmsSqlPages(),
-    ).join("\n"),
+  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+    new sh.ShellSqlPages(),
+    new c.ConsoleSqlPages(),
+    new ur.UniformResourceSqlPages(),
+    new orch.OrchestrationSqlPages(),
+    new dmsSqlPages(),
   );
+  console.log(SQL.join("\n"));
 }

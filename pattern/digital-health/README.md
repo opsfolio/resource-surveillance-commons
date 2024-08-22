@@ -30,13 +30,8 @@ $ mkdir ingest && cd ingest && unzip ../synthea_sample_data_fhir_latest.zip && c
 # then run the ingestion of files downloaded above
 $ surveilr ingest files -r ingest/
 
-# apply the FHIR views and create cached tables directly from GitHub
-$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
-$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+$ deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/digital-health/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 $ surveilr web-ui --port 9000
 # launch a browser and go to http://localhost:9000/fhir/index.sql
 ```
@@ -96,15 +91,8 @@ ignored, only `sqlite3` is required because all content is in the
 other dependencies.
 
 ```bash
-# load the "Console" and other menu/routing utilities
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
-# apply the "stateless" FHIR utility views
-$ cat stateless-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-
-# optionally create `*_cached` tables ("materialized views") to improve performance
-$ cat orchestrate-stateful-fhir.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+# load the "Console" and other menu/routing utilities plus FHIR Web UI
+$ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
@@ -114,7 +102,7 @@ $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
 # browse http://localhost:9000/ to see web UI
 
-# browse http://localhost:9000/fhir/info-schema.sql to see FHIR-specific 
+# browse http://localhost:9000/fhir/info-schema.sql to see FHIR-specific
 ```
 
 Once you apply `orchestrate-stateful-fhir.surveilr.sql` and
@@ -124,41 +112,56 @@ accessed through views or `*.cached` tables in
 database file, archive it, use in reporting tools, DBeaver, DataGrip, or any
 other SQLite data access tools.
 
-##  Installing SQLite 3.46.0 on Ubuntu
+## Installing SQLite 3.46.0 on Ubuntu
 
 To install SQLite 3.46.0 on Ubuntu, follow these steps:
 
 ### Update and Install Dependencies
 
-Ensure your package lists are up-to-date and install the necessary tools to build software from source:
+Ensure your package lists are up-to-date and install the necessary tools to
+build software from source:
 
 ```bash
 sudo apt update
 sudo apt install -y build-essential libreadline-dev wget
 ```
-###  Download SQLite 3.46.0
-Navigate to the directory where you want to download the SQLite source code and then download it:
+
+### Download SQLite 3.46.0
+
+Navigate to the directory where you want to download the SQLite source code and
+then download it:
+
 ```bash
 cd /usr/local/src
 sudo wget https://www.sqlite.org/2024/sqlite-autoconf-3460000.tar.gz
 ```
-###  Extract the Downloaded Tarball
+
+### Extract the Downloaded Tarball
+
 ```bash
 sudo tar -xzf sqlite-autoconf-3460000.tar.gz
 cd sqlite-autoconf-3460000
 ```
-###  Build and Install SQLite
+
+### Build and Install SQLite
+
 Configure, build, and install SQLite:
+
 ```bash
 sudo ./configure --prefix=/usr/local
 sudo make
 sudo make install
 ```
-###  Verify the Installation
-After installation, open a new terminal and verify that SQLite 3.46.0 is installed correctly by checking its version:
+
+### Verify the Installation
+
+After installation, open a new terminal and verify that SQLite 3.46.0 is
+installed correctly by checking its version:
+
 ```bash
 sqlite3 --version
 ```
+
 ## Automatically reloading SQL when it changes
 
 On sandboxes during development and editing of `.sql` or `.sql.ts` you may want
