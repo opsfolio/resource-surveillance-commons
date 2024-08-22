@@ -73,7 +73,9 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
 
     select 'card' as component,
     1      as columns;
-      SELECT content AS description_md FROM policy_detail WHERE uniform_resource_id = $id::TEXT;
+      SELECT  json_extract(content_fm_body_attrs, '$.attrs.title') AS title,
+    json_extract(content_fm_body_attrs, '$.body') AS description_md
+    FROM policy_detail WHERE uniform_resource_id = $id::TEXT;
 
 
     `;
