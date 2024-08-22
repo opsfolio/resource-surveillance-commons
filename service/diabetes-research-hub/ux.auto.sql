@@ -98,7 +98,8 @@ CREATE TABLE sqlpage_aide_navigation (
     title TEXT, -- for full titles when elaboration is required, default to caption if NULL
     abbreviated_caption TEXT, -- for breadcrumbs and other "short" form, default to caption if NULL
     description TEXT, -- for elaboration or explanation
-    CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
+    -- TODO: figure out why Rusqlite does not allow this but sqlite3 does
+    -- CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
     CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
 );
 
