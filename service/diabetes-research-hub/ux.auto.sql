@@ -1,6 +1,6 @@
--- code provenance: `ConsoleSqlPages.infoSchemaDDL` (file:///home/anitha/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/content/console.ts)
+-- code provenance: `ConsoleSqlPages.infoSchemaDDL` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
 
--- console_information_schema_* tables are convenience tables
+-- console_information_schema_* are convenience views
 -- to make it easier to work than pragma_table_info.
 
 DROP VIEW IF EXISTS console_information_schema_table;
@@ -120,7 +120,7 @@ INSERT OR REPLACE INTO code_notebook_cell (notebook_kernel_id, code_notebook_cel
   'web-ui.auto_generate_console_content_tabular_sqlpage_files',
   'Web UI',
   'auto_generate_console_content_tabular_sqlpage_files',
-  '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/anitha/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/content/console.ts)
+  '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
 
       -- the "auto-generated" tables will be in ''*.auto.sql'' with redirects
       DELETE FROM sqlpage_files WHERE path like ''console/content/table/%.auto.sql'';
@@ -187,7 +187,7 @@ INSERT OR REPLACE INTO code_notebook_cell (notebook_kernel_id, code_notebook_cel
   'TODO',
   'A series of idempotent INSERT statements which will auto-generate "default" content for all tables and views'
 );
-      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/anitha/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/content/console.ts)
+      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
 
       -- the "auto-generated" tables will be in '*.auto.sql' with redirects
       DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
@@ -273,6 +273,109 @@ CREATE VIEW uniform_resource_file AS
   LEFT JOIN ur_ingest_session_fs_path_entry pe ON ur.uniform_resource_id = pe.uniform_resource_id
   WHERE ur.ingest_fs_path_id IS NOT NULL;
     
+INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
+VALUES
+    ('prime', '/', 1, '/orchestration', '/orchestration/', 'Orchestration', NULL, NULL, 'Explore details about all orchestration'),
+    ('prime', '/orchestration', 99, '/orchestration/info-schema.sql', '/orchestration/info-schema.sql', 'Orchestration Tables and Views', NULL, NULL, 'Information Schema documentation for orchestrated objects')
+ON CONFLICT (namespace, parent_path, path)
+DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
+        
+ DROP VIEW IF EXISTS orchestration_session_by_device;
+ CREATE VIEW orchestration_session_by_device AS
+ SELECT
+     d.device_id,
+     d.name AS device_name,
+     COUNT(*) AS session_count
+ FROM orchestration_session os
+ JOIN device d ON os.device_id = d.device_id
+ GROUP BY d.device_id, d.name;
+
+ DROP VIEW IF EXISTS orchestration_session_duration;
+ CREATE VIEW orchestration_session_duration AS
+ SELECT
+     os.orchestration_session_id,
+     onature.nature AS orchestration_nature,
+     os.orch_started_at,
+     os.orch_finished_at,
+     (JULIANDAY(os.orch_finished_at) - JULIANDAY(os.orch_started_at)) * 24 * 60 * 60 AS duration_seconds
+ FROM orchestration_session os
+ JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
+ WHERE os.orch_finished_at IS NOT NULL;
+
+ DROP VIEW IF EXISTS orchestration_success_rate;
+ CREATE VIEW orchestration_success_rate AS
+ SELECT
+     onature.nature AS orchestration_nature,
+     COUNT(*) AS total_sessions,
+     SUM(CASE WHEN oss.to_state = 'surveilr_orch_completed' THEN 1 ELSE 0 END) AS successful_sessions,
+     (CAST(SUM(CASE WHEN oss.to_state = 'surveilr_orch_completed' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 AS success_rate
+ FROM orchestration_session os
+ JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
+ JOIN orchestration_session_state oss ON os.orchestration_session_id = oss.session_id
+ WHERE oss.to_state IN ('surveilr_orch_completed', 'surveilr_orch_failed') -- Consider other terminal states if applicable
+ GROUP BY onature.nature;
+
+ DROP VIEW IF EXISTS orchestration_session_script;
+ CREATE VIEW orchestration_session_script AS
+ SELECT
+     os.orchestration_session_id,
+     onature.nature AS orchestration_nature,
+     COUNT(*) AS script_count
+ FROM orchestration_session os
+ JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
+ JOIN orchestration_session_entry ose ON os.orchestration_session_id = ose.session_id
+ GROUP BY os.orchestration_session_id, onature.nature;
+
+ DROP VIEW IF EXISTS orchestration_executions_by_type;
+ CREATE VIEW orchestration_executions_by_type AS
+ SELECT
+     exec_nature,
+     COUNT(*) AS execution_count
+ FROM orchestration_session_exec
+ GROUP BY exec_nature;
+
+ DROP VIEW IF EXISTS orchestration_execution_success_rate_by_type;
+ CREATE VIEW orchestration_execution_success_rate_by_type AS
+ SELECT
+     exec_nature,
+     COUNT(*) AS total_executions,
+     SUM(CASE WHEN exec_status = 0 THEN 1 ELSE 0 END) AS successful_executions,
+     (CAST(SUM(CASE WHEN exec_status = 0 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 AS success_rate
+ FROM orchestration_session_exec
+ GROUP BY exec_nature;
+
+ DROP VIEW IF EXISTS orchestration_session_summary;
+ CREATE VIEW orchestration_session_summary AS
+ SELECT
+     issue_type,
+     COUNT(*) AS issue_count
+ FROM orchestration_session_issue
+ GROUP BY issue_type;
+
+ DROP VIEW IF EXISTS orchestration_issue_remediation;
+ CREATE VIEW orchestration_issue_remediation AS
+ SELECT
+     orchestration_session_issue_id,
+     issue_type,
+     issue_message,
+     remediation
+ FROM orchestration_session_issue
+ WHERE remediation IS NOT NULL;
+
+DROP VIEW IF EXISTS orchestration_logs_by_session;
+ CREATE VIEW orchestration_logs_by_session AS
+ SELECT
+     os.orchestration_session_id,
+     onature.nature AS orchestration_nature,
+     osl.category,
+     COUNT(*) AS log_count
+ FROM orchestration_session os
+ JOIN orchestration_nature onature ON os.orchestration_nature_id = onature.orchestration_nature_id
+ JOIN orchestration_session_exec ose ON os.orchestration_session_id = ose.session_id
+ JOIN orchestration_session_log osl ON ose.orchestration_session_exec_id = osl.parent_exec_id
+ GROUP BY os.orchestration_session_id, onature.nature, osl.category;
+
+        
 -- delete all /drh-related entries and recreate them in case routes are changed
 DELETE FROM sqlpage_aide_navigation WHERE path like '/drh%';
 INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
@@ -751,7 +854,7 @@ ORDER BY path;
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'console/content/action/regenerate-auto.sql',
-      '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/anitha/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/content/console.ts)
+      '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
 
       -- the "auto-generated" tables will be in ''*.auto.sql'' with redirects
       DELETE FROM sqlpage_files WHERE path like ''console/content/table/%.auto.sql'';
@@ -816,7 +919,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
 
       -- TODO: add ${this.upsertNavSQL(...)} if we want each of the above to be navigable through DB rows
 
--- code provenance: `ConsoleSqlPages.console/content/action/regenerate-auto.sql` (file:///home/anitha/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/content/console.ts)
+-- code provenance: `ConsoleSqlPages.console/content/action/regenerate-auto.sql` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
 SELECT ''redirect'' AS component, ''/console/sqlpage-files/content.sql'' as link WHERE $redirect is NULL;
 SELECT ''redirect'' AS component, $redirect as link WHERE $redirect is NOT NULL;
     ',
@@ -1047,6 +1150,95 @@ SELECT ''text'' AS component,
     (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
     AS contents_md;
     
+            ',
+      CURRENT_TIMESTAMP)
+  ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
+INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
+      'orchestration/index.sql',
+      '              SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
+              SELECT ''breadcrumb'' as component;
+WITH RECURSIVE breadcrumbs AS (
+    SELECT
+        COALESCE(abbreviated_caption, caption) AS title,
+        COALESCE(url, path) AS link,
+        parent_path, 0 AS level,
+        namespace
+    FROM sqlpage_aide_navigation
+    WHERE namespace = ''prime'' AND path = ''/orchestration''
+    UNION ALL
+    SELECT
+        COALESCE(nav.abbreviated_caption, nav.caption) AS title,
+        COALESCE(nav.url, nav.path) AS link,
+        nav.parent_path, b.level + 1, nav.namespace
+    FROM sqlpage_aide_navigation nav
+    INNER JOIN breadcrumbs b ON nav.namespace = b.namespace AND nav.path = b.parent_path
+)
+SELECT title, link FROM breadcrumbs ORDER BY level DESC;
+              -- not including page title from sqlpage_aide_navigation
+
+              WITH navigation_cte AS (
+SELECT COALESCE(title, caption) as title, description
+    FROM sqlpage_aide_navigation
+WHERE namespace = ''prime'' AND path = ''/orchestration''
+)
+SELECT ''list'' AS component, title, description
+    FROM navigation_cte;
+SELECT caption as title, COALESCE(url, path) as link, description
+    FROM sqlpage_aide_navigation
+WHERE namespace = ''prime'' AND parent_path = ''/orchestration''
+ORDER BY sibling_order;
+        
+            ',
+      CURRENT_TIMESTAMP)
+  ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
+INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
+      'orchestration/info-schema.sql',
+      '              SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
+              SELECT ''breadcrumb'' as component;
+WITH RECURSIVE breadcrumbs AS (
+    SELECT
+        COALESCE(abbreviated_caption, caption) AS title,
+        COALESCE(url, path) AS link,
+        parent_path, 0 AS level,
+        namespace
+    FROM sqlpage_aide_navigation
+    WHERE namespace = ''prime'' AND path = ''/orchestration/info-schema.sql''
+    UNION ALL
+    SELECT
+        COALESCE(nav.abbreviated_caption, nav.caption) AS title,
+        COALESCE(nav.url, nav.path) AS link,
+        nav.parent_path, b.level + 1, nav.namespace
+    FROM sqlpage_aide_navigation nav
+    INNER JOIN breadcrumbs b ON nav.namespace = b.namespace AND nav.path = b.parent_path
+)
+SELECT title, link FROM breadcrumbs ORDER BY level DESC;
+              -- not including page title from sqlpage_aide_navigation
+
+              SELECT ''title'' AS component, ''Orchestration Tables and Views'' as contents;
+SELECT ''table'' AS component,
+      ''Name'' AS markdown,
+      ''Column Count'' as align_right,
+      TRUE as sort,
+      TRUE as search;
+
+SELECT
+    ''Table'' as "Type",
+    ''['' || table_name || ''](/console/info-schema/table.sql?name='' || table_name || '')'' AS "Name",
+    COUNT(column_name) AS "Column Count"
+FROM console_information_schema_table
+WHERE table_name = ''orchestration_session'' OR table_name like ''orchestration_%''
+GROUP BY table_name
+
+UNION ALL
+
+SELECT
+    ''View'' as "Type",
+    ''['' || view_name || ''](/console/info-schema/view.sql?name='' || view_name || '')'' AS "Name",
+    COUNT(column_name) AS "Column Count"
+FROM console_information_schema_view
+WHERE view_name like ''orchestration_%''
+GROUP BY view_name;
+        
             ',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
