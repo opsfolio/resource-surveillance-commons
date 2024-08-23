@@ -6,6 +6,7 @@ import {
   shell as sh,
   uniformResource as ur,
 } from "../../prime/content/mod.ts";
+import { TypicalSqlPageNotebook } from "../../prime/sqlpage-notebook.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
@@ -60,10 +61,55 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     'card'             as component,
     3                 as columns;
     select
-    segment  as title,
+    title,
     'arrow-big-right'       as icon,
-    '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
+    '/ip/policy_list.sql?segment=' || segment || '' as link
     FROM policy_dashboard;
+      `;
+  }
+
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  "ip/policy_list.sql"() {
+    return this.SQL`
+      ${this.activePageTitle()}
+        select
+      'card'             as component,
+      1 as columns;
+    select
+        title,
+        'arrow-big-right'       as icon,
+        '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        FROM policy_list WHERE parentfolder = $segment::TEXT AND segment1=""
+
+        UNION ALL
+
+        SELECT
+          REPLACE(segment1, '-', ' ') as title,
+          'chevrons-down' as icon,
+          '/ip/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
+      FROM
+          policy_list
+      WHERE
+          parentfolder = $segment::TEXT
+          AND segment1 != ''
+      GROUP BY
+          segment1
+        ;
+      `;
+  }
+
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  "ip/policy_inner_list.sql"() {
+    return this.SQL`
+      ${this.activePageTitle()}
+        select
+      'card'             as component,
+      1 as columns;
+    select
+        title,
+        'arrow-big-right'       as icon,
+        '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        FROM policy_list WHERE parentfolder = $parentfolder::TEXT AND segment1= $segment::TEXT;
       `;
   }
 
