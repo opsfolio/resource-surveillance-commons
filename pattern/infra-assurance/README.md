@@ -1,7 +1,6 @@
-```bash
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ cat stateless-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ cat orchestrate-stateful-infra-assurance.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-$ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
-```
+# Infra Assurence
+
+The Infra Assurance project focuses on managing and overseeing assets and
+portfolios within an organization. This project provides tools and processes to
+ensure the integrity, availability, and effectiveness of assets and portfolios,
+supporting comprehensive assurance and compliance efforts.

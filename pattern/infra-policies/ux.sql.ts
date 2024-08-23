@@ -30,8 +30,8 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infra Policiese",
-    description: "Infra Policiese",
+    caption: "Infra Policies",
+    description: "Infra Policies",
   })
   "ip/index.sql"() {
     return this.SQL`
