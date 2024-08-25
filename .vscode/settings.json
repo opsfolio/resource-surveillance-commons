@@ -5,7 +5,6 @@
   },
   "files.trimTrailingWhitespace": false,
   "git.autofetch": true,
-  "terminal.integrated.fontFamily": "monospace",
   "deno.enable": true,
   "deno.lint": true,
   "deno.unstable": true,
