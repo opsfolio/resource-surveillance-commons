@@ -1,10 +1,12 @@
-import { callable as c, path, SQLa, ws } from "./deps.ts";
+import { callable as c, path, SQLa, ws } from "../deps.ts";
+import { SurveilrSqlNotebook } from "./rssd.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
 /**
  * Represents the structure of a SQL page file with path and content.
+ * Resource Surveillance (`surveilr`) creates `sqlpage_files` table as part of RSSD init.
  */
 export interface SqlPagesFileRecord {
   /**
@@ -16,9 +18,7 @@ export interface SqlPagesFileRecord {
   /** A CLOB-ish field that contains the content that SQLPage will serve. */
   readonly content: string;
   /** the method that generated the content */
-  readonly method: ReturnType<
-    c.Callables<TypicalSqlPageNotebook, Any>["filter"]
-  >[number];
+  readonly method: c.Callable<TypicalSqlPageNotebook, Any>;
 }
 
 /**
@@ -280,33 +280,65 @@ export function navigationPrimeTopLevel(
   });
 }
 
-export type SqlPageNotebookEmitCtx = SQLa.SqlEmitContext;
-
 /**
- * Base class with helper methods that Resource Surveillance Commons (RSC)
- * sqlpage_files "notebooks" use for typical requirements.
+ * Represents the base class for all RSSD SQLPage notebooks (which generate SQLPage content).
+ * This class is used to populate SQLPage content for Web UIs in RSSD databases eliminating
+ * the need for storing SQLPage content in the file system.
+ *
+ * The `TypicalSqlPageNotebook` class is designed to manage the generation of SQLPage files
+ * and handle their upsertion into the `sqlpage_files` table. It provides various utilities
+ * for SQLPage content management, including breadcrumb generation, shell configuration, and
+ * page title handling. This class is meant to be subclassed to create specific notebooks that
+ * generate SQL content to be served by SQLPage.
+ *
+ * Key Features:
+ * - **Shell and Navigation Management**: The class handles the configuration and decoration
+ *   of shell components and navigation routes, making it easier to create and manage SQL pages
+ *   with complex navigation structures.
+ * - **SQL Generation**: The class provides methods for generating SQL pagination, handling
+ *   breadcrumbs, and managing active page titles.
+ * - **Reflection-Based Utilities**: Includes methods to reflect on the call stack and extract
+ *   path components, which are useful for generating SQL based on the method names in subclasses.
+ *
+ * @example
+ * class MyNotebook extends TypicalSqlPageNotebook {
+ *   constructor() {
+ *     super();
+ *   }
+ *
+ *   @shell({ path: "/index.sql" })
+ *   index() {
+ *     return this.SQL`SELECT * FROM my_table;`;
+ *   }
+ *
+ *   @navigation({
+ *     caption: "Home",
+ *     title: "Homepage",
+ *     description: "The main page of the notebook"
+ *   })
+ *   index() {
+ *     return this.SQL`SELECT * FROM my_table;`;
+ *   }
+ * }
+ *
+ * // Create an instance of the notebook
+ * const notebook = new MyNotebook();
+ *
+ * // Generate SQL statements from the notebook methods
+ * const sqlStatements = await TypicalSqlPageNotebook.SQL(notebook);
+ *
+ * // Outputs SQL including the notebook-specific shell and navigation configurations
+ * console.log(sqlStatements);
  */
-export class TypicalSqlPageNotebook {
+export class TypicalSqlPageNotebook
+  extends SurveilrSqlNotebook<SQLa.SqlEmitContext> {
   readonly shellEliminated: Set<string> = new Set();
   readonly shellDecorated: Map<PathShellConfig["path"], DecoratedShellMethod> =
     new Map();
   // navigation will be automatically filled by @navigation decorators
   readonly navigation: Map<RouteConfig["path"], DecoratedRouteMethod> =
     new Map();
-  readonly emitCtx = SQLa.typicalSqlEmitContext({
-    sqlDialect: SQLa.sqliteDialect(),
-  }) as SqlPageNotebookEmitCtx;
-  readonly ddlOptions = SQLa.typicalSqlTextSupplierOptions<
-    SqlPageNotebookEmitCtx
-  >();
   readonly formattedSQL: boolean = true;
-
-  // type-safe wrapper for all SQL text generated in this library;
-  // we call it `SQL` so that VS code extensions like frigus02.vscode-sql-tagged-template-literals
-  // properly syntax-highlight code inside SQL`xyz` strings.
-  get SQL() {
-    return SQLa.SQL<SqlPageNotebookEmitCtx>(this.ddlOptions);
-  }
 
   /**
    * Generates SQL pagination logic including initialization, debugging variables,
@@ -335,7 +367,7 @@ export class TypicalSqlPageNotebook {
       & { varName?: (name: string) => string }
       & ({ readonly tableOrViewName: string; readonly countSQL?: never } | {
         readonly tableOrViewName?: never;
-        readonly countSQL: SQLa.SqlTextSupplier<SqlPageNotebookEmitCtx>;
+        readonly countSQL: SQLa.SqlTextSupplier<SQLa.SqlEmitContext>;
       }),
   ) {
     // `n` renders the variable name for definition, $ renders var name for accessor
@@ -425,38 +457,6 @@ export class TypicalSqlPageNotebook {
     } else {
       return defaults;
     }
-  }
-
-  /**
-   * Generates a SQL comment string indicating where the code is found,
-   * using the class name and method name from the call stack.
-   *
-   * @param importMetaURL - The URL from which the code is being executed, typically provided by `import.meta.url`.
-   * @param [level=2] - The stack trace level to extract the method name from. Defaults to 2 (immediate parent).
-   * @returns A string in the format "-- this code is found in '<class-name>.<method-name>' (importMetaURL)", or an error message if provenance can't be determined.
-   */
-  tsProvenanceSqlComment(importMetaURL: string, level = 2) {
-    // Get the stack trace using a new Error object
-    const stack = new Error().stack;
-    if (!stack) {
-      return "code provenance: stack trace is not available";
-    }
-
-    // Split the stack to find the method name
-    const stackLines = stack.split("\n");
-    if (stackLines.length < level + 1) {
-      return `code provenance: stack trace has fewer than ${level + 1} lines`;
-    }
-
-    // Parse the method name from the stack trace
-    const methodLine = stackLines[level].trim();
-    const methodNameMatch = methodLine.match(/at\s+(.*?)\s+\(/);
-    if (!methodNameMatch) {
-      return "code provenance: could not match method name in stack trace";
-    }
-
-    const fullMethodName = methodNameMatch[1];
-    return `code provenance: \`${fullMethodName}\` (${importMetaURL})`;
   }
 
   /**
@@ -593,39 +593,6 @@ export class TypicalSqlPageNotebook {
   `;
   }
 
-  async methodSqlText(
-    c: ReturnType<c.Callables<TypicalSqlPageNotebook, Any>["filter"]>[number],
-  ) {
-    const value = await c.call();
-    if (typeof value === "string") {
-      return value;
-    } else if (Array.isArray(value)) {
-      return value.join("\n");
-    } else if (SQLa.isSqlTextSupplier(value)) {
-      return value.SQL(this.emitCtx);
-    } else {
-      // deno-fmt-ignore
-      return `\n/* '${String(c.callable)}' in '${String(c.source)}' returned type ${typeof value} instead of string | string[] | SQLa.SqlTextSupplier */`;
-    }
-  }
-
-  /**
-   * Fetch a local or remote file and return the text value
-   * @param url the source
-   * @returns string
-   */
-  static async fetchText(
-    url: URL | string,
-    onError?: (response: Response, url: URL | string) => string | undefined,
-  ) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      return onError?.(response, url) ??
-        `Error fetching ${url}: [${response.status}] (${response.statusText})`;
-    }
-    return response.text();
-  }
-
   /**
    * Generate SQL from "method-based" notebooks. Any method that ends in "*.sql"
    * (case sensitive) will be assumed to generate SQL that will be upserted into
@@ -640,7 +607,9 @@ export class TypicalSqlPageNotebook {
     const arbitrarySqlStmts = await Promise.all(
       cc.filter({
         include: [/SQL$/, /DQL$/, /DML$/, /DDL$/],
-      }).map(async (c) => await c.source.instance.methodSqlText(c)),
+      }).map(async (cell) =>
+        await cell.source.instance.methodText(cell as Any)
+      ),
     );
     const sqlPageFileUpserts = await Promise.all(
       cc.filter({ include: [/\.sql$/, /\.json$/] })
@@ -650,7 +619,7 @@ export class TypicalSqlPageNotebook {
             let spfr: SqlPagesFileRecord = {
               method: method as Any,
               path: String(method.callable),
-              content: await notebook.methodSqlText(method),
+              content: await notebook.methodText(method as Any),
             };
             const shell = notebook.shellConfig(spfr);
             if (shell) {

@@ -4,8 +4,8 @@ import {
   orchestration as orch,
   shell as sh,
   uniformResource as ur,
-} from "./content/mod.ts";
-import * as spn from "./sqlpage-notebook.ts";
+} from "./web-ui-content/mod.ts";
+import * as spn from "./notebook/sqlpage.ts";
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {

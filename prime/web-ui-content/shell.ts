@@ -1,4 +1,4 @@
-import * as spn from "../sqlpage-notebook.ts";
+import * as spn from "../notebook/sqlpage.ts";
 
 export class ShellSqlPages extends spn.TypicalSqlPageNotebook {
   defaultShell() {

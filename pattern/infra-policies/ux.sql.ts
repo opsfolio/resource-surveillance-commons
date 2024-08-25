@@ -1,11 +1,11 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SqlPageNotebook as spn } from "./deps.ts";
+import { sqlPageNB as spn } from "./deps.ts";
 import {
   console as c,
   orchestration as orch,
   shell as sh,
   uniformResource as ur,
-} from "../../prime/content/mod.ts";
+} from "../../prime/web-ui-content/mod.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {

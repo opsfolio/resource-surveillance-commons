@@ -10,17 +10,17 @@ import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
  * @returns A promise that resolves to `true` if the file is executable, `false` otherwise.
  */
 async function isExecutable(filePath: string): Promise<boolean> {
-    try {
-        const fileInfo = await Deno.lstat(filePath);
-        return fileInfo.mode !== null && (fileInfo.mode & 0o111) !== 0;
-    } catch (error) {
-        console.error(
-            colors.red(
-                `   Error checking if file is executable: ${error.message}`,
-            ),
-        );
-        return false;
-    }
+  try {
+    const fileInfo = await Deno.lstat(filePath);
+    return fileInfo.mode !== null && (fileInfo.mode & 0o111) !== 0;
+  } catch (error) {
+    console.error(
+      colors.red(
+        `   Error checking if file is executable: ${error.message}`,
+      ),
+    );
+    return false;
+  }
 }
 
 /**
@@ -32,28 +32,28 @@ async function isExecutable(filePath: string): Promise<boolean> {
  * @returns A promise that resolves when the file has been executed and the output has been stored.
  */
 async function executeFile(
-    filePath: string,
-    getOutputFileName: (filePath: string) => string,
+  filePath: string,
+  getOutputFileName: (filePath: string) => string,
 ): Promise<void> {
-    try {
-        const outputFileName = getOutputFileName(filePath);
-        const command = new Deno.Command(filePath);
-        const output = await command.output();
+  try {
+    const outputFileName = getOutputFileName(filePath);
+    const command = new Deno.Command(filePath);
+    const output = await command.output();
 
-        if (output.success) {
-            await Deno.writeFile(outputFileName, output.stdout);
-            console.log("✅", colors.brightGreen(`${outputFileName}`));
-        } else {
-            console.error(
-                "❌",
-                colors.red(
-                    `${filePath} (${new TextDecoder().decode(output.stderr)}`,
-                ),
-            );
-        }
-    } catch (error) {
-        console.error("❌", colors.red(`${filePath} (${error.message})`));
+    if (output.success) {
+      await Deno.writeFile(outputFileName, output.stdout);
+      console.log("✅", colors.brightGreen(`${outputFileName}`));
+    } else {
+      console.error(
+        "❌",
+        colors.red(
+          `${filePath} (${new TextDecoder().decode(output.stderr)}`,
+        ),
+      );
     }
+  } catch (error) {
+    console.error("❌", colors.red(`${filePath} (${error.message})`));
+  }
 }
 
 /**
@@ -69,27 +69,27 @@ async function executeFile(
  * @returns A promise that resolves when all matching files have been processed.
  */
 async function generateSqlFromExecutable(
-    match: RegExp,
-    getOutputFileName: (filePath: string) => string,
+  match: RegExp,
+  getOutputFileName: (filePath: string) => string,
 ): Promise<void> {
-    for await (
-        const entry of walk(Deno.cwd(), {
-            includeFiles: true,
-            match: [match],
-        })
-    ) {
-        const filePath = entry.path;
-        console.log(colors.dim(`👀 ${filePath}`));
+  for await (
+    const entry of walk(Deno.cwd(), {
+      includeFiles: true,
+      match: [match],
+    })
+  ) {
+    const filePath = entry.path;
+    console.log(colors.dim(`👀 ${filePath}`));
 
-        if (await isExecutable(filePath)) {
-            await executeFile(filePath, getOutputFileName);
-        } else {
-            console.error("⚠️ ", colors.yellow(`Not executable: ${filePath}`));
-        }
+    if (await isExecutable(filePath)) {
+      await executeFile(filePath, getOutputFileName);
+    } else {
+      console.error("⚠️ ", colors.yellow(`Not executable: ${filePath}`));
     }
+  }
 }
 
 await generateSqlFromExecutable(
-    /.+\.sql\..*/,
-    (filePath) => filePath.replace(/\.sql\..*$/, ".auto.sql"),
+  /.+\.sql\..*/,
+  (filePath) => filePath.replace(/\.sql\..*$/, ".auto.sql"),
 );

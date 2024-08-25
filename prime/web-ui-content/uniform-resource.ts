@@ -1,4 +1,4 @@
-import * as spn from "../sqlpage-notebook.ts";
+import * as spn from "../notebook/sqlpage.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 export function urNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {

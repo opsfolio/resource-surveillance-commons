@@ -4,8 +4,8 @@ import {
   orchestration as orch,
   shell as sh,
   uniformResource as ur,
-} from "../../prime/content/mod.ts";
-import { SqlPageNotebook as spn } from "./deps.ts";
+} from "../../prime/web-ui-content/mod.ts";
+import { sqlPageNB as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function drhNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {

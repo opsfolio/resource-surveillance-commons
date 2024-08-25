@@ -1,12 +1,11 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
-import { SqlPageNotebook as spn } from "./deps.ts";
+import { sqlPageNB as spn } from "./deps.ts";
 import {
   console as c,
   orchestration as orch,
   shell as sh,
   uniformResource as ur,
-} from "../../prime/content/mod.ts";
-import { TypicalSqlPageNotebook } from "../../prime/sqlpage-notebook.ts";
+} from "../../prime/web-ui-content/mod.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function fhirNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
@@ -172,10 +171,10 @@ export class FhirSqlPages extends spn.TypicalSqlPageNotebook {
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
   const SQL = await spn.TypicalSqlPageNotebook.SQL(
-    new class extends TypicalSqlPageNotebook {
+    new class extends spn.TypicalSqlPageNotebook {
       async statelessFhirSQL() {
         // read the file from either local or remote (depending on location of this file)
-        return await TypicalSqlPageNotebook.fetchText(
+        return await spn.TypicalSqlPageNotebook.fetchText(
           import.meta.resolve("./stateless-fhir.surveilr.sql"),
         );
       }

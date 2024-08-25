@@ -1,5 +1,5 @@
 import { ws } from "../deps.ts";
-import * as spn from "../sqlpage-notebook.ts";
+import * as spn from "../notebook/sqlpage.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 export function consoleNav(
@@ -15,7 +15,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
   infoSchemaDDL() {
     // deno-fmt-ignore
     return this.SQL`
-      -- ${this.tsProvenanceSqlComment(import.meta.url)}
+      -- ${this.tsProvenanceComment(import.meta.url)}
 
       -- console_information_schema_* are convenience views
       -- to make it easier to work than pragma_table_info.
@@ -151,7 +151,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
     // TODO: add this same SQL block into a code_notebook_cell row too
     // deno-fmt-ignore
     return ws.unindentWhitespace(`
-      -- ${this.tsProvenanceSqlComment(import.meta.url)}
+      -- ${this.tsProvenanceComment(import.meta.url)}
 
       -- the "auto-generated" tables will be in '*.auto.sql' with redirects
       DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
@@ -442,7 +442,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
       ${this.infoSchemaContentDML()}
 
-      -- ${this.tsProvenanceSqlComment(import.meta.url)}
+      -- ${this.tsProvenanceComment(import.meta.url)}
       SELECT 'redirect' AS component, '/console/sqlpage-files/content.sql' as link WHERE $redirect is NULL;
       SELECT 'redirect' AS component, $redirect as link WHERE $redirect is NOT NULL;
     `;

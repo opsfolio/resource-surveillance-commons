@@ -1,4 +1,4 @@
--- code provenance: `ConsoleSqlPages.infoSchemaDDL` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
+-- code provenance: `ConsoleSqlPages.infoSchemaDDL` (file:///home/snshah/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/web-ui-content/console.ts)
 
 -- console_information_schema_* are convenience views
 -- to make it easier to work than pragma_table_info.
@@ -98,7 +98,7 @@ CREATE TABLE sqlpage_aide_navigation (
     title TEXT, -- for full titles when elaboration is required, default to caption if NULL
     abbreviated_caption TEXT, -- for breadcrumbs and other "short" form, default to caption if NULL
     description TEXT, -- for elaboration or explanation
-    "-- TODO: figure out why Rusqlite does not allow this but sqlite3 does"
+    -- TODO: figure out why Rusqlite does not allow this but sqlite3 does
     -- CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
     CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
 );
@@ -121,7 +121,7 @@ INSERT OR REPLACE INTO code_notebook_cell (notebook_kernel_id, code_notebook_cel
   'web-ui.auto_generate_console_content_tabular_sqlpage_files',
   'Web UI',
   'auto_generate_console_content_tabular_sqlpage_files',
-  '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
+  '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/snshah/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/web-ui-content/console.ts)
 
       -- the "auto-generated" tables will be in ''*.auto.sql'' with redirects
       DELETE FROM sqlpage_files WHERE path like ''console/content/table/%.auto.sql'';
@@ -188,7 +188,7 @@ INSERT OR REPLACE INTO code_notebook_cell (notebook_kernel_id, code_notebook_cel
   'TODO',
   'A series of idempotent INSERT statements which will auto-generate "default" content for all tables and views'
 );
-      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
+      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/snshah/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/web-ui-content/console.ts)
 
       -- the "auto-generated" tables will be in '*.auto.sql' with redirects
       DELETE FROM sqlpage_files WHERE path like 'console/content/table/%.auto.sql';
@@ -855,7 +855,7 @@ ORDER BY path;
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'console/content/action/regenerate-auto.sql',
-      '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
+      '      -- code provenance: `ConsoleSqlPages.infoSchemaContentDML` (file:///home/snshah/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/web-ui-content/console.ts)
 
       -- the "auto-generated" tables will be in ''*.auto.sql'' with redirects
       DELETE FROM sqlpage_files WHERE path like ''console/content/table/%.auto.sql'';
@@ -920,7 +920,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
 
       -- TODO: add ${this.upsertNavSQL(...)} if we want each of the above to be navigable through DB rows
 
--- code provenance: `ConsoleSqlPages.console/content/action/regenerate-auto.sql` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/content/console.ts)
+-- code provenance: `ConsoleSqlPages.console/content/action/regenerate-auto.sql` (file:///home/snshah/workspaces/github.com/opsfolio/resource-surveillance-commons/prime/web-ui-content/console.ts)
 SELECT ''redirect'' AS component, ''/console/sqlpage-files/content.sql'' as link WHERE $redirect is NULL;
 SELECT ''redirect'' AS component, $redirect as link WHERE $redirect is NOT NULL;
     ',
