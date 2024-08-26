@@ -37,8 +37,7 @@ After adding database, you will only work with these files:
 
 ```bash
 # load the "Console" and other menu/routing utilities
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+$ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 # apply the "stateless" infra policy utility views
 $ cat stateless-ip.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
