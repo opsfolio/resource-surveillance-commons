@@ -38,23 +38,19 @@ Note: Try this option outside this repository
    - Input the command `surveilr --version`.
    - If the tool is available, it will show the version number.
 
-   3.1 **Ingest the Files**
+   3.1 **Ingest and transform the Files**
 
    **Command:**
 
-   - Command: `surveilr ingest files -r <foldername>/`
-   - Example: `surveilr ingest files -r reference-data/`
+   - Command:
+     `surveilr ingest files -r <foldername>/ && surveilr orchestrate transform-csv`
+   - Example:
+     `surveilr ingest files -r reference-data/ && surveilr orchestrate transform-csv`
 
    **Note**: Here `reference-data` is a sub folder within `common-files`
    containing the files.
 
-   3.2 **Transform the Files**
-
-   **Command:**
-
-   - Command: `surveilr orchestrate  transform-csv`
-
-   3.3 **Verify the Transformed Data**
+   3.2 **Verify the Transformed Data**
 
    - Plese check the folder directly to see the transformed database.
 
@@ -70,21 +66,15 @@ Note: Try this option outside this repository
    surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql
    ```
 
-6. **Apply the Database Views(requires `sqlite3`) to Preview in SQLPage**
+6. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
 
    ```bash
-   curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/stateless-drh-surveilr.sql --ssl-no-revoke | sqlite3 resource-surveillance.sqlite.db
-   ```
-
-7. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
-
-   ```bash
-   deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
    ```
    ```bash
    surveilr web-ui --port 9000
    ```
-   Then, open a browser and navigate to
+   # Launch a browser and go to
    [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
 
    ## Try it out in this repo (if you're developing SQL scripts)
@@ -102,11 +92,14 @@ Note: Try this option outside this repository
    The directory should look like this now:
 
    ```
-   .
+   ├── de-identification
+   |   ├──drh-deidentification.sql
    ├── study-files
    │   ├── author.csv
    │   ├── publication.csv
-   │   └── ...many other study files      
+   │   └── ...many other study files    
+   ├── verfication-validation
+   |   ├──orchestrate-drh-vv.sql
    ├── stateless-drh-surveilr.sql
    ├── generate-raw-cgm-web-ui-pages.sql
    ```
@@ -116,22 +109,19 @@ Note: Try this option outside this repository
    into this directory, then ingest and query the data:
 
    ```bash
-   # ingest the files in the "study-files/" directory, creating resource-surveillance.sqlite.db
-   $ surveilr ingest files -r study-files/
+   # ingest and transform the CSV files in the "study-files/" directory, creating resource-surveillance.sqlite.db
+   $ surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
    ```
 
-   ```bash
-   # transform the csv files in the "study-files/" directory
-   $ surveilr orchestrate  transform-csv
-   ```
+   ````
    ```bash
    # Apply de-identification
    $ cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"
-   ```
+   ````
 
    ```bash
    # Perform verification and validation
-   $ cat verfication-validation/orchestrate-drh-vv.sql |surveilr orchestrate -n "v&v"
+   $ cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"
    ```
    After ingestion, you will only work with these files:
 
@@ -147,11 +137,7 @@ Note: Try this option outside this repository
 
    ```bash
    # load the "Console" and other menu/routing utilities   
-   $ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
-
-   # apply the "stateless"  utility views
-   $ cat stateless-drh-surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+   $ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 
    # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
@@ -165,11 +151,13 @@ Note: Try this option outside this repository
    # browse http://localhost:9000/drh/index.sql
    ```
 
-   Once you apply `drh-deidentification.sql` and `stateless-drh-surveilr.sql`
-   you can ignore those files and all content will be accessed through views or
-   `*.cached` tables in `resource-surveillance.sqlite.db`. At this point you can
-   rename the SQLite database file, archive it, use in reporting tools, DBeaver,
-   DataGrip, or any other SQLite data access tools.
+   Once you apply `drh-deidentification.sql` and `orchestrate-drh-vv.sql` you
+   can ignore those files and all content will be accessed through views or
+   `*.cached` tables in `resource-surveillance.sqlite.db`. The
+   `stateless-drh-surveilr.sql` shall be executed within the ux.sql.ts file
+   itself. At this point you can rename the SQLite database file, archive it,
+   use in reporting tools, DBeaver, DataGrip, or any other SQLite data access
+   tools.
 
    ## Automatically reloading SQL when it changes
 
