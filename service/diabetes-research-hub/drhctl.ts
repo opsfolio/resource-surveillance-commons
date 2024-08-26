@@ -28,17 +28,17 @@ try {
 
  // Execute deidentification orchestration
  console.log("Executing deidentification orchestration");
- await $`surveilr orchestrate -n "deidentification" -s ${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
+ await $`surveilr orchestrate -n "deidentification" -s ${RSC_BASE_URL}||/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
  //await $`cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"`;
 
  // Execute verification and validation orchestration
  console.log("Executing verification and validation orchestration");
- await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
+ await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}||/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
  //await $`cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"`;
 
  // Execute UX auto orchestration
  console.log("Executing UX auto orchestration");
- await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}||/service/diabetes-research-hub/ux.auto.sql`;
 
  console.log("Process completed successfully!");
 } catch (error) {
