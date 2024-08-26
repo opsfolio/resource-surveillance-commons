@@ -38,7 +38,7 @@ After adding database, you will only work with these files:
 ```bash
 # load the "Console" and other menu/routing utilities
 $ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
+ 
 # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
 # browse http://localhost:9000/ to see web UI
