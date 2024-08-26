@@ -137,24 +137,7 @@ export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
         first_name as title from patient_detail where CAST(message_uid AS TEXT)=CAST($id AS TEXT) ;
 
    SELECT 'html' AS component, '
-  <style>
-    .patient-summary {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
-    .patient-summary th {
-      background-color: #f2f2f2;
-      text-align: left;
-      padding: 8px;
-      border: 1px solid #ddd;
-      width: 20%;
-    }
-    .patient-summary td {
-      padding: 8px;
-      border: 1px solid #ddd;
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/style.css">
   <h2>' || document_title || '</h2>
   <table class="patient-summary">
     <tr>
@@ -257,38 +240,8 @@ FROM patient_detail pd
 JOIN author_detail ad ON pd.message_uid = ad.message_uid
 WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
 
-    SELECT 'html' AS component, '
-      <style>
-        .patient-details {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
-          font-family: Arial, sans-serif;
-        }
-        .patient-details th, .patient-details td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-          vertical-align: top;
-        }
-        .patient-details th {
-          background-color: #f2f2f2;
-          font-weight: bold;
-        }
-        .section-header {
-          background-color: #e6e6e6;
-        }
-        .no-border-bottom {
-          border-bottom: none;
-        }
-        .no-border-top {
-          border-top: none;
-        }
-        .patient-details th {
-            width: 20%;
-        }
-      </style>
-
+    SELECT 'html' AS component, '      
+      <link rel="stylesheet" href="/assets/style.css">
       <table class="patient-details">
       <tr>
       <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Document</b></th>
@@ -335,49 +288,28 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
     WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
 
     SELECT 'html' AS component, '
+    <link rel="stylesheet" href="/assets/style.css">
     <style>
       .patient-details {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 20px;
         font-family: Arial, sans-serif;
-      }
-      .patient-details th, .patient-details td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-        vertical-align: top;
-      }
-      .patient-details th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-      }
-      .section-header {
-        background-color: #e6e6e6;
-      }
-      .no-border-bottom {
-        border-bottom: none;
-      }
-      .no-border-top {
-        border-top: none;
-      }
-      .patient-details th {
-          width: 20%;
-      }
+      }    
+      
     </style>
 
     <table class="patient-details">
-
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Patient</b></th>
+        <th class="no-border-bottom" ><b>Patient</b></th>
         <td class="no-border-bottom" style="width:30%">'|| first_name||'  '|| last_name||'</td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details</b></th>
+        <th class="no-border-bottom" ><b>Contact Details</b></th>
         <td class="no-border-bottom">'|| address||' '|| city||', '|| state||' '|| postalCode||' '|| addr_use||'</td>
       </tr>
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Date of Birth</b></th>
+        <th class="no-border-bottom" ><b>Date of Birth</b></th>
         <td class="no-border-bottom">'|| strftime('%Y-%m-%d', substr(birthTime, 1, 4) || '-' || substr(birthTime, 5, 2) || '-' || substr(birthTime, 7, 2))||' </td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Gender</b></th>
+        <th class="no-border-bottom" ><b>Gender</b></th>
         <td class="no-border-bottom">'|| CASE
         WHEN gender_code = 'F' THEN 'Female'
         WHEN gender_code = 'M' THEN 'Male'
@@ -385,15 +317,15 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
       END||'</td>
       </tr>
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Race</b></th>
+        <th class="no-border-bottom" ><b>Race</b></th>
         <td class="no-border-bottom">'||race_displayName||'</td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Ethnicity</b></th>
+        <th class="no-border-bottom" ><b>Ethnicity</b></th>
         <td class="no-border-bottom">'||ethnic_displayName||'</td>
       </tr>
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Patient-IDs</b></th>
+        <th class="no-border-bottom" ><b>Patient-IDs</b></th>
         <td class="no-border-bottom">'||id||'</td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Language Communication</b></th>
+        <th class="no-border-bottom" ><b>Language Communication</b></th>
         <td class="no-border-bottom">'||
         CASE
             WHEN language_code IS NOT NULL THEN language_code
@@ -403,16 +335,16 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
       </tr>
 
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Guardian</b></th>
+        <th class="no-border-bottom" ><b>Guardian</b></th>
         <td class="no-border-bottom">'||guardian_name||' '||guardian_family_name||' '||guardian_display_name||'</td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details</b></th>
+        <th class="no-border-bottom" ><b>Contact Details</b></th>
         <td class="no-border-bottom">'|| guardian_address||', '|| guardian_city||' ,'|| guardian_state||', '|| guardian_zip||' ,'|| guardian_country||'</td>
       </tr>
 
       <tr>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Provider Organization</b></th>
+        <th class="no-border-bottom" ><b>Provider Organization</b></th>
         <td class="no-border-bottom">'||provider_organization||'</td>
-        <th class="no-border-bottom" style="background-color: #f2f2f2"><b>Contact Details (Organization)</b></th>
+        <th class="no-border-bottom" ><b>Contact Details (Organization)</b></th>
         <td class="no-border-bottom">'|| provider_address_line||', '|| provider_city||' ,'|| provider_state||', '|| provider_country||' ,'|| provider_zip||'</td>
       </tr>
 
@@ -421,126 +353,16 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
   FROM patient_detail
   WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
 
---  WITH extracted_data AS (
---     SELECT
---         section_title,
---         section_data,
---         section_code
---     FROM
---         patient_diagnosis
---     WHERE
---         CAST(message_uid AS TEXT) = CAST($id AS TEXT)
---         AND json_valid(section_data)  -- Check if section_data is valid JSON
--- ),
--- detail_data AS (
---     SELECT
---         section_title,
---         '<table><tr><td>' || json_extract(td.value, '$[0]') || '</td></tr></table>' AS json_data
---     FROM
---         extracted_data,
---         json_each(section_data) td
--- )
--- SELECT
---     'html' AS component,
---     '<details>
---         <summary>' || section_title || '</summary>
---         <div>
---             <p>' || json_data || '</p>
---         </div>
---     </details>' AS html
--- FROM
---     detail_data;
-
-
---  WITH extracted_data AS (
---     SELECT
---         section_title,
---         section_data
---     FROM
---         patient_diagnosis
---     WHERE
---         CAST(message_uid AS TEXT) = CAST($id AS TEXT)
---         AND json_valid(section_data)  -- Ensure section_data is valid JSON
--- ),
--- detail_data AS (
---     SELECT
---         section_title,
---         COALESCE(group_concat(
---             '<tr><td>' || json_extract(td.value, '$.td[0]') || '</td>' ||
---             '<td>' || json_extract(td.value, '$.td[1].content.#text') || '</td>' ||
---             '<td>' || json_extract(td.value, '$.td[2]') || '</td></tr>', ''
---         ),'') AS json_data
---     FROM
---         extracted_data,
---         json_each(section_data) td
---     GROUP BY
---         section_title
--- )
--- SELECT
---     'html' AS component,
---     '<details>
---         <summary>' || section_title || '</summary>
---         <div>
---             <table border="1">
---                 <tr><th>Substance</th><th>Reaction</th><th>Status</th></tr>' || json_data || '
---             </table>
---         </div>
---     </details>' AS html
--- FROM
---     detail_data;
-
-
 
   select 'html' as component;
-  select '<style>
-      .patient-details table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-        font-family: Arial, sans-serif;
-      }
-      .patient-details th, .patient-details td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-        vertical-align: top;
-      }
-      .patient-details th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-      }
-      .section-header {
-        background-color: #e6e6e6;
-      }
-      .no-border-bottom {
-        border-bottom: none;
-      }
-      .no-border-top {
-        border-top: none;
-      }
-      .patient-details th {
-          width: 20%;
-      }
-      .accordian-head{
-        border:1px solid #ddd;
-        margin-bottom:1px;
-        display:block;
-      }
-      .accordian-head summary{
-        padding:8px 15px;
-        background: #f2f2f2;
-        font-weight:bold
-      }
-    </style>
+  select '<link rel="stylesheet" href="/assets/style.css">
     <details class="accordian-head">
   <summary>'||section_title||'</summary>
   <div class="patient-details">
     <div>'||table_data||'</div>
   </div>
-</details>
-
-' as html
-FROM patient_diagnosis
+  </details>' as html
+  FROM patient_diagnosis
   WHERE CAST(message_uid AS TEXT)=CAST($id AS TEXT);
   `;
   }
@@ -582,6 +404,22 @@ FROM patient_diagnosis
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
   const SQL = await spn.TypicalSqlPageNotebook.SQL(
+    new class extends spn.TypicalSqlPageNotebook {
+      async statelessFhirSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        return await spn.TypicalSqlPageNotebook.fetchText(
+          import.meta.resolve("./stateless-dms.surveilr.sql"),
+        );
+      }
+
+      async orchestrateStatefulFhirSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        // optional, for better performance:
+        // return await TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./orchestrate-stateful-fhir.surveilr.sql"),
+        // );
+      }
+    }(),
     new sh.ShellSqlPages(),
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),

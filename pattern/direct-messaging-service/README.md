@@ -93,31 +93,64 @@ messages are appropriately processed and stored for further analysis.
   refreshed.
 
 ## Try it out on any device without this repo (if you're just using the SQL scripts)
-```
+
 Prepare the directory with sample files, download direct message inbox samples, download surveilr, and create resource-surveillance.sqlite.db RSSD file that will contain queryable direct message inbox content data and attachments includng pdf and CCDA xml files.
+
+```
 # prepare a working directory with files
 $ mkdir -p /tmp/direct-messages
 $ cd /tmp/direct-messages
-
+```
 Prepare the Sample Files for Ingestion
-
+```
 # download the sample direct messages zip file using the below command.
 $ wget https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip
+```
 
-Extract the zip file into ingest folder 
-mkdir ingest && cd ingest && unzip ../ingest.zip && cd ..
+Extract the zip file 
+```
+unzip ./ingest.zip
+```
 
-# download surveilr using instructions at https://docs.opsfolio.com/surveilr/how-to/installation-guide
+Once unzipped, you should see the sample files in the ingest folder. The 'direct-messages' 
+directory structure should look like this:
+
+``` bash
+
+direct-messages
+├── ingest
+    ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.xml
+    ├── 20240808171534044_messageDeliveryStatus.json
+    ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_content.json
+    └── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.pdf
+
+```
+
+Now
+[Download `surveilr` binary](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
+into 'direct-messages' directory, then ingest and query the data:
+
+```bash
+# ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
 $ ./surveilr ingest files -r ingest/
+```
+After ingestion your directory structure should look like this
+```
+direct-messages
+├── ingest
+│   ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.xml
+|   ├── 20240808171534044_messageDeliveryStatus.json
+│   ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_content.json
+│   └── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.pdf
+└── resource-surveillance.sqlite.db            # SQLite database
+```
+Post-ingestion, `surveilr` is no longer required, the `ingest` directory can be
+ignored, only `sqlite3` is required because all content is in the
+```resource-surveillance.sqlite.db``` SQLite database which does not require any
+other dependencies.
 
-# apply the DMS views and create cached tables directly from GitHub
-$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/direct-messaging-service/stateless-dms.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-
-$ curl -L https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/direct-messaging-service/orchestrate-stateful-dms.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-
+``` bash
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
-$ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
 $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/direct-messaging-service/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 $ surveilr web-ui --port 9000
@@ -194,14 +227,7 @@ other dependencies.
 
 ```bash
 # load the "Console" and other menu/routing utilities
-$ deno run ../../prime/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-$ deno run ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
-
-# apply the "stateless" DMS utility views
-$ cat stateless-dms.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
-
-# optionally create `*_cached` tables ("materialized views") to improve performance
-$ cat orchestrate-stateful-dms.surveilr.sql | sqlite3 resource-surveillance.sqlite.db
+$ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
 $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime

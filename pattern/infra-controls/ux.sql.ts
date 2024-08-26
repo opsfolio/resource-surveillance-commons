@@ -11,7 +11,7 @@ import {
 function icNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/ic",
+    parentPath: "/infra/control",
   });
 }
 
@@ -33,14 +33,14 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     caption: "Infra Controls",
     description: "Infra Controls",
   })
-  "ic/index.sql"() {
+  "infra/control/index.sql"() {
     return this.SQL`
     SELECT
     'card'             as component
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/ic/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/infra/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     control_regimes;`;
   }
@@ -50,7 +50,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 1,
   })
-  "ic/control.sql"() {
+  "infra/control/control.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
       -- SELECT 'table' AS component;
@@ -60,7 +60,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/ic/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/infra/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     control_regimes;
 `;
@@ -71,7 +71,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 2,
   })
-  "ic/control_regime.sql"() {
+  "infra/control/control_regime.sql"() {
     return this.SQL`
   SELECT
     'title' AS component,
@@ -79,7 +79,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'card' as component
     SELECT audit_type_name  as title,
       'arrow-big-right'       as icon,
-     '/ic/controls.sql?id=' ||audit_type_id || '' as link
+     '/infra/control/controls.sql?id=' ||audit_type_id || '' as link
       FROM control_regimes WHERE control_regime_id = $id::TEXT;
     `;
   }
@@ -89,7 +89,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 3,
   })
-  "ic/controls.sql"() {
+  "infra/control/controls.sql"() {
     return this.SQL`
     SELECT
     'title' AS component,
@@ -106,11 +106,6 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-// if (import.meta.main) {
-//   console.log(spn.TypicalSqlPageNotebook.SQL(new ipSqlPages()).join("\n"));
-// }
-
-// this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
   const SQL = await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
@@ -125,7 +120,7 @@ if (import.meta.main) {
         // read the file from either local or remote (depending on location of this file)
         // optional, for better performance:
         // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-fhir.surveilr.sql"),
+        //   import.meta.resolve("./orchestrate-stateful-ic.surveilr.sql"),
         // );
       }
     }(),

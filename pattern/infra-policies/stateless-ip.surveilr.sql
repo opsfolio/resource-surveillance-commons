@@ -29,7 +29,6 @@ CREATE VIEW policy_dashboard AS
     WITH RECURSIVE split_uri AS (
         SELECT
             uniform_resource_id,
-            frontmatter->>'title' AS title,
             uri,
             substr(uri, instr(uri, 'src/') + 4, instr(substr(uri, instr(uri, 'src/') + 4), '/') - 1) AS segment,
             substr(substr(uri, instr(uri, 'src/') + 4), instr(substr(uri, instr(uri, 'src/') + 4), '/') + 1) AS rest,
@@ -39,7 +38,6 @@ CREATE VIEW policy_dashboard AS
         UNION ALL
         SELECT
             uniform_resource_id,
-            title,
             uri,
             substr(rest, 1, instr(rest, '/') - 1) AS segment,
             substr(rest, instr(rest, '/') + 1) AS rest,
@@ -50,7 +48,6 @@ CREATE VIEW policy_dashboard AS
     final_segment AS (
         SELECT DISTINCT
             uniform_resource_id,
-            title,
             segment,
             substr(uri, instr(uri, 'src/')) AS url,
             CASE WHEN instr(rest, '/') = 0 THEN 0 ELSE 1 END AS is_folder
@@ -59,7 +56,7 @@ CREATE VIEW policy_dashboard AS
     )
     SELECT
         uniform_resource_id,
-        title,
+        REPLACE(segment,"-"," ")title,
         segment,
         url
     FROM final_segment

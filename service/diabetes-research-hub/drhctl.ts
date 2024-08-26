@@ -15,21 +15,32 @@ if (Deno.args.length === 0) {
 // Store the folder name in a variable
 const folderName = Deno.args[0];
 
-// Run the surveilr commands with the provided folder name
+// Log the start of the process
+console.log(`Starting the process for folder: ${folderName}`);
 
 try {
- // Ingest files and Orchestrate transform-csv
- await $`surveilr ingest files -r ${folderName}/`;
+ // Ingest files and orchestrate transform-csv
+ console.log(`Ingesting files from folder: ${folderName}`);
+ await $`surveilr ingest files -r ${folderName}||/`;
+
+ console.log("Running orchestrate transform-csv");
  await $`surveilr orchestrate transform-csv`;
 
  // Execute deidentification orchestration
+ console.log("Executing deidentification orchestration");
  await $`surveilr orchestrate -n "deidentification" -s ${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
+ //await $`cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"`;
 
  // Execute verification and validation orchestration
+ console.log("Executing verification and validation orchestration");
  await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
+ //await $`cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"`;
 
  // Execute UX auto orchestration
+ console.log("Executing UX auto orchestration");
  await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+
+ console.log("Process completed successfully!");
 } catch (error) {
  console.error("An error occurred:", error);
  Deno.exit(1);
