@@ -84,7 +84,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
               ;
 
               SELECT
-                  'Research Study Details'  as title,
+                  'Study Participant ResearchSite Details'  as title,
                   '/drh/study-related-data/index.sql' as link,
                   'This section provides detailed information about the study , the participants and sites involved in the research study.' as description,
                   'book'                as icon,
