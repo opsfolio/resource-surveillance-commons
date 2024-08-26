@@ -35,17 +35,14 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   })
   "ip/index.sql"() {
     return this.SQL`
-      WITH navigation_cte AS (
-          SELECT COALESCE(title, caption) as title, description
-            FROM sqlpage_aide_navigation
-           WHERE namespace = 'prime' AND path = '/ip'
-      )
-      SELECT 'list' AS component, title, description
-        FROM navigation_cte;
-      SELECT caption as title, COALESCE(url, path) as link, description
-        FROM sqlpage_aide_navigation
-       WHERE namespace = 'prime' AND parent_path = '/ip'
-       ORDER BY sibling_order;`;
+        select
+    'card'             as component,
+    3                 as columns;
+    select
+    title,
+    'arrow-big-right'       as icon,
+    '/ip/policy_list.sql?segment=' || segment || '' as link
+    FROM policy_dashboard;`;
   }
 
   @ipNav({
@@ -67,7 +64,11 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
-  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  @ipNav({
+    caption: "Policy List",
+    description: ``,
+    siblingOrder: 2,
+  })
   "ip/policy_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
@@ -97,7 +98,11 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
-  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  @ipNav({
+    caption: "Policy Inner List",
+    description: ``,
+    siblingOrder: 3,
+  })
   "ip/policy_inner_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
@@ -112,7 +117,11 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
       `;
   }
 
-  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  @ipNav({
+    caption: "Policy Detail",
+    description: ``,
+    siblingOrder: 4,
+  })
   "ip/policy_detail.sql"() {
     return this.SQL`
 
@@ -133,8 +142,35 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
 // }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
+// if (import.meta.main) {
+//   const SQL = await spn.TypicalSqlPageNotebook.SQL(
+//     new sh.ShellSqlPages(),
+//     new c.ConsoleSqlPages(),
+//     new ur.UniformResourceSqlPages(),
+//     new orch.OrchestrationSqlPages(),
+//     new ipSqlPages(),
+//   );
+//   console.log(SQL.join("\n"));
+// }
+
 if (import.meta.main) {
   const SQL = await spn.TypicalSqlPageNotebook.SQL(
+    new class extends spn.TypicalSqlPageNotebook {
+      async statelessIpSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        return await spn.TypicalSqlPageNotebook.fetchText(
+          import.meta.resolve("./stateless-ip.surveilr.sql"),
+        );
+      }
+
+      async orchestrateStatefulIcSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        // optional, for better performance:
+        // return await TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./orchestrate-stateful-fhir.surveilr.sql"),
+        // );
+      }
+    }(),
     new sh.ShellSqlPages(),
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
