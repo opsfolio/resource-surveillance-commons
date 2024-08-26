@@ -95,7 +95,19 @@ WHERE
   nature = 'json'
   AND uri LIKE '%_content.json';
 
-
+DROP VIEW IF EXISTS inboxss;
+CREATE VIEW inboxss AS
+SELECT 
+  mcd.message_uid as id,
+  mcd.content_from AS "from",
+  mcd.recipient AS "to",
+  mcd.content_subject AS subject,
+  mcd.content_body AS content,
+  mcd.content_date AS date,
+  attachment_count as attachment_count
+  
+FROM 
+  mail_content_detail mcd;
 
 DROP VIEW IF EXISTS inbox;
 CREATE VIEW inbox AS
@@ -233,7 +245,7 @@ SELECT
 FROM
    uniform_resource_transform ;
 
-    DROP VIEW author_detail;
+  DROP VIEW IF EXISTS author_detail;
   
   CREATE VIEW author_detail AS
   SELECT
@@ -312,6 +324,100 @@ FROM
   ) AS subquery
   GROUP BY message_uid;
 
+DROP VIEW IF EXISTS patient_observation;
+CREATE VIEW patient_observation AS
+ SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL;
+
+DROP VIEW IF EXISTS patient_allergy;
+CREATE VIEW patient_allergy AS
+SELECT
+   message_uid,
+   section_title,
+   section_code,
+   json_extract(td.value, '$.td[0]') as substance,
+   json_extract(td.value, '$.td[1].content.#text' ) as reaction,
+   json_extract(td.value, '$.td[2]') as status 
+FROM
+   patient_observation,
+   json_each(section_data) td 
+WHERE
+   section_code = '48765-2';
+
+DROP VIEW IF EXISTS patient_medication;
+CREATE VIEW patient_medication AS
+SELECT
+   message_uid,
+   section_title,
+   section_code,
+   json_extract(td.value, '$[0].content.#text'),
+   json_extract(td.value, '$[1]'),
+   json_extract(td.value, '$[2]'),
+   json_extract(td.value, '$[3]'),
+   json_extract(td.value, '$[4]'),
+   json_extract(td.value, '$[5]') 
+FROM
+   patient_observation,
+   json_each(section_data) td 
+WHERE
+   section_code = '10160-0';
+
+DROP VIEW IF EXISTS patient_lab_report;
+CREATE VIEW patient_lab_report AS
+SELECT
+   message_uid,
+   section_title,
+   section_code,
+   json_extract(td.value, '$.td.#text') as lab_test_header,
+   COALESCE(json_extract(td.value, '$.td[0].content.#text'), json_extract(td.value, '$.td[0]')) as lab_test_name,
+   json_extract(td.value, '$.td[1]') as lab_test_result 
+FROM
+   patient_observation,
+   json_each(section_data) td 
+WHERE
+   section_code = '30954-2';   
+
+DROP VIEW IF EXISTS patient_procedure;
+CREATE VIEW patient_procedure AS
+SELECT
+   message_uid,
+   section_title,
+   section_code,
+   json_extract(td.value, '$.td[0].#text') as description,
+   json_extract(td.value, '$.td[1]') as date,
+   json_extract(td.value, '$.td[2]') as status 
+FROM
+   patient_observation,
+   json_each(section_data) td 
+WHERE
+   section_code = '47519-4';
+
+DROP VIEW IF EXISTS patient_social_history;
+CREATE VIEW patient_social_history AS
+ SELECT
+   message_uid,
+   section_title,
+   section_code,
+   COALESCE(json_extract(td.value, '$[0]'),json_extract(td.value, '$.td[0].#text')) as history, 
+            COALESCE(json_extract(td.value, '$[1].#text'),json_extract(td.value, '$.td[1]')) as observation, 
+            COALESCE(json_extract(td.value, '$[2]'),json_extract(td.value, '$.td[2]')) as date
+FROM
+   patient_observation,
+   json_each(section_data) td 
+WHERE
+   section_code = '29762-2';
  
 
 DROP VIEW IF EXISTS patient_diagnosis;
@@ -369,7 +475,7 @@ SELECT
         '') ||
     '</table>'
    WHEN section_code = '47519-4' THEN
-    '<table><tr>Description<th></th><th>Date and Time (Range)</th><th>Status</th></tr>'||
+    '<table><tr><th>Description</th><th>Date and Time (Range)</th><th>Status</th></tr>'||
         group_concat(
             '<tr><td>' || 
             json_extract(td.value, '$.td[0].#text')|| 
@@ -392,7 +498,6 @@ SELECT
 FROM
   component_detail,
   json_each(section_data) td
-
 GROUP BY
   section_title, section_code,message_uid;   
 
