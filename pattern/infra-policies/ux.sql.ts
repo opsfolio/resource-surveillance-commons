@@ -11,7 +11,7 @@ import {
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/ip",
+    parentPath: "/infra/policy",
   });
 }
 
@@ -33,43 +33,43 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     caption: "Infra Policies",
     description: "Infra Policies",
   })
-  "ip/index.sql"() {
+  "infra/policy/index.sql"() {
     return this.SQL`
         select
     'card'             as component,
     3                 as columns;
     select
-    title,
+    UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
     'arrow-big-right'       as icon,
-    '/ip/policy_list.sql?segment=' || segment || '' as link
+    '/infra/policy/policy_list.sql?segment=' || segment || '' as link
     FROM policy_dashboard;`;
   }
 
-  @ipNav({
-    caption: "Policy Dashboard",
-    description: ``,
-    siblingOrder: 1,
-  })
-  "ip/policy_dashboard.sql"() {
-    return this.SQL`
-      ${this.activePageTitle()}
-      select
-    'card'             as component,
-    3                 as columns;
-    select
-    title,
-    'arrow-big-right'       as icon,
-    '/ip/policy_list.sql?segment=' || segment || '' as link
-    FROM policy_dashboard;
-      `;
-  }
+  // @ipNav({
+  //   caption: "Policy Dashboard",
+  //   description: ``,
+  //   siblingOrder: 1,
+  // })
+  // "infra/policy_dashboard.sql"() {
+  //   return this.SQL`
+  //     ${this.activePageTitle()}
+  //     select
+  //   'card'             as component,
+  //   3                 as columns;
+  //   select
+  //   UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
+  //   'arrow-big-right'       as icon,
+  //   '/infra/policy_list.sql?segment=' || segment || '' as link
+  //   FROM policy_dashboard;
+  //     `;
+  // }
 
   @ipNav({
     caption: "Policy List",
     description: ``,
     siblingOrder: 2,
   })
-  "ip/policy_list.sql"() {
+  "infra/policy/policy_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -78,7 +78,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/infra/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $segment::TEXT AND segment1=""
 
         UNION ALL
@@ -86,7 +86,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
         SELECT
           REPLACE(segment1, '-', ' ') as title,
           'chevrons-down' as icon,
-          '/ip/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
+          '/infra/policy/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
       FROM
           policy_list
       WHERE
@@ -103,7 +103,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 3,
   })
-  "ip/policy_inner_list.sql"() {
+  "infra/policy/policy_inner_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -112,7 +112,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/ip/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/infra/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $parentfolder::TEXT AND segment1= $segment::TEXT;
       `;
   }
@@ -122,7 +122,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 4,
   })
-  "ip/policy_detail.sql"() {
+  "infra/policy/policy_detail.sql"() {
     return this.SQL`
 
     select 'card' as component,
@@ -137,21 +137,6 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-// if (import.meta.main) {
-//   console.log(spn.TypicalSqlPageNotebook.SQL(new ipSqlPages()).join("\n"));
-// }
-
-// this will be used by any callers who want to serve it as a CLI with SDTOUT
-// if (import.meta.main) {
-//   const SQL = await spn.TypicalSqlPageNotebook.SQL(
-//     new sh.ShellSqlPages(),
-//     new c.ConsoleSqlPages(),
-//     new ur.UniformResourceSqlPages(),
-//     new orch.OrchestrationSqlPages(),
-//     new ipSqlPages(),
-//   );
-//   console.log(SQL.join("\n"));
-// }
 
 if (import.meta.main) {
   const SQL = await spn.TypicalSqlPageNotebook.SQL(
@@ -167,7 +152,7 @@ if (import.meta.main) {
         // read the file from either local or remote (depending on location of this file)
         // optional, for better performance:
         // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-fhir.surveilr.sql"),
+        //   import.meta.resolve("./orchestrate-stateful-ip.surveilr.sql"),
         // );
       }
     }(),
