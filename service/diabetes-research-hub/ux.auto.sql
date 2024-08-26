@@ -323,7 +323,7 @@ WITH raw_cgm_table_name AS (
     SELECT table_name
     FROM drh_raw_cgm_table_lst
 )
-INSERT INTO sqlpage_files (path, contents)
+INSERT OR IGNORE INTO sqlpage_files (path, contents)
 SELECT 
     'drh/cgm-data/raw-cgm/' || table_name||'.sql' AS path,
     '
