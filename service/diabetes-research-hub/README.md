@@ -66,10 +66,10 @@ Note: Try this option outside this repository
    surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql
    ```
 
-6. **Preview Content with SQLPage (requires `deno` v1.40 or above):**
+6. **Preview Content with SQLPage:**
 
    ```bash
-   deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+   surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql
    ```
    ```bash
    surveilr web-ui --port 9000

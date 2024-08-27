@@ -2,6 +2,38 @@
 
 import { $ } from "https://deno.land/x/dax@0.4.0/mod.ts";
 
+// Define a helper function to fetch SQL content from a URL
+async function fetchSqlContent(url: string): Promise<string> {
+ const response = await fetch(url);
+ if (!response.ok) {
+  throw new Error(`Failed to fetch SQL content from ${url}`);
+ }
+ return await response.text();
+}
+
+// Define a helper function to execute a command with SQL content
+async function executeCommandWithSql(command: string, sql: string) {
+ console.log(`Running command: ${command}`);
+
+ // Run the command with stdin
+ const process = Deno.run({
+  cmd: command.split(" "),
+  stdin: "piped",
+  stdout: "inherit",
+  stderr: "inherit",
+ });
+
+ // Write SQL content to stdin
+ const encoder = new TextEncoder();
+ await process.stdin.write(encoder.encode(sql));
+ process.stdin.close(); // Close stdin to indicate EOF
+
+ const status = await process.status();
+ if (!status.success) {
+  console.error(`Command failed with status ${status.code}`);
+ }
+}
+
 // Base URL for the resource surveillance commons
 const RSC_BASE_URL =
  "https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main";
@@ -20,28 +52,43 @@ console.log(`Starting the process for folder: ${folderName}`);
 
 try {
  // Ingest files and orchestrate transform-csv
- console.log(`Ingesting files from folder: ${folderName}`);
- await $`surveilr ingest files -r ${folderName}||/`;
+ console.log(
+  `Files from folder: ${folderName} conversion is in progress...`,
+ );
+ await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
+ console.log("Files Conversion Successful!!");
 
- console.log("Running orchestrate transform-csv");
- await $`surveilr orchestrate transform-csv`;
+ // Fetch and execute deidentification orchestration
+ const deidentificationUrl =
+  `${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
+ const deidentificationSql = await fetchSqlContent(deidentificationUrl);
+ console.log("PHI De-Identification is inprogress..");
+ await executeCommandWithSql(
+  "surveilr orchestrate -n deidentification",
+  deidentificationSql,
+ );
+ console.log("Deidentification completed");
 
- // Execute deidentification orchestration
- console.log("Executing deidentification orchestration");
- await $`surveilr orchestrate -n "deidentification" -s ${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
- //await $`cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"`;
+ // Fetch and execute verification and validation orchestration
+ const vvUrl =
+  `${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
+ const vvSql = await fetchSqlContent(vvUrl);
+ console.log("Verficaton and Valdiation of Files is inprogress..");
+ await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
+ console.log("Verifcation and validation completed successfully!!");
 
- // Execute verification and validation orchestration
- console.log("Executing verification and validation orchestration");
- await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
- //await $`cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"`;
+ // Fetch and execute UX auto orchestration
+ // const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ // const uxAutoSql = await fetchSqlContent(uxAutoUrl);
+ // console.log("SqlPage Build in progress");
+ // await executeCommandWithSql("surveilr orchestrate -n v&v", uxAutoSql);
 
- // Execute UX auto orchestration
- console.log("Executing UX auto orchestration");
- await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ // console.log("Orchestration Process completed successfully!");
 
- console.log("Process completed successfully!");
+ // // Launch the SQLPage web UI
+ // console.log("Sqlpage Web UI loading...");
+ // await $`surveilr web-ui --port 9000`;
 } catch (error) {
- console.error("An error occurred:", error);
+ console.error("An error occurred:", error.message);
  Deno.exit(1);
 }
