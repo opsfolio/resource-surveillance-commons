@@ -14,9 +14,6 @@ import { E2E_TEST_DIR, runTests } from "./assurance/scripts/mod.ts";
 // # 4. add multitenancy tests
 
 const mode = Deno.args[0] || "local";
-// const REPO_URL =
-//     "https://github.com/opsfolio/resource-surveillance-commons.git";
-const REPO_DIR = "resource-surveillance-commons";
 
 async function commandExists(command: string): Promise<boolean> {
   try {
@@ -27,7 +24,6 @@ async function commandExists(command: string): Promise<boolean> {
   }
 }
 
-// Step 1: Check if surveilr is installed, if not, install it
 if (!(await commandExists("surveilr"))) {
   console.log(
     colors.yellow(
@@ -92,5 +88,5 @@ await runTests();
 // console.log(colors.green("🎉 E2E testing completed successfully."));
 
 // // Cleanup
-// Deno.chdir("..");
-// await $`rm -rf ${E2E_TEST_DIR}`;
+Deno.chdir("..");
+await $`rm -rf ${E2E_TEST_DIR}`;
