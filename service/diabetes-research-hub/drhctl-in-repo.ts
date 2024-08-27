@@ -106,7 +106,13 @@ try {
  const vvFilePath = "verfication-validation/orchestrate-drh-vv.sql";
  const vvSql = await Deno.readTextFile(vvFilePath);
  await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
- console.log("Verifcation and validation completed successfully!!");
+ console.log("Verification and validation completed successfully!!");
+
+ console.log("Sqlpage Build is inprogress..");
+ const uxFilePath = "ux.auto.sql";
+ const uxSql = await Deno.readTextFile(uxFilePath);
+ await executeCommandWithSql("surveilr orchestrate -n v&v", uxSql);
+ console.log("Build completed");
 
  //  // Run the Deno script and pipe its output to sqlite3
  //  console.log("Running internal Deno script with full permissions and piping output to sqlite3");

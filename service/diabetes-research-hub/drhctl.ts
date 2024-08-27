@@ -47,7 +47,7 @@ if (Deno.args.length === 0) {
 // Store the folder name in a variable
 const folderName = Deno.args[0];
 
-// Log the start of the process
+/// Log the start of the process
 console.log(`Starting the process for folder: ${folderName}`);
 
 try {
@@ -62,7 +62,9 @@ try {
  const deidentificationUrl =
   `${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
  const deidentificationSql = await fetchSqlContent(deidentificationUrl);
- console.log("PHI De-Identification is inprogress..");
+ console.log(deidentificationSql);
+
+ console.log("PHI De-Identification is inprogress");
  await executeCommandWithSql(
   "surveilr orchestrate -n deidentification",
   deidentificationSql,
@@ -73,9 +75,10 @@ try {
  const vvUrl =
   `${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
  const vvSql = await fetchSqlContent(vvUrl);
- console.log("Verficaton and Valdiation of Files is inprogress..");
+ console.log("Verficaton and Valdiation of Files is inprogress");
+
  await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
- console.log("Verifcation and validation completed successfully!!");
+ console.log("Verification and validation completed successfully!!");
 
  // Fetch and execute UX auto orchestration
  // const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
