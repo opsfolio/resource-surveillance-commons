@@ -94,12 +94,13 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     SELECT
     'title' AS component,
     'Control List' AS contents
-    select 'table' as component
+    select 'table' as component,
+    'Control code' AS markdown;
     SELECT
-    control_code,
-    common_criteria,
-    fii,
-    question
+    '[' || control_code || '](/infra/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
+    common_criteria as "Common criteria",
+    fii as "Fii Id",
+    question as "Question"
       FROM control WHERE audit_type_id = $id::TEXT;
     `;
   }
