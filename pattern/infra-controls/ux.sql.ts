@@ -97,7 +97,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'table' as component,
     'Control code' AS markdown;
     SELECT
-    '[' || control_code || '](/infra/control/control_detail.sql?id=' || control_code || ')' AS "Control code",
+    '[' || control_code || '](/infra/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
     common_criteria as "Common criteria",
     fii as "Fii Id",
     question as "Question"
