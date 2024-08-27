@@ -2,6 +2,38 @@
 
 import { $ } from "https://deno.land/x/dax@0.4.0/mod.ts";
 
+// Define a helper function to fetch SQL content from a URL
+async function fetchSqlContent(url: string): Promise<string> {
+ const response = await fetch(url);
+ if (!response.ok) {
+  throw new Error(`Failed to fetch SQL content from ${url}`);
+ }
+ return await response.text();
+}
+
+// Define a helper function to execute a command with SQL content
+async function executeCommandWithSql(command: string, sql: string) {
+ console.log(`Running command: ${command}`);
+
+ // Run the command with stdin
+ const process = Deno.run({
+  cmd: command.split(" "),
+  stdin: "piped",
+  stdout: "inherit",
+  stderr: "inherit",
+ });
+
+ // Write SQL content to stdin
+ const encoder = new TextEncoder();
+ await process.stdin.write(encoder.encode(sql));
+ process.stdin.close(); // Close stdin to indicate EOF
+
+ const status = await process.status();
+ if (!status.success) {
+  console.error(`Command failed with status ${status.code}`);
+ }
+}
+
 // Base URL for the resource surveillance commons
 const RSC_BASE_URL =
  "https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main";
@@ -25,17 +57,28 @@ try {
  );
  await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
 
- // Execute deidentification orchestration
+ // Fetch and execute deidentification orchestration
+ const deidentificationUrl =
+  `${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
+ const deidentificationSql = await fetchSqlContent(deidentificationUrl);
  console.log("Executing deidentification orchestration");
- await $`surveilr orchestrate -n "deidentification" -s ${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
+ await executeCommandWithSql(
+  "surveilr orchestrate -n deidentification",
+  deidentificationSql,
+ );
 
- // Execute verification and validation orchestration
+ // Fetch and execute verification and validation orchestration
+ const vvUrl =
+  `${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
+ const vvSql = await fetchSqlContent(vvUrl);
  console.log("Executing verification and validation orchestration");
- await $`surveilr orchestrate -n "v&v" -s ${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
+ await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
 
- // Execute UX auto orchestration
- console.log("Executing UX auto orchestration");
- await $`surveilr orchestrate -n "ux" -s ${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ // Fetch and execute UX auto orchestration
+ //const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ // uxAutoSql = await fetchSqlContent(uxAutoUrl);
+ //console.log("Executing UX auto orchestration");
+ //await executeCommandWithSql("surveilr orchestrate -n v&v", uxAutoSql);
 
  console.log("Orchestration Process completed successfully!");
 
