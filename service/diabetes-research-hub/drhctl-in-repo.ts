@@ -84,27 +84,29 @@ console.log(`Starting the process for folder: ${folderName}`);
 try {
  // Ingest files and orchestrate transform-csv
  console.log(
-  `Ingesting files from folder: ${folderName} and transforming the CSV`,
+  `Files from folder: ${folderName} conversion is in progress...`,
  );
  await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
+ console.log("Files Conversion Successful!!");
 
  // Read the SQL file content
  const sqlFilePath = "de-identification/drh-deidentification.sql";
  const sqlContent = await Deno.readTextFile(sqlFilePath);
 
  // Execute the deidentification orchestration command with SQL content
- console.log("Executing deidentification orchestration");
+ console.log("PHI De-Identification is inprogress");
  await executeCommandWithSql(
   "surveilr orchestrate -n deidentification",
   sqlContent,
  );
-
+ console.log("Deidentification completed");
  // Read and execute additional SQL files if needed
 
- console.log("Executing verfication and validation");
+ console.log("Verficaton and Valdiation of Files is inprogress..");
  const vvFilePath = "verfication-validation/orchestrate-drh-vv.sql";
  const vvSql = await Deno.readTextFile(vvFilePath);
  await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
+ console.log("Verifcation and validation completed successfully!!");
 
  //  // Run the Deno script and pipe its output to sqlite3
  //  console.log("Running internal Deno script with full permissions and piping output to sqlite3");

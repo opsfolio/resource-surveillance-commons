@@ -53,38 +53,41 @@ console.log(`Starting the process for folder: ${folderName}`);
 try {
  // Ingest files and orchestrate transform-csv
  console.log(
-  `Ingesting files from folder: ${folderName} and transforming the CSV`,
+  `Files from folder: ${folderName} conversion is in progress...`,
  );
  await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
+ console.log("Files Conversion Successful!!");
 
  // Fetch and execute deidentification orchestration
  const deidentificationUrl =
   `${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
  const deidentificationSql = await fetchSqlContent(deidentificationUrl);
- console.log("Executing deidentification orchestration");
+ console.log("PHI De-Identification is inprogress..");
  await executeCommandWithSql(
   "surveilr orchestrate -n deidentification",
   deidentificationSql,
  );
+ console.log("Deidentification completed");
 
  // Fetch and execute verification and validation orchestration
  const vvUrl =
   `${RSC_BASE_URL}/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql`;
  const vvSql = await fetchSqlContent(vvUrl);
- console.log("Executing verification and validation orchestration");
+ console.log("Verficaton and Valdiation of Files is inprogress..");
  await executeCommandWithSql("surveilr orchestrate -n v&v", vvSql);
+ console.log("Verifcation and validation completed successfully!!");
 
  // Fetch and execute UX auto orchestration
- //const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
- // uxAutoSql = await fetchSqlContent(uxAutoUrl);
- //console.log("Executing UX auto orchestration");
- //await executeCommandWithSql("surveilr orchestrate -n v&v", uxAutoSql);
+ // const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
+ // const uxAutoSql = await fetchSqlContent(uxAutoUrl);
+ // console.log("SqlPage Build in progress");
+ // await executeCommandWithSql("surveilr orchestrate -n v&v", uxAutoSql);
 
- console.log("Orchestration Process completed successfully!");
+ // console.log("Orchestration Process completed successfully!");
 
- // Launch the SQLPage web UI
- console.log("Sqlpage Web UI loading...");
- await $`surveilr web-ui --port 9000`;
+ // // Launch the SQLPage web UI
+ // console.log("Sqlpage Web UI loading...");
+ // await $`surveilr web-ui --port 9000`;
 } catch (error) {
  console.error("An error occurred:", error.message);
  Deno.exit(1);
