@@ -62,7 +62,6 @@ try {
  const deidentificationUrl =
   `${RSC_BASE_URL}/service/diabetes-research-hub/de-identification/drh-deidentification.sql`;
  const deidentificationSql = await fetchSqlContent(deidentificationUrl);
- console.log(deidentificationSql);
 
  console.log("PHI De-Identification is inprogress");
  await executeCommandWithSql(
