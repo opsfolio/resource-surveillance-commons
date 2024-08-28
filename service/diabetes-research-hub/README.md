@@ -11,7 +11,7 @@ data tables.
 **Note: The following are required to preview the Edge UI:**
 
 1. surveilr tool(use version: `0.12.2`)
-2. deno runtime(requires `deno` v1.40 or above):**:
+2. deno runtime(requires `deno` v1.40 or above):
    https://docs.deno.com/runtime/manual/getting_started/installation/
 
 Steps for installation shall vary based on the operating system
@@ -30,8 +30,8 @@ Note: Try this option outside this repository
 
    - Follow the installation instructions at
      [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
-   - Download the version `surveilr 0.12.2` from https://github.com/opsfolio/releases.opsfolio.com/releases to this folder.
-  
+   - Download the version `surveilr 0.12.2` from
+     https://github.com/opsfolio/releases.opsfolio.com/releases to this folder.
 
 3. **Verify the Tool Version**
 
