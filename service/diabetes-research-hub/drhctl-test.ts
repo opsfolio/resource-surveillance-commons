@@ -68,6 +68,12 @@ if (Deno.args.length === 0) {
 // Store the folder name in a variable
 const folderName = Deno.args[0];
 
+// Path to the SQLite database file
+const dbFilePath = "./resource-surveillance.sqlite.db";
+
+// Check and delete the file if it exists
+await checkAndDeleteFile(dbFilePath);
+
 // Log the start of the process
 console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
@@ -81,7 +87,7 @@ try {
  );
 
  // Ingest files and orchestrate transform-csv
- console.log(colors.dim(`performing deidentification: ${folderName}...`));
+ console.log(colors.dim(`Performing DeIdentification: ${folderName}...`));
  await executeCommand([
   toolCmd,
   "orchestrate",
@@ -94,6 +100,45 @@ try {
  console.log(
   colors.green("Deidentification successful."),
  );
+
+ // Ingest files and orchestrate transform-csv
+ console.log(
+  colors.dim(`Performing Verfication and Validation : ${folderName}...`),
+ );
+ await executeCommand([
+  toolCmd,
+  "orchestrate",
+  "-n",
+  "v&v",
+  "-s",
+  `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
+ ]);
+ console.log(
+  colors.green(
+   "Verification and validation orchestration completed successfully.",
+  ),
+ );
+
+ // Ingest files and orchestrate transform-csv
+ console.log(
+  colors.dim(`Performing UX orchestration : ${folderName}...`),
+ );
+ await executeCommand([
+  toolCmd,
+  "orchestrate",
+  "-n",
+  "v&v",
+  "-s",
+  `${RSC_BASE_URL}/ux.auto.sql`,
+ ]);
+ console.log(
+  colors.green(
+   "UX orchestration completed successfully.",
+  ),
+ );
+
+ console.log(colors.dim(`Loading DRH Edge UI...`));
+ await executeCommand([toolCmd, "web-ui", "--port", "9000"]);
 
  // Continue with further commands if needed...
 } catch (error) {
