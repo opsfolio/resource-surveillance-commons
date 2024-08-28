@@ -94,22 +94,22 @@ messages are appropriately processed and stored for further analysis.
 
 ## Try it out on any device without this repo (if you're just using the SQL scripts)
 
-Prepare the directory with sample files, download direct message inbox samples, download surveilr, and create resource-surveillance.sqlite.db RSSD file that will contain queryable direct message inbox content data and attachments includng pdf and CCDA xml files.
+Prepare the directory with sample files, download direct message inbox samples, download surveilr, and create resource-surveillance.sqlite.db RSSD file that will contain queryable direct message inbox content data and attachments including pdf and CCDA xml files.
 
-```
-# prepare a working directory with files
+```bash
+# prepare a working directory
 $ mkdir -p /tmp/direct-messages
 $ cd /tmp/direct-messages
 ```
-Prepare the Sample Files for Ingestion
-```
+Prepare the sample files for ingestion
+```bash
 # download the sample direct messages zip file using the below command.
 $ wget https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip
 ```
 
 Extract the zip file 
-```
-unzip ./ingest.zip
+```bash
+$ unzip ./ingest.zip
 ```
 
 Once unzipped, you should see the sample files in the ingest folder. The 'direct-messages' 
