@@ -59,60 +59,51 @@ const folderName = Deno.args[0];
 console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
 try {
-  try {
+   try{
     // Ingest files and orchestrate transform-csv
     console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
-    console.log(colors.dim(`Please wait....may incur more time`));
-    //await $`./surveilr ingest files -r ${folderName} && ./surveilr orchestrate transform-csv`;
-    await $`./surveilr ingest files -r ${folderName}/`;
-    await $`./surveilr orchestrate transform-csv`;
+    console.log(colors.dim(`Please wait....may take time`));
+    await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
     //await $`surveilr orchestrate transform-csv`;
     console.log(
       colors.green("Files ingestion and transformation successful."),
     );
-  } catch (error) {
+   }
+  catch (error) {
     // Optionally handle the error or log it if needed
-    console.error(
-      colors.red(
-        "An error occurred during Files ingestion and transformation process.",
-      ),
-      error,
-    );
+    console.error(colors.red("An error occurred during Files ingestion and transformation process."), error);
   }
 
   // Fetch and execute deidentification orchestration
-  try {
+  try{
     const deidentificationUrl =
       `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`;
     const deidentificationSql = await fetchSqlContent(deidentificationUrl);
     console.log(colors.dim("Executing deidentification ..."));
     await executeCommandWithSqlSTDIN(
       deidentificationSql,
-      "./surveilr",
+      "surveilr",
       "orchestrate",
       "-n",
       "deidentification",
     );
     console.log(colors.green("Deidentification completed."));
-  } catch (error) {
+  }
+  catch (error) {
     // Optionally handle the error or log it if needed
-    console.error(
-      colors.red("An error occurred during Deidentification process."),
-      error,
-    );
+    console.error(colors.red("An error occurred during Deidentification process."), error);
   }
 
   // Fetch and execute verification and validation orchestration
-  try {
-    const vvUrl =
-      `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`;
+  try{
+    const vvUrl = `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`;
     const vvSql = await fetchSqlContent(vvUrl);
     console.log(
       colors.dim("Executing verification and validation ..."),
     );
     await executeCommandWithSqlSTDIN(
       vvSql,
-      "./surveilr",
+      "surveilr",
       "orchestrate",
       "-n",
       "v&v",
@@ -122,14 +113,10 @@ try {
         "Verification and validation orchestration completed successfully.",
       ),
     );
-  } catch (error) {
+  }
+  catch (error) {
     // Optionally handle the error or log it if needed
-    console.error(
-      colors.red(
-        "An error occurred during Verification and validation process.",
-      ),
-      error,
-    );
+    console.error(colors.red("An error occurred during Verification and validation process."), error);
   }
 
   // Fetch and execute UX auto orchestration
@@ -145,32 +132,32 @@ try {
   // );
   // console.log(colors.green("UX auto orchestration completed successfully."));
 
-  try {
+
+  try{
     console.log("Executing UX auto orchestration...");
     //console.log(`${RSC_BASE_URL}/ux.auto.sql`);
     //await executeCommandWithSql("surveilr orchestrate -n v&v -s", uxAutoSql);
     const exec_url: string = `${RSC_BASE_URL}/ux.auto.sql`;
-    await $`./surveilr orchestrate -n "v&v" -s ${exec_url}`;
+    await $`surveilr orchestrate -n "v&v" -s ${exec_url}`;
     //await $`surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql`;
 
     console.log(colors.green("UX auto orchestration completed successfully."));
-  } catch (error) {
-    // Optionally handle the error or log it if needed
-    console.error(
-      colors.red("An error occurred during UX auto orchestration process."),
-      error,
-    );
-  }
+    }
+    catch (error) {
+      // Optionally handle the error or log it if needed
+      console.error(colors.red("An error occurred during UX auto orchestration process."), error);
+    }
 
-  try {
+  try{
     // Launch the SQLPage web UI
     console.log(
       "DRH EDGE Web UI loading...at http://localhost:9000/drh/index.sql",
     );
-    await $`./surveilr web-ui --port 9000`;
-  } catch (error) {
+    await $`surveilr web-ui --port 9000`;
+  }
+  catch (error) {
     // Optionally handle the error or log it if needed
-    console.error(colors.red("An error occurred UI loading process."), error);
+    console.error(colors.red("An error occurred during UI loading process."), error);
   }
 } catch (error) {
   console.error(colors.red("An error occurred:"), error.message);
