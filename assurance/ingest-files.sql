@@ -48,7 +48,7 @@ SELECT
 FROM uniform_resource ur
 JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
 WHERE ur.nature LIKE '%executable%' OR ur.nature LIKE '%script%' 
-      OR isfpe.file_extn IN ('.exe', '.dll', '.bat', '.ps1', '.sh');
+OR isfpe.file_extn IN ('.exe', '.dll', '.bat', '.ps1', '.sh');
 
 -- detect potential compliance violations within file content by looking for patterns indicating sensitive data or PII exposure.
 DROP VIEW IF EXISTS compliance_violations;
@@ -65,7 +65,7 @@ SELECT
 FROM uniform_resource ur
 JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
 WHERE ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%' 
-      OR ur.content LIKE '%password%' OR ur.content LIKE '%credit card%';
+OR ur.content LIKE '%password%' OR ur.content LIKE '%credit card%';
 
 
 WITH expected_counts AS (
