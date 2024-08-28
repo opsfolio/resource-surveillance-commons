@@ -1,21 +1,71 @@
-import { INGEST_DIR, ITest, ZIP_FILE, ZIP_URL } from "./mod.ts";
-import { $ } from "https://deno.land/x/dax@0.39.2/mod.ts";
+import {
+  ASSURANCE_DIRECTORY,
+  DEFAULT_RSSD_PATH,
+  INGEST_DIR,
+  ITest,
+  ZIP_FILE,
+  ZIP_URL,
+} from "./mod.ts";
+import { $, CommandResult } from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
 export class IngestTest implements ITest {
+  private e2eTestDir: string;
+
+  constructor(e2eTestDir: string) {
+    this.e2eTestDir = e2eTestDir;
+  }
+
   async multitenancy(): Promise<void> {
-    const multitenancyRssd = "multitenancy-resource-surveillance.sqlite.db";
+    const multitenancyRssd = path.join(
+      this.e2eTestDir,
+      "multitenancy-resource-surveillance.sqlite.db",
+    );
     const tenantId = "e2e-id-one";
     const tenantName = "surveilr end to end test";
     console.log(
       colors.blue("🚀 Running surveilr with multitenancy enabled"),
     );
-    await $`surveilr ingest files -d ${multitenancyRssd} -r ./${INGEST_DIR} --tenant-id ${tenantId} --tenant-name ${tenantName}`;
+    await $`surveilr ingest files -d ${multitenancyRssd} -r ./${INGEST_DIR}/10k_synthea_covid19_csv --tenant-id ${tenantId} --tenant-name ${tenantName}`;
     console.log(
       colors.green(
         "✅ Ingest command with multitenancy executed successfully.",
       ),
     );
+  }
+
+  async executeMultitenancyTapTest(): Promise<CommandResult> {
+    const dbFilePath = path.join(
+      this.e2eTestDir,
+      "multitenancy-resource-surveillance.sqlite.db",
+    );
+
+    const sqlFilePath = path.join(
+      ASSURANCE_DIRECTORY,
+      "ingest-files-multitenancy.sql",
+    );
+
+    console.log(
+      colors.blue(
+        `🚀 Executing mulitenancy tap test by running ${sqlFilePath} against RSSD: ${dbFilePath}`,
+      ),
+    );
+
+    try {
+      const sqlFileContent = await Deno.readTextFile(sqlFilePath);
+
+      return $`sqlite3 ${dbFilePath}`.stdinText(
+        sqlFileContent,
+      ).captureCombined();
+    } catch (error) {
+      console.error(
+        colors.red(
+          `❌ Error during multitenancy tap test execution: ${error.message}`,
+        ),
+      );
+      Deno.exit(1);
+    }
   }
 
   async setup(): Promise<void> {
@@ -53,12 +103,48 @@ export class IngestTest implements ITest {
     console.log(
       colors.blue("🚀 Running the ingest command with surveilr..."),
     );
-    await $`surveilr ingest files -r ./${INGEST_DIR}`;
+    await $`surveilr ingest files -r ./${INGEST_DIR}/10k_synthea_covid19_csv`;
     console.log(colors.green("✅ Ingest command executed successfully."));
     await this.multitenancy();
   }
 
-  async tap(): Promise<void> {
+  async executeTapTest(): Promise<Array<CommandResult>> {
+    const sqlFilePath = path.join(ASSURANCE_DIRECTORY, "ingest-files.sql");
+    console.log(
+      colors.blue(
+        `🚀 Executing tap test by running ${sqlFilePath} against RSSD: ${DEFAULT_RSSD_PATH}`,
+      ),
+    );
+
+    const results: CommandResult[] = [];
+    try {
+      const sqlFileContent = await Deno.readTextFile(sqlFilePath);
+
+      const ingestResult = await $`sqlite3 ${DEFAULT_RSSD_PATH}`
+        .stdinText(
+          sqlFileContent,
+        ).captureCombined();
+
+      results.push(ingestResult);
+
+      //   await this.delay(1000);
+
+      //   results.push(await this.executeMultitenancyTapTest());
+
+      return results;
+    } catch (error) {
+      console.error(
+        colors.red(
+          `❌ Error during tap test execution: ${error.message}`,
+        ),
+      );
+      Deno.exit(1);
+    }
+  }
+
+  // Helper method to add a delay
+  delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async teardown(): Promise<void> {

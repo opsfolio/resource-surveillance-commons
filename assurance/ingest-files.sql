@@ -69,13 +69,13 @@ WHERE ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%'
 
 
 WITH expected_counts AS (
-    SELECT 'file_change_history' AS table_name, 14 AS expected_count
+    SELECT 'file_change_history' AS table_name, 17 AS expected_count
     UNION ALL
     SELECT 'user_activity_summary', 0 AS expected_count 
     UNION ALL
     SELECT 'potential_risk_files', 0 AS expected_count 
     UNION ALL
-    SELECT 'compliance_violations', 0 AS expected_count 
+    SELECT 'compliance_violations', 1 AS expected_count 
 ),
 actual_counts AS (
     SELECT 'file_change_history' AS table_name, COUNT(*) AS actual_count FROM file_change_history
