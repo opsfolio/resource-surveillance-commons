@@ -104,11 +104,6 @@ console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
 try {
  // Check if the surveilr tool exists and is executable
- try {
-  await Deno.stat(toolCmd);
- } catch {
-  throw new Error(`The surveilr tool was not found at path: ${toolCmd}`);
- }
 
  // Ingest files and orchestrate transform-csv
  console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
@@ -146,8 +141,8 @@ try {
 
  // Fetch and execute UX auto orchestration
  console.log("Executing UX auto orchestration...");
- const execUrl = `${RSC_BASE_URL}/ux.auto.sql`;
- await executeCommand([toolCmd, "orchestrate", "-n", "v&v", "-s", execUrl]);
+ const exec_url: string = `${RSC_BASE_URL}/ux.auto.sql`;
+ await executeCommand([toolCmd, "orchestrate", "-n", "v&v", "-s", exec_url]);
  console.log(colors.green("UX auto orchestration completed successfully."));
 
  // Launch the SQLPage web UI
