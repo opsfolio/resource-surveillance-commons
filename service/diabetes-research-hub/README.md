@@ -10,9 +10,8 @@ data tables.
 
 **Note: The following are required to preview the Edge UI:**
 
-1. surveilr tool
-2. sqlite3 : https://www.sqlite.org/download.html
-3. deno runtime:
+1. surveilr tool(use version: `0.12.2`)
+2. deno runtime:
    https://docs.deno.com/runtime/manual/getting_started/installation/
 
 Steps for installation shall vary based on the operating system

@@ -5,6 +5,7 @@
 
 import { $ } from "https://deno.land/x/dax@0.4.0/mod.ts";
 import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { typeGuard } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.14.8/lib/universal/safety.ts";
 
 // Define a helper function to fetch SQL content from a URL
 async function fetchSqlContent(url: string): Promise<string> {
@@ -58,46 +59,76 @@ const folderName = Deno.args[0];
 console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
 try {
-  // Ingest files and orchestrate transform-csv
-  console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
-  await $`surveilr ingest files -r ${folderName} && surveilr orchestrate transform-csv`;
-  //await $`surveilr orchestrate transform-csv`;
-  console.log(
-    colors.green("Files ingestion and CSV transformation successful."),
-  );
+  try {
+    // Ingest files and orchestrate transform-csv
+    console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
+    console.log(colors.dim(`Please wait....may incur more time`));
+    await $`./surveilr ingest files -r ${folderName} && ./surveilr orchestrate transform-csv`;
+    //await $`surveilr orchestrate transform-csv`;
+    console.log(
+      colors.green("Files ingestion and transformation successful."),
+    );
+  } catch (error) {
+    // Optionally handle the error or log it if needed
+    console.error(
+      colors.red(
+        "An error occurred during Files ingestion and transformation process.",
+      ),
+      error,
+    );
+  }
 
   // Fetch and execute deidentification orchestration
-  const deidentificationUrl =
-    `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`;
-  const deidentificationSql = await fetchSqlContent(deidentificationUrl);
-  console.log(colors.dim("Executing deidentification orchestration..."));
-  await executeCommandWithSqlSTDIN(
-    deidentificationSql,
-    "surveilr",
-    "orchestrate",
-    "-n",
-    "deidentification",
-  );
-  console.log(colors.green("Deidentification orchestration completed."));
+  try {
+    const deidentificationUrl =
+      `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`;
+    const deidentificationSql = await fetchSqlContent(deidentificationUrl);
+    console.log(colors.dim("Executing deidentification ..."));
+    await executeCommandWithSqlSTDIN(
+      deidentificationSql,
+      "./surveilr",
+      "orchestrate",
+      "-n",
+      "deidentification",
+    );
+    console.log(colors.green("Deidentification completed."));
+  } catch (error) {
+    // Optionally handle the error or log it if needed
+    console.error(
+      colors.red("An error occurred during Deidentification process."),
+      error,
+    );
+  }
 
   // Fetch and execute verification and validation orchestration
-  const vvUrl = `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`;
-  const vvSql = await fetchSqlContent(vvUrl);
-  console.log(
-    colors.dim("Executing verification and validation orchestration..."),
-  );
-  await executeCommandWithSqlSTDIN(
-    vvSql,
-    "surveilr",
-    "orchestrate",
-    "-n",
-    "v&v",
-  );
-  console.log(
-    colors.green(
-      "Verification and validation orchestration completed successfully.",
-    ),
-  );
+  try {
+    const vvUrl =
+      `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`;
+    const vvSql = await fetchSqlContent(vvUrl);
+    console.log(
+      colors.dim("Executing verification and validation ..."),
+    );
+    await executeCommandWithSqlSTDIN(
+      vvSql,
+      "./surveilr",
+      "orchestrate",
+      "-n",
+      "v&v",
+    );
+    console.log(
+      colors.green(
+        "Verification and validation orchestration completed successfully.",
+      ),
+    );
+  } catch (error) {
+    // Optionally handle the error or log it if needed
+    console.error(
+      colors.red(
+        "An error occurred during Verification and validation process.",
+      ),
+      error,
+    );
+  }
 
   // Fetch and execute UX auto orchestration
   // const uxAutoUrl = `${RSC_BASE_URL}/service/diabetes-research-hub/ux.auto.sql`;
@@ -112,18 +143,33 @@ try {
   // );
   // console.log(colors.green("UX auto orchestration completed successfully."));
 
-  console.log("Executing UX auto orchestration...");
-  //console.log(`${RSC_BASE_URL}/ux.auto.sql`);
-  //await executeCommandWithSql("surveilr orchestrate -n v&v -s", uxAutoSql);
-  const exec_url: string = `${RSC_BASE_URL}/ux.auto.sql`;
-  await $`surveilr orchestrate -n "v&v" -s ${exec_url}`;
-  //await $`surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql`;
+  try {
+    console.log("Executing UX auto orchestration...");
+    //console.log(`${RSC_BASE_URL}/ux.auto.sql`);
+    //await executeCommandWithSql("surveilr orchestrate -n v&v -s", uxAutoSql);
+    const exec_url: string = `${RSC_BASE_URL}/ux.auto.sql`;
+    await $`./surveilr orchestrate -n "v&v" -s ${exec_url}`;
+    //await $`surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql`;
 
-  // console.log("Orchestration Process completed successfully!");
+    console.log(colors.green("UX auto orchestration completed successfully."));
+  } catch (error) {
+    // Optionally handle the error or log it if needed
+    console.error(
+      colors.red("An error occurred during UX auto orchestration process."),
+      error,
+    );
+  }
 
-  // Launch the SQLPage web UI
-  console.log("Sqlpage Web UI loading...");
-  await $`surveilr web-ui --port 9000`;
+  try {
+    // Launch the SQLPage web UI
+    console.log(
+      "DRH EDGE Web UI loading...at http://localhost:9000/drh/index.sql",
+    );
+    await $`./surveilr web-ui --port 9000`;
+  } catch (error) {
+    // Optionally handle the error or log it if needed
+    console.error(colors.red("An error occurred UI loading process."), error);
+  }
 } catch (error) {
   console.error(colors.red("An error occurred:"), error.message);
   Deno.exit(1);
