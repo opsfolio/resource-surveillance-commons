@@ -63,7 +63,9 @@ try {
     // Ingest files and orchestrate transform-csv
     console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
     console.log(colors.dim(`Please wait....may incur more time`));
-    await $`./surveilr ingest files -r ${folderName} && ./surveilr orchestrate transform-csv`;
+    //await $`./surveilr ingest files -r ${folderName} && ./surveilr orchestrate transform-csv`;
+    await $`./surveilr ingest files -r ${folderName}/`;
+    await $`./surveilr orchestrate transform-csv`;
     //await $`surveilr orchestrate transform-csv`;
     console.log(
       colors.green("Files ingestion and transformation successful."),
