@@ -113,9 +113,11 @@ try {
   // console.log(colors.green("UX auto orchestration completed successfully."));
 
   console.log("Executing UX auto orchestration...");
-  console.log(`${RSC_BASE_URL}/ux.auto.sql`);
+  //console.log(`${RSC_BASE_URL}/ux.auto.sql`);
   //await executeCommandWithSql("surveilr orchestrate -n v&v -s", uxAutoSql);
-  await $`surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql`;
+  const exec_url: string = `${RSC_BASE_URL}/ux.auto.sql`;
+  await $`surveilr orchestrate -n "v&v" -s ${exec_url}`;
+  //await $`surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql`;
 
   // console.log("Orchestration Process completed successfully!");
 
