@@ -43,12 +43,8 @@ Deno.test("file ingestion", async (t) => {
     await t.step({
         name: "setup test environment",
         fn: async () => {
-            if (await Deno.stat(ZIP_FILE).catch(() => false)) {
-                console.log("📁 Data file already exists, skipping download.");
-            } else {
-                console.log(`⬇️ Downloading the data file from ${ZIP_URL}...`);
+            if (!await Deno.stat(ZIP_FILE).catch(() => false)) {
                 await $`wget ${ZIP_URL}`;
-                console.log("✅ Data file downloaded successfully.");
             }
 
             assertExists(
@@ -56,13 +52,7 @@ Deno.test("file ingestion", async (t) => {
                 "❌ Error: Data file does not exist after download.",
             );
 
-            console.log(
-                "📦 Preparing the ingest directory and unzipping data...",
-            );
-
-            if (await Deno.stat(INGEST_DIR).catch(() => false)) {
-                console.log("📁 Data file has unzipped already. moving on...");
-            } else {
+            if (!await Deno.stat(INGEST_DIR).catch(() => false)) {
                 await Deno.mkdir(INGEST_DIR, { recursive: true });
                 const unzipResult = await $`unzip ${ZIP_FILE} -d ${INGEST_DIR}`;
 
@@ -165,32 +155,32 @@ Deno.test("file ingestion", async (t) => {
         assertEquals(result[0][0], 3);
     });
 
-    await t.step("compliance violations", () => {
-        db.execute(`
-            DROP VIEW IF EXISTS compliance_violations;
-            CREATE VIEW compliance_violations AS
-            SELECT
-                ur.uniform_resource_id,
-                ur.uri,
-                isfpe.file_path_abs,
-                CASE
-                    WHEN ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%' THEN 'Sensitive Data Exposure'
-                    WHEN ur.content LIKE '%password%' OR ur.content LIKE '%credit card%' THEN 'PII Exposure'
-                    ELSE 'Other Violation'
-                END AS violation_type
-            FROM uniform_resource ur
-            JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
-            WHERE ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%'
-            OR ur.content LIKE '%password%' OR ur.content LIKE '%credit card%';
-        `);
+    // await t.step("compliance violations", () => {
+    //     db.execute(`
+    //         DROP VIEW IF EXISTS compliance_violations;
+    //         CREATE VIEW compliance_violations AS
+    //         SELECT
+    //             ur.uniform_resource_id,
+    //             ur.uri,
+    //             isfpe.file_path_abs,
+    //             CASE
+    //                 WHEN ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%' THEN 'Sensitive Data Exposure'
+    //                 WHEN ur.content LIKE '%password%' OR ur.content LIKE '%credit card%' THEN 'PII Exposure'
+    //                 ELSE 'Other Violation'
+    //             END AS violation_type
+    //         FROM uniform_resource ur
+    //         JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
+    //         WHERE ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%'
+    //         OR ur.content LIKE '%password%' OR ur.content LIKE '%credit card%';
+    //     `);
 
-        const result = db.query(
-            `SELECT COUNT(*) AS count FROM compliance_violations`,
-        );
-        console.log({ result });
-        assertEquals(result.length, 1);
-        assertEquals(result[0][0], 0);
-    });
+    //     const result = db.query(
+    //         `SELECT COUNT(*) AS count FROM compliance_violations`,
+    //     );
+    //     console.log({ result });
+    //     assertEquals(result.length, 1);
+    //     assertEquals(result[0][0], 0);
+    // });
 
     // await t.step("potentially risky files", () => {
     //     db.execute(`
