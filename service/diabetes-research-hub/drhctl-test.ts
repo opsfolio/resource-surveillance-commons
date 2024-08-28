@@ -1,66 +1,26 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run
 
-import { $ } from "https://deno.land/x/dax@0.4.0/mod.ts";
 import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
-
-// Helper function to fetch SQL content from a URL
-async function fetchSqlContent(url: string): Promise<string> {
- const response = await fetch(url);
- if (!response.ok) {
-  throw new Error(`Failed to fetch SQL content from ${url}`);
- }
- return await response.text();
-}
-
-// Helper function to execute a command with SQL content via STDIN
-async function executeCommandWithSqlSTDIN(sql: string, ...cmd: string[]) {
- console.log(colors.dim(`Running command: ${cmd.join(" ")}`));
-
- const process = Deno.run({
-  cmd,
-  stdin: "piped",
-  stdout: "inherit",
-  stderr: "inherit",
- });
-
- const encoder = new TextEncoder();
- await process.stdin.write(encoder.encode(sql));
- process.stdin.close();
-
- const status = await process.status();
- if (!status.success) {
-  console.error(colors.red(`Command failed with status ${status.code}`));
-  Deno.exit(status.code);
- }
-}
 
 // Detect platform-specific command format
 const isWindows = Deno.build.os === "windows";
 const toolCmd = isWindows ? ".\\surveilr" : "./surveilr";
 
-// Base URL for the resource surveillance commons
-const RSC_BASE_URL =
- "https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub";
+// Helper function to execute a command
+async function executeCommand(cmd: string[]) {
+ console.log(colors.dim(`Executing command: ${cmd.join(" ")}`));
 
-// Function to check if a file exists and delete it if it does
-async function checkAndDeleteFile(filePath: string) {
- try {
-  const fileInfo = await Deno.stat(filePath);
-  if (fileInfo.isFile) {
-   console.log(colors.yellow(`File ${filePath} found. Deleting...`));
-   await Deno.remove(filePath);
-   console.log(colors.green(`File ${filePath} deleted.`));
-  }
- } catch (error) {
-  if (error instanceof Deno.errors.NotFound) {
-   console.log(colors.green(`File ${filePath} not found. No action needed.`));
-  } else {
-   console.error(
-    colors.red(`Error checking or deleting file ${filePath}:`),
-    error.message,
-   );
-   Deno.exit(1);
-  }
+ const process = Deno.run({
+  cmd, // Pass the command as an array
+  stdout: "inherit",
+  stderr: "inherit",
+ });
+
+ const status = await process.status();
+ process.close();
+
+ if (!status.success) {
+  throw new Error(`Command failed with status ${status.code}`);
  }
 }
 
@@ -72,16 +32,8 @@ if (Deno.args.length === 0) {
  Deno.exit(1);
 }
 
-console.log(`hi ${toolCmd}`);
-
 // Store the folder name in a variable
 const folderName = Deno.args[0];
-
-// Path to the SQLite database file
-const dbFilePath = "resource-surveillance.sqlite.db";
-
-// Check and delete the file if it exists
-await checkAndDeleteFile(dbFilePath);
 
 // Log the start of the process
 console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
@@ -89,59 +41,13 @@ console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 try {
  // Ingest files and orchestrate transform-csv
  console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
- const ingesttransformCmd =
-  `${toolCmd} ingest files -r ${folderName}/ && ${toolCmd} orchestrate transform-csv`;
- const transformCmd = `${toolCmd} orchestrate transform-csv`;
- console.log(colors.dim(`Executing command: ${ingesttransformCmd}`));
- //console.log(colors.dim(`Executing command: ${transformCmd}`));
- await $`${ingesttransformCmd}`;
- //await $`${transformCmd}`;
+ await executeCommand([toolCmd, "ingest", "files", "-r", `${folderName}/`]);
+ await executeCommand([toolCmd, "orchestrate", "transform-csv"]);
  console.log(
   colors.green("Files ingestion and CSV transformation successful."),
  );
 
- // Fetch and execute deidentification orchestration
- const deidentificationUrl =
-  `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`;
- const deidentificationSql = await fetchSqlContent(deidentificationUrl);
- console.log(colors.dim("Executing deidentification orchestration..."));
- await executeCommandWithSqlSTDIN(
-  deidentificationSql,
-  toolCmd,
-  "orchestrate",
-  "-n",
-  "deidentification",
- );
- console.log(colors.green("Deidentification orchestration completed."));
-
- // Fetch and execute verification and validation orchestration
- const vvUrl = `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`;
- const vvSql = await fetchSqlContent(vvUrl);
- console.log(
-  colors.dim("Executing verification and validation orchestration..."),
- );
- await executeCommandWithSqlSTDIN(
-  vvSql,
-  toolCmd,
-  "orchestrate",
-  "-n",
-  "v&v",
- );
- console.log(
-  colors.green(
-   "Verification and validation orchestration completed successfully.",
-  ),
- );
-
- // Fetch and execute UX auto orchestration
- console.log("Executing UX auto orchestration...");
- const execUrl = `${RSC_BASE_URL}/ux.auto.sql`;
- await $`${toolCmd} orchestrate -n "v&v" -s ${execUrl}`;
- console.log(colors.green("UX auto orchestration completed successfully."));
-
- // Launch the SQLPage web UI
- console.log("SQLPage Web UI loading...");
- await $`${toolCmd} web-ui --port 9000`;
+ // Continue with further commands if needed...
 } catch (error) {
  console.error(colors.red("An error occurred:"), error.message);
  Deno.exit(1);
