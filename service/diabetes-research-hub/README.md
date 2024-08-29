@@ -21,10 +21,13 @@ Installation steps may vary depending on your operating system.
 
 You can perform file conversion in two ways:
 
-1. **Step-by-Step Command Execution**
-2. **Using an Automated Script** (suitable for Windows Command Prompt and
+1. **Multiple Command Execution**: Refer
+   [the section](#multiple-command-execution).
+2. **Single Command Execution** (suitable for Windows Command Prompt and
    PowerShell): To use the automated script, refer to the
    [Single Command Execution](#single-command-execution).
+
+![edge-image](./assets/edge-ingestion-steps.drawio.svg)
 
 ### Step 1: Navigate to the Folder Containing the Files
 
@@ -48,7 +51,7 @@ You can perform file conversion in two ways:
 
 ![image1](./assets/surveilr-version-cmd.png)
 
-## Step By Step Execution:
+## Multiple Command Execution:
 
 ### Ingest and Transform the Files
 
