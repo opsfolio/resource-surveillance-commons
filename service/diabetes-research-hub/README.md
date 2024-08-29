@@ -1,169 +1,211 @@
-# Surveilr DRH Data Transformation and SqlPage Preview
+# Surveilr DRH Data Transformation and SQLPage Preview Guide
 
 ## Overview
 
-The `drh-deidentification.sql` performs the deidentification of the columns in
-the study data converted tables. The `stateless-drh-surveilr.sql` creates the
-database views which shall be used in SQLPage preview. The
-`orchestrate-drh-vv.sql` performs the verification and validation on the study
-data tables.
+Welcome to the Surveilr DRH Data Transformation and SQLPage Preview guide! This
+tool allows you to securely convert your CSV files, perform de-identification,
+and conduct verification and validation (V&V) processes behind your firewall.
+You can view the results directly on your local system. The following steps will
+guide you through converting your files, performing de-identification, V&V, and
+verifying the data all within your own environment.
 
-**Note: The following are required to preview the Edge UI:**
+### Requirements for Previewing the Edge UI:
 
-1. surveilr tool(use version: `0.12.2`)
-2. deno runtime(requires `deno` v1.40 or above):
-   https://docs.deno.com/runtime/manual/getting_started/installation/
+1. **Surveilr Tool** (use version `0.12.2`)
+2. **Deno Runtime** (requires `deno` v1.40 or above):
+   [Deno Installation Guide](https://docs.deno.com/runtime/manual/getting_started/installation/)
 
-Steps for installation shall vary based on the operating system
+Installation steps may vary depending on your operating system.
 
 ## Getting Started
 
-Note: Try this option outside this repository
+You can perform file conversion in two ways:
 
-1. **Move to folder containing the files:**
+1. **Step-by-Step Command Execution**
+2. **Using an Automated Script** (suitable for Windows Command Prompt and
+   PowerShell):To use the automated script, refer to the
+   [Single Command Execution](#single-command-execution).
 
-   - Open the command prompt and change to the directory containing the files.
-   - Command: `cd <folderpath>`
-   - Example: `cd D:/workfiles/common-files`
+### Step 1: Navigate to the Folder Containing the Files
 
-2. **Download Surveilr:**
+- Open the command prompt and navigate to the directory with your files.
+- Command: `cd <folderpath>`
+- Example: `cd D:/workfiles/DRH-Files`
 
-   - Follow the installation instructions at
-     [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
-   - Download the version `surveilr 0.12.2` from
-     https://github.com/opsfolio/releases.opsfolio.com/releases to this folder.
+### Step 2: Download Surveilr
 
-3. **Verify the Tool Version**
+- Follow the installation instructions at the
+  [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
+- Download version `surveilr 0.12.2` from
+  [Surveilr Releases](https://github.com/opsfolio/releases.opsfolio.com/releases)
+  to this folder.
 
-   - Input the command `surveilr --version`.
-   - If the tool is available, it will show the version number.
+### Step 3: Verify the Tool Version
 
-   3.1 **Ingest and transform the Files**
+- Run the command `surveilr --version` in command prompt and
+  `.\surveilr --version` in powershell.
+- If the tool is installed correctly, it will display the version number.
 
-   **Command:**
+![image1](./assets/surveilr-version-cmd.png)
 
-   - Command:
-     `surveilr ingest files -r <foldername>/ && surveilr orchestrate transform-csv`
-   - Example:
-     `surveilr ingest files -r reference-data/ && surveilr orchestrate transform-csv`
+## Step By Step Execution:
 
-   **Note**: Here `reference-data` is a sub folder within `common-files`
-   containing the files.
+### Ingest and Transform the Files
 
-   3.2 **Verify the Transformed Data**
+**Command:**
 
-   - Plese check the folder directly to see the transformed database.
+```bash
+surveilr ingest files -r <foldername>/ && surveilr orchestrate transform-csv
+```
 
-4. **Perform De-identification**
+- Example:
+  ```bash
+  surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
+  ```
 
-   ```bash
-   surveilr orchestrate -n "deidentification" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/de-identification/drh-deidentification.sql
-   ```
+**Note:** Replace `study-files` with the subfolder containing your files .It is
+a sub folder within `DRH-Files`.
 
-5. **Perform verification and validation**
+### Verify the Transformed Data
 
-   ```bash
-   surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql
-   ```
+- Check the folder directly to view the transformed database.
+- You should see a SQLite database named `resource-surveillance.sqlite.db`.
 
-6. **Preview Content with SQLPage:**
+### Perform De-identification
 
-   ```bash
-   surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql
-   ```
-   ```bash
-   surveilr web-ui --port 9000
-   ```
-   # Launch a browser and go to
-   [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
+```bash
+surveilr orchestrate -n "deidentification" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/de-identification/drh-deidentification.sql
+```
 
-   ## Try it out in this repo (if you're developing SQL scripts)
+### Perform Verification and Validation
 
-   **Note**: Reference sample files can be found in the repository folder:
-   /service/diabetes-research-hub/study-files.zip
+```bash
+surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/verfication-validation/orchestrate-drh-vv.sql
+```
 
-   First, prepare the directory with sample files and copy them to this folder,
-   or extract the sample files and move them to this folder:
+### Preview Content with SQLPage
 
-   ```bash
-   $ cd service/diabetes-research-hub
-   ```
+```bash
+surveilr orchestrate -n "v&v" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/ux.auto.sql
+```
 
-   The directory should look like this now:
+```bash
+surveilr web-ui --port 9000
+```
 
-   ```
-   ├── de-identification
-   |   ├──drh-deidentification.sql
-   ├── study-files
-   │   ├── author.csv
-   │   ├── publication.csv
-   │   └── ...many other study files    
-   ├── verfication-validation
-   |   ├──orchestrate-drh-vv.sql
-   ├── stateless-drh-surveilr.sql
-   ├── generate-raw-cgm-web-ui-pages.sql
-   ```
+- Launch your browser and go to
+  [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
 
-   Now
-   [Download `surveilr`](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
-   into this directory, then ingest and query the data:
+## Single Command Execution
 
-   ```bash
-   # ingest and transform the CSV files in the "study-files/" directory, creating resource-surveillance.sqlite.db
-   $ surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
-   ```
+You can run everything with a single command:
 
-   ````
-   ```bash
-   # Apply de-identification
-   $ cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"
-   ````
+```bash
+deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
+```
 
-   ```bash
-   # Perform verification and validation
-   $ cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"
-   ```
-   After ingestion, you will only work with these files:
+- Replace `study-files` with the name of your folder containing all CSV files to
+  be converted.
 
-   ```
-   ├── stateless-drh-surveilr.sql    
-   └── resource-surveillance.sqlite.db            # SQLite database
-   ```
+This method provides a streamlined approach to complete the process and see the
+results quickly.
 
-   Post-ingestion, `surveilr` is no longer required, the `study-files` directory
-   can be ignored, only `sqlite3` is required because all content is in the
-   `resource-surveillance.sqlite.db` SQLite database which does not require any
-   other dependencies.
+**Note:** If you encounter any issues using the automated script, please refer
+to the [FAQ.md](FAQ.md) for troubleshooting.
 
-   ```bash
-   # load the "Console" and other menu/routing utilities   
-   $ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
+## Try it out in this repo (Steps for the developer)
+
+The following SQL scripts will be used:
+
+    - **`drh-deidentification.sql`**: De-identifies sensitive columns in the study data.
+    - **`stateless-drh-surveilr.sql`**: Creates database views for SQLPage preview.
+    - **`orchestrate-drh-vv.sql`**: Performs verification and validation on the study data tables.
+
+**Note**: Reference sample files can be found in the repository folder:
+/service/diabetes-research-hub/study-files.zip
+
+First, prepare the directory with sample files and copy them to this folder, or
+extract the sample files and move them to this folder:
+
+```bash
+$ cd service/diabetes-research-hub
+```
+
+The directory should look like this now:
+
+```
+├── de-identification
+|   ├──drh-deidentification.sql
+├── study-files
+│   ├── author.csv
+│   ├── publication.csv
+│   └── ...many other study files    
+├── verfication-validation
+|   ├──orchestrate-drh-vv.sql
+├── stateless-drh-surveilr.sql
+├── generate-raw-cgm-web-ui-pages.sql
+```
+
+Now
+[Download `surveilr`](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
+into this directory, then ingest and query the data:
+
+```bash
+# ingest and transform the CSV files in the "study-files/" directory, creating resource-surveillance.sqlite.db
+$ surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
+```
+
+````
+```bash
+# Apply de-identification
+$ cat de-identification/drh-deidentification.sql| surveilr orchestrate -n "deidentification"
+````
+
+```bash
+# Perform verification and validation
+$ cat verfication-validation/orchestrate-drh-vv.sql | surveilr orchestrate -n "v&v"
+```
+
+After ingestion, you will only work with these files:
+
+```
+├── stateless-drh-surveilr.sql    
+└── resource-surveillance.sqlite.db            # SQLite database
+```
+
+Post-ingestion, `surveilr` is no longer required, the `study-files` directory
+can be ignored, only `sqlite3` is required because all content is in the
+`resource-surveillance.sqlite.db` SQLite database which does not require any
+other dependencies.
+
+```bash
+# load the "Console" and other menu/routing utilities   
+$ deno run -A ./ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
 
-   # if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
-   $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
-   # browse http://localhost:9000/ to see web UI
+# if you want to start surveilr embedded SQLPage in "watch" mode to re-load files automatically
+$ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime
+# browse http://localhost:9000/ to see web UI
 
-   # if you want to start a standalone SQLPage in "watch" mode to re-load files automatically
-   $ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
-   # browse http://localhost:9000/ to see web UI
+# if you want to start a standalone SQLPage in "watch" mode to re-load files automatically
+$ ../../support/bin/sqlpagectl.ts dev --watch . --watch ../../prime --standalone
+# browse http://localhost:9000/ to see web UI
 
-   # browse http://localhost:9000/drh/index.sql
-   ```
+# browse http://localhost:9000/drh/index.sql
+```
 
-   Once you apply `drh-deidentification.sql` and `orchestrate-drh-vv.sql` you
-   can ignore those files and all content will be accessed through views or
-   `*.cached` tables in `resource-surveillance.sqlite.db`. The
-   `stateless-drh-surveilr.sql` shall be executed within the ux.sql.ts file
-   itself. At this point you can rename the SQLite database file, archive it,
-   use in reporting tools, DBeaver, DataGrip, or any other SQLite data access
-   tools.
+Once you apply `drh-deidentification.sql` and `orchestrate-drh-vv.sql` you can
+ignore those files and all content will be accessed through views or `*.cached`
+tables in `resource-surveillance.sqlite.db`. The `stateless-drh-surveilr.sql`
+shall be executed within the ux.sql.ts file itself. At this point you can rename
+the SQLite database file, archive it, use in reporting tools, DBeaver, DataGrip,
+or any other SQLite data access tools.
 
-   ## Automatically reloading SQL when it changes
+## Automatically reloading SQL when it changes
 
-   On sandboxes during development and editing of `.sql` or `.sql.ts` you may
-   want to automatically re-load the contents into SQLite regularly. Since it
-   can be time-consuming to re-run the same command in the CLI manually each
-   time a file changes, you can use _watch mode_ instead.
+On sandboxes during development and editing of `.sql` or `.sql.ts` you may want
+to automatically re-load the contents into SQLite regularly. Since it can be
+time-consuming to re-run the same command in the CLI manually each time a file
+changes, you can use _watch mode_ instead.
 
-   See: [`sqlpagectl.ts`](../../support/bin/sqlpagectl.ts).
+See: [`sqlpagectl.ts`](../../support/bin/sqlpagectl.ts).
