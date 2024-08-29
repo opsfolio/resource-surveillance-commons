@@ -23,14 +23,14 @@ You can perform file conversion in two ways:
 
 1. **Step-by-Step Command Execution**
 2. **Using an Automated Script** (suitable for Windows Command Prompt and
-   PowerShell):To use the automated script, refer to the
+   PowerShell): To use the automated script, refer to the
    [Single Command Execution](#single-command-execution).
 
 ### Step 1: Navigate to the Folder Containing the Files
 
 - Open the command prompt and navigate to the directory with your files.
 - Command: `cd <folderpath>`
-- Example: `cd D:/workfiles/DRH-Files`
+- Example: `cd D:/DRH-Files`
 
 ### Step 2: Download Surveilr
 
@@ -55,16 +55,17 @@ You can perform file conversion in two ways:
 **Command:**
 
 ```bash
-surveilr ingest files -r <foldername>/ && surveilr orchestrate transform-csv
+surveilr ingest files -r `foldername`/ && surveilr orchestrate transform-csv
 ```
 
-- Example:
-  ```bash
-  surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
-  ```
+Example:
 
-**Note:** Replace `study-files` with the subfolder containing your files .It is
-a sub folder within `DRH-Files`.
+```bash
+surveilr ingest files -r study-files/ && surveilr orchestrate transform-csv
+```
+
+**Note:** Replace `study-files` with the name of your folder containing all CSV
+files to be converted. Here It is a sub folder within `DRH-Files`.
 
 ### Verify the Transformed Data
 
@@ -100,11 +101,19 @@ surveilr web-ui --port 9000
 
 You can run everything with a single command:
 
+**Command:**
+
 ```bash
-deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
+deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts 'foldername'
 ```
 
-- Replace `study-files` with the name of your folder containing all CSV files to
+**Example:**
+
+```bash
+deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts  study-files
+```
+
+- Replace `foldername` with the name of your folder containing all CSV files to
   be converted.
 
 This method provides a streamlined approach to complete the process and see the
@@ -113,7 +122,7 @@ results quickly.
 **Note:** If you encounter any issues using the automated script, please refer
 to the [FAQ.md](FAQ.md) for troubleshooting.
 
-## Try it out in this repo (Steps for the developer)
+# Try it out in this repo (Steps for the developer)
 
 The following SQL scripts will be used:
 
