@@ -132,9 +132,9 @@ to the [FAQ.md](FAQ.md) for troubleshooting.
 
 The following SQL scripts will be used:
 
-    - **`drh-deidentification.sql`**: De-identifies sensitive columns in the study data.
-    - **`stateless-drh-surveilr.sql`**: Creates database views for SQLPage preview.
-    - **`orchestrate-drh-vv.sql`**: Performs verification and validation on the study data tables.
+- drh-deidentification.sql: De-identifies sensitive columns in the study data.
+- stateless-drh-surveilr.sql: Creates database views for SQLPage preview.
+- orchestrate-drh-vv.sql: Performs verification and validation on the study data tables.
 
 **Note**: Reference sample files can be found in the repository folder:
 /service/diabetes-research-hub/study-files.zip
