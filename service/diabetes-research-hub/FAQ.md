@@ -6,8 +6,8 @@ is executed ,the following error is received. How to resolve this?
 
 ![issue](./assets/faq-issue1.png)
 
-This issue may be caused by a version change or a cache change related to Deno.
-To resolve the issue, follow these steps:
+This issue may be caused by a version change or caching to Deno. To resolve the
+issue, follow these steps:
 
 1. Clear the cache by running the following command:
 

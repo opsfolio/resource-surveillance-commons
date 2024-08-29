@@ -110,11 +110,14 @@ deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-com
 **Example:**
 
 ```bash
-deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts  study-files
+deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
 ```
 
 - Replace `foldername` with the name of your folder containing all CSV files to
   be converted.
+
+- After the above command completes execution launch your browser and go to
+  [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
 
 This method provides a streamlined approach to complete the process and see the
 results quickly.
