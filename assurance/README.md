@@ -26,7 +26,7 @@ This test script focuses on all current SQLite-specific functions provided by `s
 To run these tests, ensure that you have the following installed on your system:
 
 1. **[Deno](https://deno.com/)**: A modern runtime for JavaScript and TypeScript that is used to execute the test scripts.
-2. **[sqlite3](https://www.sqlite.org/download.html)**: The SQLite command-line tool required for database management and execution of SQL commands.
+2. [Download `surveilr` binary](https://docs.opsfolio.com/surveilr/how-to/installation-guide/)
 
 ## How to Run the Tests
 
