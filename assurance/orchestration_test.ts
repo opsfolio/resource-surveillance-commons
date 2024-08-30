@@ -158,14 +158,14 @@ Deno.test("orchestration and transformations", async (t) => {
     const urAuthorEmailsAfterDeidentification = db.query(
       "SELECT email FROM uniform_resource_author",
     );
-    const urInvestigatorEmailsAfterDeidentification = db.query(
-      "SELECT email FROM uniform_resource_investigator",
-    );
-
     assertNotEquals(
       urAuthorEmailsAfterDeidentification,
       urAuthorEmailsBeforeDeidentification,
       "❌ Error: uniform_resource_author emails were not deidentified.",
+    );
+
+    const urInvestigatorEmailsAfterDeidentification = db.query(
+      "SELECT email FROM uniform_resource_investigator",
     );
     assertNotEquals(
       urInvestigatorEmailsBeforeDeidentification,
@@ -189,7 +189,7 @@ Deno.test("orchestration and transformations", async (t) => {
   await t.step("verify orchestrated remote v&v script", async (t) => {
     await t.step("verify orchestration nature ID", () => {
       const orchestrationNatureId = db.query(
-        "SELECT orchestration_nature_id FROM orchestration_nature WHERE nature = 'Verification and Validation'",
+        "SELECT orchestration_nature_id FROM orchestration_nature WHERE nature = 'Verfication and Validation'",
       );
       assertEquals(
         orchestrationNatureId.length,
