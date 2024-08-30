@@ -32,13 +32,7 @@ To run these tests, ensure that you have the following installed on your system:
 
 To execute all tests and ensure that `surveilr` is functioning correctly:
 
-1. Navigate to the `assurance` directory:
-
-    ```bash
-    cd assurance/
-    ```
-
-2. Run the tests using Deno:
+1. Run the tests using Deno:
 
     ```bash
     deno test -A  # Executes all tests
