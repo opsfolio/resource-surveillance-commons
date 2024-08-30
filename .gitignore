@@ -4,9 +4,11 @@ surveilr.exe
 
 # when testing in this repo, we might have created default RSSDs
 resource-surveillance.sqlite.db
+*e2e*.db
 
 # when testing in this repo, we might have ingest samples / exemplars
 ingest/
+study-files/
 10k*
 
 # sometimes we'll test local files in SQLPage but we don't want those tracked
