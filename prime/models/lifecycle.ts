@@ -118,6 +118,11 @@ export function codeNotebooksModels<
     },
   });
 
+  const codeNotebookKernelDescr = markdown`
+    A Notebook is a group of Cells. A kernel is a computational engine that executes the code contained in a notebook cell.
+    Each notebook is associated with a kernel of a specific programming language or code transformer which can interpret
+    code and produce a result. For example, a SQL notebook might use a SQLite kernel for running SQL code and an AI Prompt
+    might prepare AI prompts for LLMs.`;
   const codeNotebookKernel = gm.textPkTable("code_notebook_kernel", {
     code_notebook_kernel_id: gk.varCharPrimaryKey(),
     kernel_name: gd.text(),
@@ -136,11 +141,7 @@ export function codeNotebooksModels<
       ];
     },
     populateQS: (t, c, _, tableName) => {
-      t.description = markdown`
-        A Notebook is a group of Cells. A kernel is a computational engine that executes the code contained in a notebook cell.
-        Each notebook is associated with a kernel of a specific programming language or code transformer which can interpret
-        code and produce a result. For example, a SQL notebook might use a SQLite kernel for running SQL code and an AI Prompt
-        might prepare AI prompts for LLMs.`;
+      t.description = codeNotebookKernelDescr;
       c.code_notebook_kernel_id.description =
         `${tableName} primary key and internal label (not a ULID)`;
       c.kernel_name.description = `the kernel name for human/display use cases`;
@@ -155,11 +156,7 @@ export function codeNotebooksModels<
     },
 
     qualitySystem: {
-      description: markdown`
-          A Notebook is a group of Cells. A kernel is a computational engine that executes the code contained in a notebook cell.
-          Each notebook is associated with a kernel of a specific programming language or code transformer which can interpret
-          code and produce a result. For example, a SQL notebook might use a SQLite kernel for running SQL code and an AI Prompt
-          might prepare AI prompts for LLMs.`,
+      description: codeNotebookKernelDescr,
     },
   });
 
@@ -169,6 +166,16 @@ export function codeNotebooksModels<
   //    sqlite3 xyz.db "select sql from code_notebook_cell where code_notebook_cell_id = 'infoSchemaMarkdown'" | sqlite3 xyz.db
   // You can pass in arguments using .parameter or `sql_parameters` table, like:
   //    echo ".parameter set X Y; $(sqlite3 xyz.db \"SELECT sql FROM code_notebook_cell where code_notebook_cell_id = 'init'\")" | sqlite3 xyz.db
+  const codeNotebookCellDescr = markdown`
+    Each Notebook is divided into cells, which are individual units of interpretable code.
+    Each cell is linked to a kernel in the 'code_notebook_kernel' table via 'notebook_kernel_id'.
+    The content of Cells depends on the Notebook Kernel and contain the source code to be
+    executed by the Notebook's Kernel. The output of the code (text, graphics, etc.) can be
+    stateless or may be stateful and store its results and state transitions in code_notebook_state.
+    Notebooks can have multiple versions of cells, where the interpretable_code and other metadata
+    may be updated over time. Code notebook cells are unique for notebook_name, cell_name and
+    interpretable_code_hash which means there may be "duplicate" cells when interpretable_code
+    has been edited and updated over time.`;
   const codeNotebookCell = gm.textPkTable("code_notebook_cell", {
     code_notebook_cell_id: gk.varCharPrimaryKey(),
     notebook_kernel_id: codeNotebookKernel.belongsTo.code_notebook_kernel_id(),
@@ -189,17 +196,25 @@ export function codeNotebooksModels<
       ];
     },
     populateQS: (t, c, _, tableName) => {
-      t.description = markdown`
-        Each Notebook is divided into cells, which are individual units of interpretable code.
-        The content of Cells depends on the Notebook Kernel and contain the source code to be
-        executed by the Notebook's Kernel. The output of the code (text, graphics, etc.) can be
-        stateless or may be stateful and store its results and state transitions in code_notebook_state.`;
+      t.description = codeNotebookCellDescr;
       c.code_notebook_cell_id.description = `${tableName} primary key`;
       c.cell_governance.description =
         `any idempotency, versioning, hash, branch, tag or other "governance" data (dependent on the cell)`;
     },
+    qualitySystem: {
+      description: codeNotebookCellDescr,
+    },
   });
 
+  const codeNotebookStateDescr = markdown`
+    Records the state of a notebook's cells' executions, computations, and results for Kernels that are stateful.
+    For example, a SQL Notebook Cell that creates tables should only be run once (meaning it's stateful).
+    Other Kernels might store results for functions and output defined in one cell can be used in later cells.
+    Each record links to a cell in the 'code_notebook_cell' table and includes information about the state transition,
+    such as the previous and new states, transition reason, and timestamps. Surveilr tracks "migratable" SQL by
+    looking in a special notebook called "ConstructionSqlNotebook" and any cells in that notebook are "candidates"
+    for migration. Candidates that do not have a 'EXECUTED' in the state table mean that specific cell has not been
+    "migrated" yet.`;
   const codeNotebookState = gm.textPkTable("code_notebook_state", {
     code_notebook_state_id: gk.varCharPrimaryKey(),
     code_notebook_cell_id: codeNotebookCell.references
@@ -220,10 +235,7 @@ export function codeNotebooksModels<
       ];
     },
     populateQS: (t, c, _, tableName) => {
-      t.description = markdown`
-        Records the state of a notebook's cells' executions, computations, and results for Kernels that are stateful.
-        For example, a SQL Notebook Cell that creates tables should only be run once (meaning it's statefule).
-        Other Kernels might store results for functions and output defined in one cell can be used in later cells.`;
+      t.description = codeNotebookStateDescr;
       c.code_notebook_state_id.description = `${tableName} primary key`;
       c.code_notebook_cell_id.description =
         `${codeNotebookCell.tableName} row this state describes`;
@@ -238,6 +250,9 @@ export function codeNotebooksModels<
       c.transitioned_at.description = `when the transition occurred`;
       c.elaboration.description =
         `any elaboration needed for the state transition`;
+    },
+    qualitySystem: {
+      description: codeNotebookCellDescr,
     },
   });
 
@@ -634,9 +649,9 @@ export function serviceModels<EmitContext extends SQLa.SqlEmitContext>() {
       },
       populateQS: (t, c, _, tableName) => {
         t.description = markdown`
-        Records the state of an orchestration session, computations, and results for Kernels that are stateful.
-        For example, a SQL Notebook Cell that creates tables should only be run once (meaning it's stateful).
-        Other Kernels might store results for functions and output defined in one cell can be used in later cells.`;
+          Records the state of an orchestration session, computations, and results for Kernels that are stateful.
+          For example, a SQL Notebook Cell that creates tables should only be run once (meaning it's stateful).
+          Other Kernels might store results for functions and output defined in one cell can be used in later cells.`;
         c.orchestration_session_state_id.description =
           `${tableName} primary key`;
         c.session_id.description =

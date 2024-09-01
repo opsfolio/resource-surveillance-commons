@@ -1,5 +1,17 @@
 import { callable as c, SQLa, SQLa_typ as tp, user } from "../deps.ts";
 
+/*-----------------------------------------------------------------------------
+- TODO: add sqlruff or other linters that can check for lack of idempotency.
+- TODO: create a new LLM prompt that would give all the SQL and ask LLM to lint?
+- TODO: SQLa: add new `table.upsertDML` which calls `table.insertDML` with
+        automatic selection of ON CONFLICT columns and automatic handling of
+        housekeeping updates (e.g. `updated_at`, `updated_by`, etc.)
+- TODO: see https://www.sqlite.org/sqlar/doc/trunk/README.md and incorporate
+        `sqlar` table so that any RSSD can be used to extract files like text
+        assets, etc.
+-------------------------------------------------------------------------------*/
+// TODO: add sqlruff or other linters that can check for lack of idempotency.
+
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
@@ -14,6 +26,8 @@ export const osUser = await user.osUserName(async () => ({
  *
  * This function is typically used to format multi-line strings in a consistent manner
  * by removing leading spaces that match the indentation of the first non-blank line.
+ *
+ * Any expressions sent in will be indented first so that the unindent will properly work.
  *
  * @param literals - The array of literal strings in the template.
  * @param expressions - The array of expressions that are interpolated within the template.
@@ -72,23 +86,21 @@ export function unindentedText(
  * const hash = await gitLikeHash('Hello, World!');
  * console.log(hash); // Outputs the SHA-1 hash as a hexadecimal string
  */
-export async function gitLikeHash(content: string) {
+export async function gitLikeHash(
+  content: string,
+  nature: "blob" | "commit" | "tree" = "blob",
+) {
   // Git header for a blob object (change 'blob' to 'commit' or 'tree' for those objects)
   // This assumes the content is plain text, so we can get its length as a string
-  const header = `blob ${content.length}\0`;
-
-  // Combine header and content
-  const combinedContent = new TextEncoder().encode(header + content);
-
-  // Compute SHA-1 hash
-  const hashBuffer = await crypto.subtle.digest("SHA-1", combinedContent);
-
-  // Convert hash to hexadecimal string
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join(
-    "",
-  );
-
+  const header = `${nature} ${content.length}\0`;
+  const hashHex = Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-1",
+        new TextEncoder().encode(header + content),
+      ),
+    ),
+  ).map((b) => b.toString(16).padStart(2, "0")).join("");
   return hashHex;
 }
 
@@ -181,9 +193,23 @@ export class SurveilrSqlNotebook<
   readonly model = tp.governedModel<DomainQS, DomainsQS, EmitContext>(
     this.ddlOptions,
   );
-  readonly sqliteParamsVirtualTable = this.model.table("sqlite_parameters", {
-    key: this.domains.text(),
+  readonly exludedHousekeepingCols = [
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by",
+    "deleted_at",
+    "deleted_by",
+    "activity_log",
+  ];
+
+  readonly sessionStateTable = this.model.table("session_state_ephemeral", {
+    key: this.keys.textPrimaryKey(),
     value: this.domains.text(),
+  }, { isTemp: true, isIdempotent: true });
+  readonly sqlEngineState = this.activeSessionState({
+    current_user: this.sqlUser?.userId ?? "UNKNOWN",
+    current_user_name: this.sqlUser?.userName ?? "UNKNOWN",
   });
 
   // type-safe wrapper for all SQL text generated in this library;
@@ -204,37 +230,21 @@ export class SurveilrSqlNotebook<
   }
 
   /**
-   * Sets up SQL bind parameters for use in SQLite queries.
+   * Sets up session-based SQL arguments for use across SQLite queries within a session.
    *
-   * This function transforms an object containing key-value pairs into SQL bind parameters,
-   * where the keys are prefixed with a colon (`:`) to create SQLite-compatible parameter names
-   * (e.g., `:key1`, `:key2`, etc.). The function also generates corresponding SQL Data Manipulation
-   * Language (DML) statements that insert these parameters into the `sqlite_parameters` table,
-   * which is a special table managed by SQLite to handle parameterized queries.
-   *
-   * SQLite has a special "virtual" table called `sqlite_parameters` that is used to store key-value
-   * pairs for parameterized queries. This table should not be used for defining new schema (DDL) but
-   * is useful for storing parameters for DML operations.
-   *
-   * The method generates an `INSERT INTO sqlite_parameters` statement for each key-value pair in the
-   * `shape` object. This makes the keys available as SQLite bind parameters (e.g., `:key`) in SQL queries.
-   *
-   * Each key in the `shape` object is prefixed with a colon (`:`) to create a new key that is compatible
-   * with SQLite's parameter binding syntax. For example, a key `key1` becomes `:key1`. The values in the
-   * `shape` object are left unchanged, except when the value is a number. In this case, the number is
-   * converted to a string, as SQLite parameters must be represented as strings.
+   * The method generates an `INSERT INTO session_state_ephemeral` statement for each key-value pair in the
+   * `shape` object.
    *
    * @template Shape - An object type representing the shape of the key-value pairs to be converted
-   * into SQL bind parameters. Each key in the object is a string, and the value can be a string, number,
+   * into SQL session rows. Each key in the object is a string, and the value can be a string, number,
    * or an `SqlTextSupplier` instance.
    *
    * @param shape - An object containing the key-value pairs that will be converted to SQLite parameters.
-   *
    * @returns An object containing two properties:
    * - `params`: A function that returns a new object where each key from the original `shape` is
-   *   transformed into a SQLite parameter (prefixed with a colon `:`), and the values are unchanged.
+   *   transformed into a SELECT query that will obtain the value of a key from the session table.
    * - `paramsDML`: An array of DML statements that can be executed to insert the parameters into the
-   *   `sqlite_parameters` table, making them available as bind parameters in subsequent queries.
+   *   `session_state_ephemeral` table, making them available as bind parameters in subsequent queries.
    *
    * ### Example Usage:
    *
@@ -245,52 +255,49 @@ export class SurveilrSqlNotebook<
    *   isAdmin: SQLa.literal("TRUE")
    * };
    *
-   * const result = sqlParameters(paramsObj);
+   * const result = activeSessionState(paramsObj);
    *
    * // Access the transformed parameters
-   * const bindParams = result.params();
-   * // bindParams would be { ":name": "Alice", ":age": "30", ":isAdmin": SQLa.literal("TRUE") }
+   * const selectables = result.select;
+   * // selectables would be { "name": "SELECT value from session_state_ephemeral where key = 'name'", ... }
    *
-   * // Access the DML statements to insert these parameters into the sqlite_parameters table
+   * // Access the DML statements to insert these parameters into the session_state_ephemeral table
    * const dmlStatements = result.paramsDML;
    * ```
    *
    * In the above example, `sqlParameters` converts the `paramsObj` into SQLite-compatible bind parameters
-   * and generates the necessary DML statements to insert these parameters into the `sqlite_parameters` table.
+   * and generates the necessary DML statements to insert these parameters into the `session_state_ephemeral` table.
    */
-  sqlParameters<
+  activeSessionState<
     Shape extends Record<
       string,
       string | number | SQLa.SqlTextSupplier<EmitContext>
     >,
   >(shape: Shape) {
-    const paramsDML = Object.entries(shape).map(([key, value]) =>
-      this.sqliteParamsVirtualTable.insertDML({
-        key: `:${key}`,
+    const seedDML = Object.entries(shape).map(([key, value]) =>
+      this.sessionStateTable.insertDML({
+        key,
         value: typeof value === "number" ? String(value) : value,
+      }, {
+        onConflict: {
+          SQL: () => `ON CONFLICT DO UPDATE SET value = excluded.value`,
+        },
       })
     );
 
-    type SqlParameters = { [K in keyof Shape as `:${string & K}`]: Shape[K] };
-    return {
-      params: (): SqlParameters => {
-        const newShape: Partial<SqlParameters> = {};
-        for (const key in shape) {
-          const newKey = `:${key}`;
-          (newShape as Any)[newKey] = shape[key];
-        }
-        return newShape as unknown as SqlParameters;
-      },
-      paramsDML,
-    };
+    type AccessSql = { [K in keyof Shape]: SQLa.SqlTextSupplier<EmitContext> };
+    const select = {} as AccessSql;
+    for (const key in shape) {
+      (select as Any)[key] = this.sessionStateTable.select({ key: key }, {
+        returning: ["value"],
+      });
+    }
+
+    return { select, seedDML };
   }
 
   get sqlUser() {
     return osUser;
-  }
-
-  get sqlUserLiteral() {
-    return `'${osUser?.userId.replaceAll("'", "''")}'`;
   }
 
   // ULID generator when the value is needed by the SQLite engine runtime
@@ -306,7 +313,7 @@ export class SurveilrSqlNotebook<
   get housekeepingValues() {
     return {
       created_at: this.sqlEngineNow,
-      created_by: this.sqlUser?.userId,
+      created_by: this.sqlEngineState.select.current_user,
     };
   }
 
@@ -342,17 +349,66 @@ export class SurveilrSqlNotebook<
     return `code provenance: \`${fullMethodName}\` (${importMetaURL})`;
   }
 
-  onAnyConflictUpdate(...set: string[]) {
+  // this is a pretty simple function but it looks complicated because of all
+  // the generics -- the generics are there to ensure that the column names are
+  // typesafe.
+  readonly ANY_CONFLICT = undefined;
+  onConflictDoUpdateSet<
+    TableName extends string,
+    InsertableRecord,
+    ReturnableRecord,
+    Context extends SQLa.SqlEmitContext,
+    DomainQS extends SQLa.SqlDomainQS,
+    InsertableColumnName extends keyof InsertableRecord =
+      keyof InsertableRecord,
+  >(
+    table: SQLa.TableDefinition<TableName, Context, DomainQS> & {
+      readonly insertDML: SQLa.InsertStmtPreparerSync<
+        TableName,
+        InsertableRecord,
+        ReturnableRecord,
+        Context,
+        DomainQS
+      >;
+    },
+    conflictExpr?: string, // pass in this.ANY_CONFLICT for readability
+    ...set: InsertableColumnName[]
+  ): SQLa.InsertStmtPreparerOptions<
+    TableName,
+    InsertableRecord,
+    ReturnableRecord,
+    Context,
+    DomainQS,
+    InsertableColumnName
+  >["onConflict"] {
+    if (set.length == 0) {
+      const excluded: string[] = [
+        "created_at",
+        "created_by",
+        "updated_at",
+        "updated_by",
+        "deleted_at",
+        "deleted_by",
+        // TODO: this should be filled out soon (use SQLa/pattern/typical/typical.ts:activityLogDmlPartial for history tracking)
+        "activity_log",
+      ];
+      set.push(
+        ...table.domains
+          .filter((d) => !excluded.includes(d.columnName))
+          .map((d) => d.columnName),
+      );
+    }
+    // TODO: when an upsert is stored in a code_notebook_cell this.sqlUserLiteral does
+    // not make sense so figure out what to (e.g. join with `device` or use function?)
     return {
-      // deno-fmt-ignore
-      SQL: () => `ON CONFLICT DO UPDATE SET ${set.map(c => `${c} = COALESCE(EXCLUDED.${c}, ${c})`)}, "updated_at" = CURRENT_TIMESTAMP, "updated_by" = ${this.sqlUserLiteral};`,
-    };
-  }
-
-  onSpecifcConflictUpdate(conflictExpr: string, ...set: string[]) {
-    return {
-      // deno-fmt-ignore
-      SQL: () => `ON CONFLICT(${conflictExpr}) DO UPDATE SET ${set.map(c => `${c} = COALESCE(EXCLUDED.${c}, ${c})`)}, "updated_at" = CURRENT_TIMESTAMP, "updated_by" = ${this.sqlUserLiteral};`,
+      SQL: () =>
+        `ON CONFLICT${conflictExpr ? `${conflictExpr}` : ""} DO UPDATE SET  ${
+          set.map((c) =>
+            `${String(c)} = COALESCE(EXCLUDED.${String(c)}, ${String(c)})`
+          ).join(", ")
+        }, "updated_at" = CURRENT_TIMESTAMP, "updated_by" = (${
+          // assume that `current_user` is stored in session_state_ephemeral
+          this.sqlEngineState.select.current_user.SQL(this.emitCtx)})`,
     };
   }
 
@@ -364,6 +420,37 @@ export class SurveilrSqlNotebook<
       embeddedStsOptions: this.templateState.ddlOptions,
       before: (viewName) => SQLa.dropView(viewName),
     });
+  }
+
+  /**
+   * This function handles polymorphic values:
+   * - If the value is a string, it is returned as-is.
+   * - If the value is an array, each item in the array is recursively processed, and the results are joined with newlines.
+   * - If the value is an `SqlTextSupplier`, it generates the corresponding SQL using the notebook's emit context.
+   * - If the value is of any other type, a comment string indicating the unexpected type is returned.
+   *
+   * @param value - The value returned from a callable method or any other source.
+   * @returns A promise that resolves to the processed string or SQL representation.
+   *
+   * @example
+   * // Example usage within a TypicalSqlNotebook subclass:
+   * const result = await notebookInstance.textFrom(this.myMethod());
+   * console.log(result); // Outputs the processed string or SQL statements
+   */
+  async textFrom(value: unknown, unknownNature: (value: unknown) => string) {
+    if (typeof value === "string") {
+      return value;
+    } else if (Array.isArray(value)) {
+      const result: string[] = [];
+      for (const item of value) {
+        result.push(await this.textFrom(item, unknownNature));
+      }
+      return result.join("\n");
+    } else if (SQLa.isSqlTextSupplier(value)) {
+      return value.SQL(this.emitCtx);
+    } else {
+      return unknownNature(value);
+    }
   }
 
   /**
@@ -384,20 +471,13 @@ export class SurveilrSqlNotebook<
    * console.log(result); // Outputs the processed string or SQL statements
    */
   async methodText(c: c.Callable<SurveilrSqlNotebook<EmitContext>, Any>) {
-    const textOf = (value: unknown): string => {
-      if (typeof value === "string") {
-        return value;
-      } else if (Array.isArray(value)) {
-        return value.map((item) => textOf(item)).join("\n");
-      } else if (SQLa.isSqlTextSupplier(value)) {
-        return value.SQL(this.emitCtx);
-      } else {
-        // deno-fmt-ignore
-        return `\n/* '${String(c.callable)}' in '${String(c.source)}' returned type ${typeof value} instead of string | string[] | SQLa.SqlTextSupplier */`;
-      }
-    };
-
-    return textOf(await c.call());
+    return this.textFrom(
+      await c.call(),
+      (value) =>
+        `\n/* '${String(c.callable)}' in '${
+          String(c.source)
+        }' returned type ${typeof value} instead of string | string[] | SQLa.SqlTextSupplier */`,
+    );
   }
 
   /**

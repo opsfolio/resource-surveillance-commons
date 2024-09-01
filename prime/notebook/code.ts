@@ -20,12 +20,22 @@ export type CodeNotebookCellTableDefn = ReturnType<
 
 export type Singular<T> = T extends Array<infer U> ? U : T;
 
-export type CodeNotebookKernelRecord = Singular<
-  Parameters<CodeNotebookKernelTableDefn["insertDML"]>[0]
->;
+export type CodeNotebookKernelRecord<Kernel extends string> =
+  & Omit<
+    Singular<Parameters<CodeNotebookKernelTableDefn["insertDML"]>[0]>,
+    "code_notebook_kernel_id"
+  >
+  & { code_notebook_kernel_id: Kernel };
+
 export type CodeNotebookCellRecord = Singular<
   Parameters<CodeNotebookCellTableDefn["insertDML"]>[0]
 >;
+export type CodeNotebookKernelCellRecord<Kernel extends string> =
+  & Omit<
+    Singular<Parameters<CodeNotebookCellTableDefn["insertDML"]>[0]>,
+    "code_notebook_kernel_id"
+  >
+  & { code_notebook_kernel_id: Kernel };
 
 export const {
   codeNotebookKernel: codeNotebookKernelTable,
@@ -42,10 +52,10 @@ export const {
  * @property methodFn - The function of the method.
  * @property methodCtx - The context of the method decorator.
  */
-export type DecoratedCell =
+export type DecoratedCell<Kernel extends string> =
   & Partial<CodeNotebookCellRecord>
   & {
-    readonly ensureKernel?: CodeNotebookKernelRecord;
+    readonly ensureKernel?: CodeNotebookKernelRecord<Kernel>;
     readonly methodName: string;
     readonly methodFn: Any;
     readonly methodCtx: ClassMethodDecoratorContext<TypicalCodeNotebook>;
@@ -57,34 +67,51 @@ export type DecoratedCell =
  * to the method it decorates and the result of the method creates the content in
  * code_notebook_cell.interpretable_code.
  *
+ * This is not designed to be used directly, but wrapped in type-safe kernel
+ * decorators like `sqlCell()`.
+ *
+ * @param kernelId - The code_notebook_cell.notebook_kernel_id column value
  * @param init - The code_notebook_cell.* column values
  * @returns A decorator function that informs its host notebook about declaration
  *
  * @example
  * class MyNotebook extends TypicalCodeNotebook {
- *   @cell({ ... })
+ *   @kernelCell({ ... })
  *   "myCell"() {
  *     // method implementation
  *   }
  * }
  */
-export function cell(
-  init?:
-    & Partial<CodeNotebookCellRecord>
-    & { readonly ensureKernel?: CodeNotebookKernelRecord },
+export function kernelCell<
+  Kernel extends string,
+  Notebook extends TypicalCodeNotebook,
+>(
+  kernelId: Kernel,
+  init?: Partial<CodeNotebookKernelCellRecord<Kernel>>,
+  ensureKernel?: CodeNotebookKernelRecord<Kernel>,
+  enhance?: (
+    supplied: DecoratedCell<Kernel>,
+    methodCtx: ClassMethodDecoratorContext<Notebook>,
+    methodFn: Any,
+  ) => DecoratedCell<Kernel>,
 ) {
   return function (
     methodFn: Any,
     methodCtx: ClassMethodDecoratorContext<TypicalCodeNotebook>,
   ) {
     const methodName = String(methodCtx.name);
-    const dcn: DecoratedCell = {
+    let dcn: DecoratedCell<Kernel> = {
       cell_name: methodName, // default cell_name
       ...init, // if cell_name is provided in init, it will override
+      notebook_kernel_id: kernelId,
+      ensureKernel,
       methodName,
       methodFn,
       methodCtx,
     };
+
+    // allow refinement and methodCtx enhancement
+    if (enhance) dcn = enhance(dcn, methodCtx, methodFn);
 
     methodCtx.addInitializer(function () {
       this.cellConfig.set(methodName, dcn);
@@ -92,6 +119,84 @@ export function cell(
 
     // return void so that decorated function is not modified
   };
+}
+
+/**
+ * Decorator function which declares that the method it decorates creates a
+ * code_notebook_cell SQL kernel row. This decorator adds code_notebook_cell.*
+ * column values to the method it decorates and the result of the method
+ * creates the content in code_notebook_cell.interpretable_code.
+ *
+ * @param init - The code_notebook_cell.* column values
+ * @returns A decorator function that informs its host notebook about declaration
+ *
+ * @example
+ * class MyNotebook extends TypicalCodeNotebook {
+ *   @sqlCell({ ... })
+ *   "myCell"() {
+ *     // method implementation
+ *   }
+ * }
+ */
+export function sqlCell<Notebook extends TypicalCodeNotebook>(
+  init?: Partial<CodeNotebookKernelCellRecord<"SQL">>,
+  enhance?: (
+    supplied: DecoratedCell<"SQL">,
+    methodCtx: ClassMethodDecoratorContext<Notebook>,
+    methodFn: Any,
+  ) => DecoratedCell<"SQL">,
+) {
+  return kernelCell("SQL", init, {
+    code_notebook_kernel_id: "SQL",
+    kernel_name: "SQLite SQL Statements",
+    mime_type: "application/sql",
+    file_extn: ".sql",
+  }, enhance);
+}
+
+/**
+ * Decorator function which declares that the method it decorates creates a
+ * code_notebook_cell Text Asset kernel row. Text assets are text files which
+ * are stored in code_notebook_cell rows.
+ *
+ * @param init - The code_notebook_cell.* column values
+ * @returns A decorator function that informs its host notebook about declaration
+ *
+ * @example
+ * class MyNotebook extends TypicalCodeNotebook {
+ *   @textAssetCell(".puml", { ... })
+ *   myCell() {
+ *     // method implementation
+ *   }
+ * }
+ */
+export function textAssetCell<
+  FileExtn extends string,
+  Kernel extends `Text Asset (${FileExtn})`,
+>(
+  fileExn: FileExtn,
+  kernel: Kernel,
+  init?:
+    & Partial<CodeNotebookKernelCellRecord<Kernel>>
+    & Partial<CodeNotebookKernelRecord<Kernel>>,
+) {
+  return kernelCell<Kernel, TypicalCodeNotebook>(
+    kernel,
+    init,
+    {
+      code_notebook_kernel_id: kernel,
+      kernel_name: init?.kernel_name ?? kernel,
+      mime_type: init?.mime_type ?? "text/plain",
+      file_extn: fileExn ?? ".txt",
+    },
+    (dc, methodCtx) => {
+      methodCtx.addInitializer(function () {
+        this.textAssetCells.set(String(methodCtx.name), dc);
+      });
+      // we're not modifying the DecoratedCell
+      return dc;
+    },
+  );
 }
 
 /**
@@ -181,12 +286,10 @@ export function cell(
  */
 export class TypicalCodeNotebook
   extends SurveilrSqlNotebook<SQLa.SqlEmitContext> {
-  readonly cellConfig: Map<string, DecoratedCell> = new Map();
+  readonly cellConfig: Map<string, DecoratedCell<string>> = new Map();
+  readonly textAssetCells: Map<string, DecoratedCell<Any>> = new Map();
 
-  constructor(
-    readonly notebookName: string,
-    readonly ensureKernel?: DecoratedCell["ensureKernel"],
-  ) {
+  constructor(readonly notebookName: string) {
     super();
   }
 
@@ -195,39 +298,40 @@ export class TypicalCodeNotebook
   }
 
   kernelUpsertStmt(
-    ensure: Parameters<CodeNotebookKernelTableDefn["insertDML"]>[0],
+    ensure: Singular<Parameters<CodeNotebookKernelTableDefn["insertDML"]>[0]>,
   ) {
-    const kc = codeNotebookKernelTable.columnNames(this.emitCtx).symbol;
     return codeNotebookKernelTable.insertDML({
       ...this.housekeepingValues,
       ...ensure,
     }, {
-      onConflict: this.onAnyConflictUpdate(
-        kc.code_notebook_kernel_id,
-        kc.kernel_name,
-        kc.description,
-        kc.mime_type,
-        kc.file_extn,
-        kc.governance,
-        kc.elaboration,
+      onConflict: this.onConflictDoUpdateSet(
+        codeNotebookKernelTable,
+        this.ANY_CONFLICT,
+        "code_notebook_kernel_id",
+        "kernel_name",
+        "description",
+        "mime_type",
+        "file_extn",
+        "governance",
+        "elaboration",
       ),
     });
   }
 
   cellUpsertStmt(
-    ensure: Parameters<CodeNotebookCellTableDefn["insertDML"]>[0],
+    ensure: Singular<Parameters<CodeNotebookCellTableDefn["insertDML"]>[0]>,
   ) {
-    const cc = codeNotebookCellTable.columnNames(this.emitCtx).symbol;
-
     // TODO: the ON CONFLICT needs more investigation
     return codeNotebookCellTable.insertDML({
       ...this.housekeepingValues,
       ...ensure,
     }, {
-      onConflict: this.onAnyConflictUpdate(
-        cc.description,
-        cc.cell_governance,
-        cc.interpretable_code,
+      onConflict: this.onConflictDoUpdateSet(
+        codeNotebookCellTable,
+        this.ANY_CONFLICT,
+        "description",
+        "cell_governance",
+        "interpretable_code",
       ),
     });
   }
@@ -265,7 +369,7 @@ export class TypicalCodeNotebook
             : /(SQL|DQL|DML|DDL)$/.test(String(c)),
       }).map(async (c) => await c.source.instance.methodText(c as Any)),
     );
-    const ensureKernels: CodeNotebookKernelRecord[] = [];
+    const ensureKernels: CodeNotebookKernelRecord<string>[] = [];
     const ensureKernelsUpserts: string[] = [];
     const codeCellUpserts = await Promise.all(
       cc.filter({
@@ -281,11 +385,10 @@ export class TypicalCodeNotebook
           const cell_name = String(c.callable).replace(/_cell$/, "");
           const cellOverrides = notebook.cellConfig.get(cell_name);
 
-          const ensureKernel = cellOverrides?.ensureKernel ??
-            notebook.ensureKernel;
+          const ensureKernel = cellOverrides?.ensureKernel;
           if (
             ensureKernel &&
-            ensureKernels.find((k) =>
+            !ensureKernels.find((k) =>
               k.code_notebook_kernel_id ==
                 ensureKernel.code_notebook_kernel_id
             )
@@ -294,9 +397,9 @@ export class TypicalCodeNotebook
             ensureKernelsUpserts.push(
               notebook.kernelUpsertStmt(ensureKernel).SQL(
                 notebook.emitCtx,
-              ),
+              ) + ";",
             );
-          } // else notebook_kernel_id's value must exist in the database already
+          }
 
           // deno-fmt-ignore (c as Any is used because c is untyped)
           const interpretable_code = await c.source.instance.methodText(c as Any);
@@ -313,7 +416,7 @@ export class TypicalCodeNotebook
               await notebook.interpretableCodeHash(
                 interpretable_code,
               ),
-          }).SQL(notebook.emitCtx);
+          }).SQL(notebook.emitCtx) + ";";
         },
       ),
     );
