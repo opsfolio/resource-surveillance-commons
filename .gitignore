@@ -15,7 +15,8 @@ study-files/
 sqlpage/
 
 # sqlpagectl.ts generates these files when it encounters an error
-ERROR-*.sql
+ERROR-*
+*-ERROR-*
 
 # windows security files
 *Zone.Identifier
