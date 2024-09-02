@@ -123,7 +123,7 @@ try {
   `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`,
  );
  vvSQL = await fetchSqlContent(
-  `${RSC_BASE_URL}/verification-validation/orchestrate-drh-vv.sql`,
+  `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
  );
 } catch (error) {
  console.error(
