@@ -173,7 +173,6 @@ export class RssdInitSqlNotebook extends cnb.TypicalCodeNotebook {
   bootstrapDDL() {
     return this.SQL`
       -- ${this.tsProvenanceComment(import.meta.url)}
-      ${this.sessionStateTable}
       ${this.sqlEngineState.seedDML}
 
       ${this.codeNbModels.informationSchema.tables}

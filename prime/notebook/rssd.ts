@@ -72,6 +72,22 @@ export function unindentedText(
 }
 
 /**
+ * Ensures that the given string ends with exactly one semicolon,
+ * removing any extra semicolons or trailing whitespace, and
+ * appending a single semicolon if necessary.
+ *
+ * @param str - The input string to check and modify.
+ * @returns - The modified string that ends with a single semicolon.
+ *
+ * @example
+ * ensureTrailingSemicolon('let x = 10'); // returns 'let x = 10;'
+ * ensureTrailingSemicolon('let x = 10; '); // returns 'let x = 10;'
+ * ensureTrailingSemicolon('let x = 10;;; '); // returns 'let x = 10;'
+ */
+export const ensureTrailingSemicolon = (str: string) =>
+  str.replace(/;*\s*$/, ";");
+
+/**
  * Generates a Git-like SHA-1 hash for a given content string.
  *
  * This function emulates how Git calculates the hash for a `blob` object.
@@ -447,7 +463,7 @@ export class SurveilrSqlNotebook<
       }
       return result.join("\n");
     } else if (SQLa.isSqlTextSupplier(value)) {
-      return value.SQL(this.emitCtx);
+      return ensureTrailingSemicolon(value.SQL(this.emitCtx));
     } else {
       return unknownNature(value);
     }
@@ -567,12 +583,35 @@ export class SurveilrSqlNotebook<
    * console.log(sqlStatements); // Outputs an array of SQL statements as strings
    */
   static async SQL(...sources: SurveilrSqlNotebook<Any>[]) {
+    // whatever is added here will be emitted before all other SQL from any notebooks
+    // passed in; it's called "ensure" since there is always some SQL that should be
+    // available even if it wasn't defined by a source notebook.
+    // NOTE: if you edit this function also edit TypicalCodeNotebook.SQL.
+    // TODO: consider adding a new @ensure or @cardinality decorator to specify that
+    // if the same method name is found across notebooks, it's only executed once?
+    const ensureNB = new SurveilrSqlNotebook<Any>();
+    const ensureOnce: (Parameters<SurveilrSqlNotebook<Any>["textFrom"]>[0])[] =
+      [
+        ensureNB.sessionStateTable, // session_state_ephemeral table should always be defined
+      ];
+
     const cc = c.callablesCollection<SurveilrSqlNotebook<Any>, Any>(...sources);
-    return await Promise.all(
-      cc.filter({
-        // include all methods whose names end in SQL, DQL, DML, or DDL
-        include: /(SQL|DQL|DML|DDL)$/,
-      }).map(async (c) => await c.source.instance.methodText(c)),
-    );
+    return [
+      ...(await Promise.all(
+        ensureOnce.map((eo) =>
+          ensureNB.textFrom(
+            eo,
+            (value) =>
+              `-- ERROR: invalid value \`${value}\` (this should never happen)`,
+          )
+        ),
+      )),
+      ...(await Promise.all(
+        cc.filter({
+          // include all methods whose names end in SQL, DQL, DML, or DDL
+          include: /(SQL|DQL|DML|DDL)$/,
+        }).map(async (c) => await c.source.instance.methodText(c)),
+      )),
+    ];
   }
 }
