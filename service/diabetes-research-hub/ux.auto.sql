@@ -1,11 +1,3 @@
-Error fetching file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/service/diabetes-research-hub/stateless-drh-surveilr.sql: Requires read access to "/home/runner/work/resource-surveillance-commons/resource-surveillance-commons/service/diabetes-research-hub/stateless-drh-surveilr.sql", run again with the --allow-read flag
-
-/* 'orchestrateStatefulFDRHSQL' in '[object Object]' returned type undefined instead of string | string[] | SQLa.SqlTextSupplier */
--- code provenance: `ConsoleSqlPages.infoSchemaDDL` (file:///home/runner/work/resource-surveillance-commons/resource-surveillance-commons/prime/web-ui-content/console.ts)
-
--- console_information_schema_* are convenience views
--- to make it easier to work than pragma_table_info.
-
 DROP VIEW IF EXISTS console_information_schema_table;
 CREATE VIEW console_information_schema_table AS
 SELECT
