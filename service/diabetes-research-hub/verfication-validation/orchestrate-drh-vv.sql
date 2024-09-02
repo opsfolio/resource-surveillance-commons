@@ -109,18 +109,81 @@ LIMIT 1;
 
 -- Validate the schema to check for missing columns
 
-WITH SchemaValidationMissingColumns AS (
+
+CREATE TEMP TABLE temp_SchemaValidationMissingColumns AS
+SELECT 
+    'Schema Validation: Missing Columns' AS heading,
+    e.table_name,
+    e.column_name,
+    e.column_type,
+    e.is_primary_key,
+    'Missing column: ' || e.column_name || ' in table ' || e.table_name AS status,
+    'Include the ' || e.column_name || ' in table ' || e.table_name AS remediation
+FROM 
+    expected_schema e
+LEFT JOIN (
     SELECT 
-        'Schema Validation: Missing Columns' AS heading,
-        e.table_name,
-        e.column_name,
-        e.column_type,
-        e.is_primary_key,
-        'Missing column: ' || e.column_name || ' in table ' || e.table_name AS status,
-        'Include the ' || e.column_name || ' in table ' || e.table_name AS remediation
+        m.name AS table_name,
+        p.name AS column_name,
+        p.type AS column_type,
+        p.pk AS is_primary_key
     FROM 
-        expected_schema e
-    LEFT JOIN (
+        sqlite_master m
+    JOIN 
+        pragma_table_info(m.name) p
+    WHERE 
+        m.type = 'table' AND
+        m.name NOT LIKE 'uniform_resource_cgm_tracing%' AND
+        m.name != 'uniform_resource_transform' AND 
+        m.name LIKE 'uniform_resource_%'
+) a ON e.table_name = a.table_name AND e.column_name = a.column_name
+WHERE 
+    a.column_name IS NULL;
+
+
+
+INSERT INTO orchestration_session_issue (
+    orchestration_session_issue_id, 
+    session_id, 
+    session_entry_id, 
+    issue_type, 
+    issue_message, 
+    issue_row, 
+    issue_column, 
+    invalid_value, 
+    remediation, 
+    elaboration
+)
+SELECT 
+    lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
+    tsi.orchestration_session_id,
+    tsi.orchestration_session_entry_id,
+    svc.heading AS issue_type,
+    svc.status AS issue_message,
+    NULL AS issue_row,
+    svc.column_name AS issue_column,
+    NULL AS invalid_value,
+    svc.remediation,
+    NULL AS elaboration
+FROM 
+    temp_SchemaValidationMissingColumns svc
+JOIN 
+    temp_session_info tsi ON 1=1;
+
+
+--- Validate the schema to check for additional columns
+
+CREATE TEMP TABLE temp_SchemaValidationAdditionalColumns As
+SELECT 
+    'Schema Validation: Additional Columns' AS heading,
+    a.table_name,
+    a.column_name,
+    a.column_type,
+    a.is_primary_key,
+    'Additional column found: ' || a.column_name || ' in table ' || a.table_name AS status,
+    'Warning: Additional column found: ' || a.column_name || ' in table ' || a.table_name || '. The column can be maintained or removed as desired.' AS remediation
+FROM 
+    (
         SELECT 
             m.name AS table_name,
             p.name AS column_name,
@@ -132,15 +195,16 @@ WITH SchemaValidationMissingColumns AS (
             pragma_table_info(m.name) p
         WHERE 
             m.type = 'table' AND
-            m.name not like 'uniform_resource_cgm_tracing%' AND
+            m.name NOT LIKE 'uniform_resource_cgm_tracing%' AND
             m.name != 'uniform_resource_transform' AND 
             m.name LIKE 'uniform_resource_%'
-    ) a ON e.table_name = a.table_name AND e.column_name = a.column_name
-    WHERE 
-        a.column_name IS NULL
-)
---SELECT * FROM SchemaValidationMissingColumns;
--- Insert into orchestration_session_issue table
+    ) a
+LEFT JOIN expected_schema e ON a.table_name = e.table_name AND a.column_name = e.column_name
+WHERE 
+    e.column_name IS NULL;
+
+
+
 INSERT INTO orchestration_session_issue (
     orchestration_session_issue_id, 
     session_id, 
@@ -154,144 +218,90 @@ INSERT INTO orchestration_session_issue (
     elaboration
 )
 SELECT 
-    -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
-    --'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
     lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
     tsi.orchestration_session_id,
     tsi.orchestration_session_entry_id,
-    svc.heading as issue_type,
-    svc.status as issue_message,
+    tsa.heading as issue_type,
+    tsa.status as issue_message,
     NULL AS issue_row,  -- Set as NULL if not applicable
-    svc.column_name AS issue_column,
+    tsa.column_name AS issue_column,
     NULL AS invalid_value,  -- Set as NULL if not applicable
-    svc.remediation,
+    tsa.remediation,
     NULL AS elaboration  -- Set as NULL or provide elaboration if needed
 FROM 
-    SchemaValidationMissingColumns svc
+    temp_SchemaValidationAdditionalColumns tsa
 JOIN 
-    temp_session_info tsi ON 1=1; 
+    temp_session_info tsi ON 1=1;
 
 
--- Line break
-SELECT '\n' AS blank_line;
+-- Data Integrity Checks: Check for invalid age values
 
--- Validate the schema to check for additional  columns
-
-WITH SchemaValidationAdditionalColumns AS (
-    SELECT 
-        'Schema Validation: Additional Columns' AS heading,
-        a.table_name,
-        a.column_name,
-        a.column_type,
-        a.is_primary_key,
-        'Additional column found: ' || a.column_name || ' in table ' || a.table_name AS status,
-        'Warning: Additional column found: ' || a.column_name || ' in table ' || a.table_name||'.The column can be maintained or removed as desired.' AS remediation
-    FROM 
-        (
-            SELECT 
-                m.name AS table_name,
-                p.name AS column_name,
-                p.type AS column_type,
-                p.pk AS is_primary_key
-            FROM 
-                sqlite_master m
-            JOIN 
-                pragma_table_info(m.name) p
-            WHERE 
-                m.type = 'table' AND
-                m.name not like 'uniform_resource_cgm_tracing%' AND
-                m.name != 'uniform_resource_transform' AND 
-                m.name LIKE 'uniform_resource_%'
-        ) a
-    LEFT JOIN expected_schema e ON a.table_name = e.table_name AND a.column_name = e.column_name
-    WHERE 
-        e.column_name IS NULL
-)
---select * FROM SchemaValidationAdditionalColumns;
-INSERT INTO orchestration_session_issue (
-    orchestration_session_issue_id, 
-    session_id, 
-    session_entry_id, 
-    issue_type, 
-    issue_message, 
-    issue_row, 
-    issue_column, 
-    invalid_value, 
-    remediation, 
-    elaboration
-)
+CREATE TEMP TABLE temp_DataIntegrityInvalidDates AS
 SELECT 
-    -- Generate a UUID for orchestration_session_issue_id (replace with actual UUID generation method if needed)
-    --'ORCISSUEID-'||((SELECT COUNT(*) FROM orchestration_session_issue) + 1)  AS orchestration_session_issue_id,
-    lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    tsi.orchestration_session_id,
-    tsi.orchestration_session_entry_id,
-    sa.heading as issue_type,
-    sa.status as issue_message,
-    NULL AS issue_row,  -- Set as NULL if not applicable
-    sa.column_name AS issue_column,
-    NULL AS invalid_value,  -- Set as NULL if not applicable
-    sa.remediation,
-    NULL AS elaboration  -- Set as NULL or provide elaboration if needed
-FROM SchemaValidationAdditionalColumns sa
-JOIN 
-    temp_session_info tsi ON 1=1; 
-
-
--- Line break
-SELECT '\n' AS blank_line;
-
-
--- Data Integrity Checks: Check for invalid dates
-WITH DataIntegrityInvalidDates AS (
+    'Data Integrity Checks: Invalid Dates' AS heading,
+    table_name,
+    column_name,
+    value,
+    'Dates must be in YYYY-MM-DD format: ' || value AS status,
+    'The date value in column: ' || column_name || ' of table ' || table_name || ' does not follow the YYYY-MM-DD format. Please ensure the dates are in this format' AS remediation
+FROM (
     SELECT 
-        'Data Integrity Checks: Invalid Dates' AS heading,
-        table_name,
-        column_name,
-        value,
-        'Dates must be in YYYY-MM-DD format: ' || value AS status,
-        'The date value in column:'||column_name||'of table' || table_name ||'does not follow the YYYY-MM-DD format.Please ensure the dates are in this format' as remediation
-    FROM (
-        SELECT 
-            'uniform_resource_study' AS table_name,
-            'start_date' AS column_name,
-            start_date AS value
-        FROM 
-            uniform_resource_study  where start_date != null or start_date !=''
-        UNION ALL
-        SELECT 
-            'uniform_resource_study' AS table_name,
-            'end_date' AS column_name,
-            end_date AS value
-        FROM 
-            uniform_resource_study where end_date != null or end_date !=''
-        UNION ALL
-        SELECT 
-            'uniform_resource_cgm_file_metadata' AS table_name,
-            'file_upload_date' AS column_name,
-            file_upload_date AS value
-        FROM 
-            uniform_resource_cgm_file_metadata  where file_upload_date != null or file_upload_date !=''
-        UNION ALL
-        SELECT 
-            'uniform_resource_cgm_file_metadata' AS table_name,
-            'data_start_date' AS column_name,
-            data_start_date AS value
-        FROM 
-            uniform_resource_cgm_file_metadata where data_start_date != null or data_start_date !=''
-        UNION ALL
-        SELECT 
-            'uniform_resource_cgm_file_metadata' AS table_name,
-            'data_end_date' AS column_name,
-            data_end_date AS value
-        FROM 
-            uniform_resource_cgm_file_metadata where data_end_date != null or data_end_date !=''
-    ) 
+        'uniform_resource_study' AS table_name,
+        'start_date' AS column_name,
+        start_date AS value
+    FROM 
+        uniform_resource_study
     WHERE 
-        value NOT LIKE '____-__-__'
-)
---SELECT * FROM DataIntegrityInvalidDates;
--- Insert invalid dates results into orchestration_session_issue
+        start_date IS NOT NULL AND start_date != ''
+    
+    UNION ALL
+    
+    SELECT 
+        'uniform_resource_study' AS table_name,
+        'end_date' AS column_name,
+        end_date AS value
+    FROM 
+        uniform_resource_study
+    WHERE 
+        end_date IS NOT NULL AND end_date != ''
+    
+    UNION ALL
+    
+    SELECT 
+        'uniform_resource_cgm_file_metadata' AS table_name,
+        'file_upload_date' AS column_name,
+        file_upload_date AS value
+    FROM 
+        uniform_resource_cgm_file_metadata
+    WHERE 
+        file_upload_date IS NOT NULL AND file_upload_date != ''
+    
+    UNION ALL
+    
+    SELECT 
+        'uniform_resource_cgm_file_metadata' AS table_name,
+        'data_start_date' AS column_name,
+        data_start_date AS value
+    FROM 
+        uniform_resource_cgm_file_metadata
+    WHERE 
+        data_start_date IS NOT NULL AND data_start_date != ''
+    
+    UNION ALL
+    
+    SELECT 
+        'uniform_resource_cgm_file_metadata' AS table_name,
+        'data_end_date' AS column_name,
+        data_end_date AS value
+    FROM 
+        uniform_resource_cgm_file_metadata
+    WHERE 
+        data_end_date IS NOT NULL AND data_end_date != ''
+) 
+WHERE 
+    value NOT LIKE '____-__-__';
+
+
 INSERT INTO orchestration_session_issue (
     orchestration_session_issue_id, 
     session_id, 
@@ -315,59 +325,16 @@ SELECT
     diid.value AS invalid_value,
     diid.remediation,
     NULL AS elaboration
-FROM DataIntegrityInvalidDates diid
+FROM temp_DataIntegrityInvalidDates diid
 JOIN 
-    temp_session_info tsi ON 1=1; 
-
-
--- Line break
-SELECT '\n' AS blank_line;
-
--- Data Integrity Checks: Check for invalid age values
-WITH DataIntegrityInvalidAge AS (
-    SELECT 
-        'Data Integrity Checks: Invalid Age Values' AS heading,
-        'uniform_resource_participant' AS table_name,
-        'age' AS column_name,
-        age AS value,
-        'Age must be numeric even if stored as TEXT: ' || age AS status
-    FROM 
-        uniform_resource_participant
-    WHERE 
-        typeof(age) = 'text' AND NOT age GLOB '[0-9]*'
-)
---SELECT * FROM  DataIntegrityInvalidAge;
-INSERT INTO orchestration_session_issue (
-    orchestration_session_issue_id, 
-    session_id, 
-    session_entry_id, 
-    issue_type, 
-    issue_message, 
-    issue_row, 
-    issue_column, 
-    invalid_value, 
-    remediation, 
-    elaboration
-)
-SELECT 
-    lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6))) AS orchestration_session_issue_id,
-    tsi.orchestration_session_id,
-    tsi.orchestration_session_entry_id,
-    d_age.heading AS issue_type,
-    d_age.status AS issue_message,
-    NULL AS issue_row,
-    d_age.column_name AS issue_column,
-    d_age.value AS invalid_value,
-    'Ensure the age is numeric.' AS remediation,
-    NULL AS elaboration
-FROM DataIntegrityInvalidAge d_age
-JOIN 
-    temp_session_info tsi ON 1=1; 
+    temp_session_info tsi ON 1=1;
 
 
 
 -- Generate SQL for finding empty or NULL values in table
-    WITH DataIntegrityEmptyCells AS (
+
+
+CREATE TEMP TABLE DataIntegrityEmptyCells AS
     SELECT 
         'Data Integrity Checks: Empty Cells' AS heading,
         table_name,
@@ -376,7 +343,7 @@ JOIN
         'The following rows in column ' || column_name || ' of file ' || substr(table_name, 18) || ' are either NULL or empty.' AS status,
         'Please provide values for the ' || column_name || ' column in file ' || substr(table_name, 18) ||'.The Rows are:'|| GROUP_CONCAT(rowid) AS remediation
     FROM (
-        -- uniform_resource_study for empty or NULL values
+        
         SELECT 
             'uniform_resource_study' AS table_name,
             'study_id' AS column_name,
@@ -1137,11 +1104,9 @@ JOIN
             study_id IS NULL OR study_id = ''
 
     )
-    GROUP BY table_name, column_name  -- Group by table and column to concatenate row IDs
-)
--- Select to review the identified empty cells
---SELECT * FROM DataIntegrityEmptyCells;
--- Insert the validation issues into orchestration_session_issue table
+    GROUP BY table_name, column_name ; 
+
+
 INSERT INTO orchestration_session_issue (
     orchestration_session_issue_id, 
     session_id, 
@@ -1160,68 +1125,68 @@ SELECT
     tsi.orchestration_session_entry_id,
     d_empty.heading AS issue_type,
     d_empty.status AS issue_message,
-    d_empty.issue_row,  -- No specific row for the summary issues
+    d_empty.issue_row AS issue_row,
     d_empty.column_name AS issue_column,
-    NULL AS invalid_value,  -- No specific value for the summary issues
-    d_empty.remediation,
+    NULL AS invalid_value,
+    d_empty.remediation AS remediation,
     NULL AS elaboration
 FROM DataIntegrityEmptyCells d_empty
 JOIN 
-    temp_session_info tsi ON 1=1; 
+    temp_session_info tsi ON 1=1;
 
 
--- CTE to compute the count of records in each table
-WITH table_counts AS (
-        SELECT 
-        'uniform_resource_study' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_study
-        UNION ALL
-        SELECT 'uniform_resource_cgm_file_metadata' AS table_name ,
-        COUNT(*) AS row_count
-        FROM uniform_resource_cgm_file_metadata
-        UNION ALL
-        SELECT 'uniform_resource_participant' AS table_name,
-        COUNT(*) AS row_count FROM uniform_resource_participant
-        UNION ALL
-        SELECT 'uniform_resource_institution' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_institution
-        UNION ALL
-        SELECT 'uniform_resource_lab' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_lab
-        UNION ALL
-        SELECT 'uniform_resource_site' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_site
-        UNION ALL
-        SELECT 'uniform_resource_investigator' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_investigator
-        UNION ALL
-        SELECT 'uniform_resource_publication' AS table_name,
-        COUNT(*) AS row_count
-        FROM uniform_resource_publication
-        UNION ALL
-        SELECT 'uniform_resource_author' AS table_name ,
-        COUNT(*) AS row_count
-        FROM uniform_resource_author      
-        -- Add more tables as needed
-    ),
-empty_tables AS (
-    SELECT 
-        table_name,
-        row_count,
-        'The File ' || substr(table_name, 18) || ' is empty' AS status,
-        'The file ' || substr(table_name, 18) || ' has zero records. Please check and ensure the file is populated with data.' AS remediation
-    FROM 
-        table_counts
-    WHERE 
-        row_count = 0
-)
---SELECT * FROM empty_tables;
--- Insert findings into orchestration_session_issue table
+
+CREATE TEMP TABLE table_counts AS
+SELECT 
+    'uniform_resource_study' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_study
+UNION ALL
+SELECT 'uniform_resource_cgm_file_metadata' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_cgm_file_metadata
+UNION ALL
+SELECT 'uniform_resource_participant' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_participant
+UNION ALL
+SELECT 'uniform_resource_institution' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_institution
+UNION ALL
+SELECT 'uniform_resource_lab' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_lab
+UNION ALL
+SELECT 'uniform_resource_site' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_site
+UNION ALL
+SELECT 'uniform_resource_investigator' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_investigator
+UNION ALL
+SELECT 'uniform_resource_publication' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_publication
+UNION ALL
+SELECT 'uniform_resource_author' AS table_name,
+    COUNT(*) AS row_count
+FROM uniform_resource_author;
+
+-- Step 2: Create a temporary table to store empty table findings
+CREATE TEMP TABLE empty_tables AS
+SELECT 
+    table_name,
+    row_count,
+    'The File ' || substr(table_name, 18) || ' is empty' AS status,
+    'The file ' || substr(table_name, 18) || ' has zero records. Please check and ensure the file is populated with data.' AS remediation
+FROM 
+    table_counts
+WHERE 
+    row_count = 0;
+
+
 INSERT INTO orchestration_session_issue (
     orchestration_session_issue_id, 
     session_id, 
@@ -1248,4 +1213,12 @@ SELECT
 FROM 
     empty_tables ed
 JOIN 
-    temp_session_info tsi ON 1=1; 
+    temp_session_info tsi ON 1=1;
+
+
+DROP TABLE if EXISTS table_counts;
+DROP TABLE if EXISTS empty_tables;
+DROP TABLE if EXISTS DataIntegrityEmptyCells;
+DROP TABLE IF EXISTS temp_DataIntegrityInvalidDates;    
+DROP TABLE IF EXISTS temp_SchemaValidationMissingColumns;
+DROP TABLE IF EXISTS temp_SchemaValidationAdditionalColumns;    
