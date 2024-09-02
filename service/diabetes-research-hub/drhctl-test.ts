@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run
 
 import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.6.0/mod.ts";
 import * as drhux from "./ux.sql.ts";
 import {
  FlexibleTextSupplierSync,
@@ -81,6 +82,33 @@ async function checkAndDeleteFile(filePath: string) {
  }
 }
 
+// Function to fetch UX SQL content
+async function fetchUxSqlContent(): Promise<string> {
+ try {
+  const uxSQLContent = await drhux.drhSQL();
+  return uxSQLContent.join("\n");
+ } catch (error) {
+  console.error(
+   colors.red("Error fetching UX SQL content:"),
+   error.message,
+  );
+  Deno.exit(1);
+ }
+}
+
+// Function to execute SQL commands directly on SQLite database
+function executeSqlCommands(sqlCommands: string) {
+ try {
+  const db = new DB(dbFilePath);
+  db.execute(sqlCommands); // Execute the SQL commands
+  db.close();
+  console.log(colors.green("SQL commands executed successfully."));
+ } catch (error) {
+  console.error(colors.red("Error executing SQL commands:"), error.message);
+  Deno.exit(1);
+ }
+}
+
 // Check if a folder name was provided
 if (Deno.args.length === 0) {
  console.error(
@@ -100,19 +128,18 @@ const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
  deidentificationSQL;
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
 
+// let uxSQL: string;
 
-let uxSQL: string;
-
-try {
- const uxSQLContent = await drhux.drhSQL();
- uxSQL = uxSQLContent.join("\n");
-} catch (error) {
- console.error(colors.red("Error fetching UX SQL content:"), error.message);
- Deno.exit(1);
-}
+// try {
+//  const uxSQLContent = await drhux.drhSQL();
+//  uxSQL = uxSQLContent.join("\n");
+// } catch (error) {
+//  console.error(colors.red("Error fetching UX SQL content:"), error.message);
+//  Deno.exit(1);
+// }
 
 // Define the SQL supplier for UX
-const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
+//const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
 let deidentificationSQL: string;
 let vvSQL: string;
@@ -177,6 +204,12 @@ try {
  // console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
  // await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
  // console.log(colors.green("UX orchestration completed successfully."));
+
+ // Perform UX orchestration
+ console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
+ const uxSQL = await fetchUxSqlContent();
+ executeSqlCommands(uxSQL);
+ console.log(colors.green("UX orchestration completed successfully."));
 
  console.log(
   colors.green(`Loading DRH Edge UI... at http://localhost:9000/drh/index.sql`),
