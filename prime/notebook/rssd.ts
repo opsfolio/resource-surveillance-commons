@@ -583,35 +583,25 @@ export class SurveilrSqlNotebook<
    * console.log(sqlStatements); // Outputs an array of SQL statements as strings
    */
   static async SQL(...sources: SurveilrSqlNotebook<Any>[]) {
-    // whatever is added here will be emitted before all other SQL from any notebooks
-    // passed in; it's called "ensure" since there is always some SQL that should be
-    // available even if it wasn't defined by a source notebook.
+    // commonNB emits SQL before all other SQL from any notebooks passed in
     // NOTE: if you edit this function also edit TypicalCodeNotebook.SQL.
-    // TODO: consider adding a new @ensure or @cardinality decorator to specify that
-    // if the same method name is found across notebooks, it's only executed once?
-    const ensureNB = new SurveilrSqlNotebook<Any>();
-    const ensureOnce: (Parameters<SurveilrSqlNotebook<Any>["textFrom"]>[0])[] =
-      [
-        ensureNB.sessionStateTable, // session_state_ephemeral table should always be defined
-      ];
+    const commonNB = new (class extends SurveilrSqlNotebook<Any> {
+      commonDDL() {
+        // session_state_ephemeral table should always be defined
+        return this.sessionStateTable;
+      }
+    })();
 
-    const cc = c.callablesCollection<SurveilrSqlNotebook<Any>, Any>(...sources);
-    return [
-      ...(await Promise.all(
-        ensureOnce.map((eo) =>
-          ensureNB.textFrom(
-            eo,
-            (value) =>
-              `-- ERROR: invalid value \`${value}\` (this should never happen)`,
-          )
-        ),
-      )),
-      ...(await Promise.all(
-        cc.filter({
-          // include all methods whose names end in SQL, DQL, DML, or DDL
-          include: /(SQL|DQL|DML|DDL)$/,
-        }).map(async (c) => await c.source.instance.methodText(c)),
-      )),
-    ];
+    // select all "callable" methods from across all notebooks
+    const cc = c.callablesCollection<SurveilrSqlNotebook<Any>, Any>(
+      commonNB,
+      ...sources,
+    );
+    return await Promise.all(
+      cc.filter({
+        // include all methods whose names end in SQL, DQL, DML, or DDL
+        include: /(SQL|DQL|DML|DDL)$/,
+      }).map(async (c) => await c.source.instance.methodText(c)),
+    );
   }
 }

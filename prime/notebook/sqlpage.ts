@@ -603,7 +603,25 @@ export class TypicalSqlPageNotebook
    * @returns an array of strings which are the SQL statements
    */
   static async SQL(...sources: TypicalSqlPageNotebook[]) {
-    const cc = c.callablesCollection<TypicalSqlPageNotebook, Any>(...sources);
+    // commonNB emits SQL before all other SQL from any notebooks passed in
+    const commonNB = new (class extends TypicalSqlPageNotebook {
+      commonDDL() {
+        return this.SQL`
+          -- ${this.tsProvenanceComment(import.meta.url)}
+          -- idempotently create location where SQLPage looks for its content
+          CREATE TABLE IF NOT EXISTS "sqlpage_files" (
+            "path" VARCHAR PRIMARY KEY NOT NULL,
+            "contents" TEXT NOT NULL,
+            "last_modified" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );`;
+      }
+    })();
+
+    // select all "callable" methods from across all notebooks
+    const cc = c.callablesCollection<TypicalSqlPageNotebook, Any>(
+      commonNB,
+      ...sources,
+    );
     const arbitrarySqlStmts = await Promise.all(
       cc.filter({
         include: [/SQL$/, /DQL$/, /DML$/, /DDL$/],
@@ -611,6 +629,7 @@ export class TypicalSqlPageNotebook
         await cell.source.instance.methodText(cell as Any)
       ),
     );
+
     const sqlPageFileUpserts = await Promise.all(
       cc.filter({ include: [/\.sql$/, /\.json$/] })
         .map(

@@ -359,38 +359,29 @@ export class TypicalCodeNotebook
    * console.log(sqlStatements); // Outputs an array of SQL statements as strings
    */
   static async SQL(...sources: TypicalCodeNotebook[]) {
-    // whatever is added here will be emitted before all other SQL from any notebooks
-    // passed in; it's called "ensure" since there is always some SQL that should be
-    // available even if it wasn't defined by a source notebook.
+    // commonNB emits SQL before all other SQL from any notebooks passed in
     // NOTE: if you edit this function also edit SurveilrSqlNotebook.SQL.
-    // TODO: consider adding a new @ensure or @cardinality decorator to specify that
-    // if the same method name is found across notebooks, it's only executed once?
-    const ensureNB = new TypicalCodeNotebook("TypicalCodeNotebook.SQL::ensure");
-    const ensureOnce: (Parameters<TypicalCodeNotebook["textFrom"]>[0])[] = [
-      ensureNB.sessionStateTable, // session_state_ephemeral table should always be defined
-    ];
+    const commonNB = new (class extends TypicalCodeNotebook {
+      commonDDL() {
+        // session_state_ephemeral table should always be defined
+        return this.sessionStateTable;
+      }
+    })("TypicalCodeNotebook.SQL::common");
 
-    const cc = c.callablesCollection<TypicalCodeNotebook, Any>(...sources);
-    const arbitrarySqlStmts = [
-      ...(await Promise.all(
-        ensureOnce.map((eo) =>
-          ensureNB.textFrom(
-            eo,
-            (value) =>
-              `-- ERROR: invalid value \`${value}\` (this should never happen)`,
-          )
-        ),
-      )),
-      ...(await Promise.all(
-        cc.filter({
-          // include all methods don't have *Cell() decorator and their names end in SQL, DQL, DML, or DDL
-          include: (c, instance) =>
-            instance.cellConfig.get(String(c))
-              ? false
-              : /(SQL|DQL|DML|DDL)$/.test(String(c)),
-        }).map(async (c) => await c.source.instance.methodText(c as Any)),
-      )),
-    ];
+    // select all "callable" methods from across all notebooks
+    const cc = c.callablesCollection<TypicalCodeNotebook, Any>(
+      commonNB,
+      ...sources,
+    );
+    const arbitrarySqlStmts = await Promise.all(
+      cc.filter({
+        // include all methods don't have *Cell() decorator and their names end in SQL, DQL, DML, or DDL
+        include: (c, instance) =>
+          instance.cellConfig.get(String(c))
+            ? false
+            : /(SQL|DQL|DML|DDL)$/.test(String(c)),
+      }).map(async (c) => await c.source.instance.methodText(c as Any)),
+    );
     const ensureKernels: CodeNotebookKernelRecord<string>[] = [];
     const ensureKernelsUpserts: string[] = [];
     const codeCellUpserts = await Promise.all(
