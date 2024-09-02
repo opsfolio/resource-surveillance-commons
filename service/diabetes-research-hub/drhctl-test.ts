@@ -1,7 +1,6 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run
 
 import * as colors from "https://deno.land/std@0.224.0/fmt/colors.ts";
-import * as drhux from "./ux.sql.ts";
 import {
  FlexibleTextSupplierSync,
  spawnedResult,
@@ -11,26 +10,6 @@ import {
 // Detect platform-specific command format
 const isWindows = Deno.build.os === "windows";
 const toolCmd = isWindows ? ".\\surveilr" : "./surveilr";
-
-const RSC_BASE_URL =
- "https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub";
-
-// Helper function to fetch SQL content
-async function fetchSqlContent(url: string): Promise<string> {
- try {
-  const response = await fetch(url);
-  if (!response.ok) {
-   throw new Error(`Failed to fetch SQL content from ${url}`);
-  }
-  return response.text();
- } catch (error) {
-  console.error(
-   colors.red(`Error fetching SQL content from ${url}:`),
-   error.message,
-  );
-  Deno.exit(1);
- }
-}
 
 // Helper function to execute a command
 async function executeCommand(
@@ -95,49 +74,34 @@ const folderName = Deno.args[0];
 // Path to the SQLite database file
 const dbFilePath = "./resource-surveillance.sqlite.db";
 
-// Define synchronous suppliers
-const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
- deidentificationSQL;
-const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
-
-// Fetch and store UX SQL content
-// let uxSQL: string;
-
-// try {
-//  const uxSQLContent = await drhux.drhSQL();
-//  uxSQL = uxSQLContent.join("\n");
-// } catch (error) {
-//  console.error(colors.red("Error fetching UX SQL content:"), error.message);
-//  Deno.exit(1);
-// }
-
-// Define the SQL supplier for UX
-const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
-
+// Read SQL content from local files
 let deidentificationSQL: string;
 let vvSQL: string;
 let uxSQL: string;
 
 try {
- // Fetch SQL content for DeIdentification and Verification & Validation
- deidentificationSQL = await fetchSqlContent(
-  `${RSC_BASE_URL}/de-identification/drh-deidentification.sql`,
+ deidentificationSQL = await Deno.readTextFile(
+  "./de-identification/drh-deidentification.sql",
  );
- vvSQL = await fetchSqlContent(
-  `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
+ vvSQL = await Deno.readTextFile(
+  "./verfication-validation/orchestrate-drh-vv.sql",
  );
- uxSQL = await fetchSqlContent(
-  `${RSC_BASE_URL}/ux.auto.sql`,
- );
+ uxSQL = await Deno.readTextFile("./ux.auto.sql");
 } catch (error) {
  console.error(
   colors.red(
-   "Error fetching SQL contents for DeIdentification and Verification & Validation:",
+   "Error reading SQL contents for DeIdentification and Verification & Validation:",
   ),
   error.message,
  );
  Deno.exit(1);
 }
+
+// Define synchronous suppliers
+const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
+ deidentificationSQL;
+const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
+const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
 // Check and delete the file if it exists
 await checkAndDeleteFile(dbFilePath);
