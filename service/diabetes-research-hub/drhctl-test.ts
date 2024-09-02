@@ -129,7 +129,6 @@ const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
 const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
-
 // let uxSQL: string;
 
 // try {
@@ -139,7 +138,6 @@ const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 //  console.error(colors.red("Error fetching UX SQL content:"), error.message);
 //  Deno.exit(1);
 // }
-
 
 let deidentificationSQL: string;
 let vvSQL: string;
@@ -202,7 +200,10 @@ try {
 
  //Perform UX orchestration
  console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
- await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
+ await executeCommand(
+  [toolCmd, "orchestrate", "-n", "v&v", "-s"],
+  uxSQLSupplier,
+ );
  console.log(colors.green("UX orchestration completed successfully."));
 
  // Perform UX orchestration
