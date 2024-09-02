@@ -707,21 +707,8 @@ ${pagination.renderSimpleMarkdown()}
   }
 }
 
-// // this will be used by any callers who want to serve it as a CLI with SDTOUT
-// if (import.meta.main) {
-//   const SQL = await spn.TypicalSqlPageNotebook.SQL(
-//     new sh.ShellSqlPages(),
-//     new c.ConsoleSqlPages(),
-//     new ur.UniformResourceSqlPages(),
-//     new orch.OrchestrationSqlPages(),
-//     new DRHSqlPages(),
-//   );
-//   console.log(SQL.join("\n"));
-// }
-
-// this will be used by any callers who want to serve it as a CLI with SDTOUT
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+export async function drhSQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
       async statelessDRHSQL() {
         // read the file from either local or remote (depending on location of this file)
@@ -743,5 +730,9 @@ if (import.meta.main) {
     new orch.OrchestrationSqlPages(),
     new DRHSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await drhSQL()).join("\n"));
 }
