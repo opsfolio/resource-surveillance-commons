@@ -127,6 +127,8 @@ const dbFilePath = "./resource-surveillance.sqlite.db";
 const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
  deidentificationSQL;
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
+const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
+
 
 // let uxSQL: string;
 
@@ -138,12 +140,10 @@ const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
 //  Deno.exit(1);
 // }
 
-// Define the SQL supplier for UX
-//const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
 let deidentificationSQL: string;
 let vvSQL: string;
-//let uxSQL: string;
+let uxSQL: string;
 
 try {
  // Fetch SQL content for DeIdentification and Verification & Validation
@@ -153,9 +153,9 @@ try {
  vvSQL = await fetchSqlContent(
   `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
  );
- // uxSQL = await fetchSqlContent(
- //  `${RSC_BASE_URL}/ux.auto.sql`,
- // );
+ uxSQL = await fetchSqlContent(
+  `${RSC_BASE_URL}/ux.auto.sql`,
+ );
 } catch (error) {
  console.error(
   colors.red(
@@ -200,16 +200,16 @@ try {
   ),
  );
 
- // Perform UX orchestration
- // console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
- // await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
- // console.log(colors.green("UX orchestration completed successfully."));
+ //Perform UX orchestration
+ console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
+ await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
+ console.log(colors.green("UX orchestration completed successfully."));
 
  // Perform UX orchestration
- console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
- const uxSQL = await fetchUxSqlContent();
- executeSqlCommands(uxSQL);
- console.log(colors.green("UX orchestration completed successfully."));
+ // console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
+ // const uxSQL = await fetchUxSqlContent();
+ // executeSqlCommands(uxSQL);
+ // console.log(colors.green("UX orchestration completed successfully."));
 
  console.log(
   colors.green(`Loading DRH Edge UI... at http://localhost:9000/drh/index.sql`),
