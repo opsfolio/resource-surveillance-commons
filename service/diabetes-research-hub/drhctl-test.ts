@@ -101,21 +101,22 @@ const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
 
 // Fetch and store UX SQL content
-let uxSQL: string;
+// let uxSQL: string;
 
-try {
- const uxSQLContent = await drhux.drhSQL();
- uxSQL = uxSQLContent.join("\n");
-} catch (error) {
- console.error(colors.red("Error fetching UX SQL content:"), error.message);
- Deno.exit(1);
-}
+// try {
+//  const uxSQLContent = await drhux.drhSQL();
+//  uxSQL = uxSQLContent.join("\n");
+// } catch (error) {
+//  console.error(colors.red("Error fetching UX SQL content:"), error.message);
+//  Deno.exit(1);
+// }
 
 // Define the SQL supplier for UX
 const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
 let deidentificationSQL: string;
 let vvSQL: string;
+let uxSQL: string;
 
 try {
  // Fetch SQL content for DeIdentification and Verification & Validation
@@ -124,6 +125,9 @@ try {
  );
  vvSQL = await fetchSqlContent(
   `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
+ );
+ uxSQL = await fetchSqlContent(
+  `${RSC_BASE_URL}/ux.auto.sql`,
  );
 } catch (error) {
  console.error(
