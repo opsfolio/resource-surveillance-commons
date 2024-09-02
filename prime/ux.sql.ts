@@ -7,13 +7,15 @@ import {
 } from "./web-ui-content/mod.ts";
 import * as spn from "./notebook/sqlpage.ts";
 
-// this will be used by any callers who want to serve it as a CLI with SDTOUT
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+export async function SQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new sh.ShellSqlPages(),
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await SQL()).join("\n"));
 }
