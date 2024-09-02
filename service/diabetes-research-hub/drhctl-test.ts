@@ -175,7 +175,7 @@ try {
 
  // Perform UX orchestration
  console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
- await executeCommand([toolCmd, "orchestrate", "-n", "ux"], uxSQLSupplier);
+ await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
  console.log(colors.green("UX orchestration completed successfully."));
 
  console.log(
