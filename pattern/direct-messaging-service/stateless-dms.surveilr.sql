@@ -95,20 +95,6 @@ WHERE
   nature = 'json'
   AND uri LIKE '%_content.json';
 
-DROP VIEW IF EXISTS inboxss;
-CREATE VIEW inboxss AS
-SELECT 
-  mcd.message_uid as id,
-  mcd.content_from AS "from",
-  mcd.recipient AS "to",
-  mcd.content_subject AS subject,
-  mcd.content_body AS content,
-  mcd.content_date AS date,
-  attachment_count as attachment_count
-  
-FROM 
-  mail_content_detail mcd;
-
 DROP VIEW IF EXISTS inbox;
 CREATE VIEW inbox AS
 SELECT 
@@ -418,6 +404,157 @@ FROM
    json_each(section_data) td 
 WHERE
    section_code = '29762-2';
+DROP VIEW IF EXISTS patient_immunization_data;
+CREATE VIEW patient_immunization_data AS
+  WITH component_detail AS (
+  SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL
+)
+SELECT 
+    message_uid,
+    section_code,
+    json_extract(td.value, '$.td[0]."#text"') AS vaccine,
+    json_extract(td.value, '$.td[1]') AS date,
+    json_extract(td.value, '$.td[2]') AS status
+FROM
+  component_detail,
+  json_each(section_data) td
+WHERE section_code='11369-6';
+
+
+DROP VIEW IF EXISTS patient_medical_equipment;
+CREATE VIEW patient_medical_equipment AS
+  WITH component_detail AS (
+  SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL
+)
+SELECT 
+    message_uid,
+    section_code,
+    json_extract(td.value, '$.td[0]') AS "Supply/Device",
+    json_extract(td.value, '$.td[1]') AS "Date Supplied"
+FROM
+  component_detail,
+  json_each(section_data) td
+WHERE section_code='46264-8';
+
+DROP VIEW IF EXISTS patient_insurance_provier;
+CREATE VIEW patient_insurance_provier AS
+  WITH component_detail AS (
+  SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL
+)
+SELECT 
+    message_uid,
+    section_code,
+    json_extract(td.value, '$[0]') AS "Payer name",
+    json_extract(td.value, '$[1]') AS "Policy type / Coverage type",
+    json_extract(td.value, '$[2]') AS "Policy ID",
+    json_extract(td.value, '$[3]') AS "Covered party ID",
+    json_extract(td.value, '$[4]') AS "Policy Holder"
+FROM
+  component_detail,
+  json_each(section_data) td
+WHERE section_code='48768-6';
+
+
+DROP VIEW IF EXISTS patient_plan_of_care;
+CREATE VIEW patient_plan_of_care AS
+  WITH component_detail AS (
+  SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL
+)
+SELECT 
+    message_uid,
+    section_code,
+    json_extract(td.value, '$[0]') AS "Planned Activity",
+    json_extract(td.value, '$[1]') AS "Planned Date"
+   
+FROM
+  component_detail,
+  json_each(section_data) td
+WHERE section_code='18776-5';
+
+
+DROP VIEW IF EXISTS patient_family_history;
+CREATE VIEW patient_family_history AS
+  WITH component_detail AS (
+  SELECT
+    COALESCE(substr(
+      uri,
+      instr(uri, 'ingest/') + length('ingest/'),
+      instr(substr(uri, instr(uri, 'ingest/') + length('ingest/')), '_') - 1
+    ), '') AS message_uid,
+    json_extract(value, '$.section.title') AS section_title,
+    json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text') AS component_title,
+    json_extract(value, '$.section.text.table.tbody.tr') AS section_data
+  FROM
+    uniform_resource_transform,
+    json_each(json_extract(content, '$.ClinicalDocument.component.structuredBody.component'))
+  WHERE
+    json_type(value, '$.section.title') IS NOT NULL
+)
+SELECT 
+    message_uid,
+    section_code,    
+    json_extract(component_title, '$.paragraph') as title,
+    json_extract(td.value, '$.td[0]')
+
+   
+FROM
+  component_detail dt, 
+  json_each(section_data) td
+WHERE section_code='10157-6';
+
  
 
 DROP VIEW IF EXISTS patient_diagnosis;
@@ -431,6 +568,7 @@ WITH component_detail AS (
     ), '') AS message_uid,
     json_extract(value, '$.section.title') AS section_title,
     json_extract(value, '$.section.code.@code') AS section_code,
+    json_extract(value, '$.section.text') AS component_title,
     json_extract(value, '$.section.text.table.tbody.tr') AS section_data
   FROM
     uniform_resource_transform,
@@ -493,7 +631,57 @@ SELECT
             '</td><td>' || COALESCE(json_extract(td.value, '$[2]'),json_extract(td.value, '$.td[2]')) || 
             '</td></tr>', 
         '') ||
-    '</table>'   	
+    '</table>'
+   WHEN section_code = '11369-6' THEN
+    '<table><tr><th>Vaccine</th><th>Date</th><th>Status</th></tr>'||
+        group_concat(
+            '<tr><td>' || 
+            json_extract(td.value, '$.td[0]."#text"') || 
+            '</td><td>' || json_extract(td.value, '$.td[1]') || 
+            '</td><td>' || json_extract(td.value, '$.td[2]') || 
+            '</td></tr>', 
+        '') ||
+    '</table>'
+  WHEN section_code = '46264-8' THEN
+    '<table><tr><th>Supply/Device</th><th>Date Supplied</th></tr>'||
+        group_concat(
+            '<tr><td>' || 
+            json_extract(td.value, '$.td[0]') || 
+            '</td><td>' || json_extract(td.value, '$.td[1]')||            
+            '</td></tr>', 
+        '') ||
+    '</table>'
+   WHEN section_code = '48768-6' THEN
+    '<table><tr><th>Payer name</th><th>Policy type / Coverage type</th><th>Policy ID</th><th>Covered party ID</th><th>Policy Holder</th></tr>'||
+        group_concat(
+            '<tr><td>' || 
+            json_extract(td.value, '$[0]') || 
+            '</td><td>' || json_extract(td.value, '$[1]')|| 
+            '</td><td>' || json_extract(td.value, '$[2]')|| 
+            '</td><td>' || json_extract(td.value, '$[3]')|| 
+            '</td><td>' || json_extract(td.value, '$[4]')|| 
+            '</td></tr>', 
+        '') ||
+    '</table>'
+  WHEN section_code = '18776-5' THEN
+    '<table><tr><th>Planned Activity</th><th>Planned Date</th></tr>'||
+        group_concat(
+            '<tr><td>' || 
+            json_extract(td.value, '$[0]') || 
+            '</td><td>' || json_extract(td.value, '$[1]')||            
+            '</td></tr>', 
+        '') ||
+    '</table>'
+  WHEN section_code = '10157-6' THEN
+    '<table><tr><th>Patient</th><th>Diagnosis</th><th>Age At Onset</th></tr>'||
+        group_concat(
+            '<tr><td>' || 
+            json_extract(component_title, '$.paragraph')|| 
+            '</td><td>' || json_extract(td.value, '$.td[0]')|| 
+            '</td><td>' || json_extract(td.value, '$.td[1]')|| 
+            '</td></tr>', 
+        '') ||
+    '</table>'        
   END AS table_data
 FROM
   component_detail,

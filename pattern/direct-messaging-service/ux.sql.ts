@@ -240,7 +240,7 @@ FROM patient_detail pd
 JOIN author_detail ad ON pd.message_uid = ad.message_uid
 WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
 
-    SELECT 'html' AS component, '      
+    SELECT 'html' AS component, '
       <link rel="stylesheet" href="/assets/style.css">
       <table class="patient-details">
       <tr>
@@ -295,8 +295,8 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
         border-collapse: collapse;
         margin-bottom: 20px;
         font-family: Arial, sans-serif;
-      }    
-      
+      }
+
     </style>
 
     <table class="patient-details">
@@ -401,23 +401,14 @@ WHERE CAST(pd.message_uid AS TEXT) = CAST($id AS TEXT);
   }
 }
 
-// this will be used by any callers who want to serve it as a CLI with SDTOUT
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+export async function SQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
-      async statelessFhirSQL() {
+      async statelessDmsSQL() {
         // read the file from either local or remote (depending on location of this file)
         return await spn.TypicalSqlPageNotebook.fetchText(
           import.meta.resolve("./stateless-dms.surveilr.sql"),
         );
-      }
-
-      async orchestrateStatefulFhirSQL() {
-        // read the file from either local or remote (depending on location of this file)
-        // optional, for better performance:
-        // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-fhir.surveilr.sql"),
-        // );
       }
     }(),
     new sh.ShellSqlPages(),
@@ -426,5 +417,9 @@ if (import.meta.main) {
     new orch.OrchestrationSqlPages(),
     new dmsSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await SQL()).join("\n"));
 }
