@@ -1,7 +1,7 @@
 # Integration Engine (IE)
 
-The Integration Engine module handles message exchanges between the systems it
-operates on and third-party systems. The expected features the engine suppors
+The Integration Engine (IE) module handles message exchanges between the systems
+it operates on and third-party systems. The expected features the engine suppors
 are given below,
 
 | Features/Uses                         | Details                                                                                                                                                                                                                                                                                                     |
@@ -10,10 +10,6 @@ are given below,
 | Message format/standard Support       | The Integration Engine primarily supports message standards like HL7, FHIR, JSON, and XML but can also handle a variety of file types for exchange, such as CSV, Excel, or custom formats. This includes tasks like sending tenant-specific SQL dumps for application-specific data to third-party systems. |
 | Direct SQL access to Customer systems | Supports connecting to customer or client systems' databases via SQL to facilitate information exchange between applications                                                                                                                                                                                |
 | Webhooks                              | Able to invoke various webhook APIs of the application where the Integration Engine is used to transmit data retrieved from the third-party database, enabling further processing within different application modules.                                                                                     |
-
-## Ingestion Center
-
-# Ingestion Center and Integration Engine (IE)
 
 ## Features and Capabilities
 
@@ -83,9 +79,9 @@ are given below,
   - The IE does not handle ingestion pipeline activities; it solely manages the
     exchange of messages and their archival process.
 
-## Sequence Diagramsof the various use cases
+## Sequence Diagrams for Various Use Cases
 
-1. **Files Exhange with Third-Party Systems/Network Location**
+1. **File Exchange with Third-Party Systems/Network Locations**
 
 ```mermaid
 sequenceDiagram
@@ -105,8 +101,44 @@ sequenceDiagram
   IE ->> IE: Back up the copied files
 ```
 
-2. **Files Exhange with Third-Party Systems/Network Location** **TODO:** working
-   the sequence diagram
+2. **Outbound Message Integration with Third-Party Database**
+
+```mermaid
+sequenceDiagram
+
+    participant ThirdPartyApp as Third-Party Systems (EHR)
+    participant IE as Integration Engine
+    participant IngestionCenter as Ingestion Center
+    participant HostApplication as Host Application
+    actor User as Host Application User
+
+    User->>HostApplication: User processes data using the Host Application
+    HostApplication->>HostApplication: Convert the processed data into JSON/FHIR format
+    HostApplication->>IngestionCenter: Push the processed data as a message file (JSON/FHIR) into the tenant-specific Outbound Ingestion Center
+    IE->>IE: Read the message files, extract data, and validate (e.g., FHIR, JSON)
+    IE-->>ThirdPartyApp: Insert or update data in the third-party database
+    IE->>IE: Backup the files after processing
+    IE->>HostApplication: Acknowledge receipt and processing of data
+```
+
+1. **Integration with Third-Party Databases and Webhooks**
+
+```mermaid
+sequenceDiagram
+
+    participant ThirdPartyAppDB as Third-Party Systems (EHR) Database
+    participant IE as Integration Engine
+    participant HostApplication as Host Application
+    participant WebhookAPI as Webhook API
+    actor User as Host Application User
+
+    IE->>IE: Poll for data from customer database at regular intervals
+    IE->>ThirdPartyAppDB: Execute SQL query
+    ThirdPartyAppDB-->>IE: Return query results
+    IE->>IE: Process and convert data into JSON/FHIR format
+    IE->>WebhookAPI: Send data (JSON/FHIR)
+    User->>HostApplication: Utilize data from various application modules for business operations
+```
 
 # Resource surveillance (surveilr)
 
