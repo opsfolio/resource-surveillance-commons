@@ -163,14 +163,14 @@ console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
 try {
  console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
- await executeCommand(["surveilr", "ingest", "files", "-r", `${folderName}/`]);
+ await executeCommand([toolCmd, "ingest", "files", "-r", `${folderName}/`]);
 } catch (error) {
  console.error(colors.red("Error ingesting files:"), error.message);
  Deno.exit(1);
 }
 
 try {
- await executeCommand(["surveilr", "orchestrate", "transform-csv"]);
+ await executeCommand([toolCmd, "orchestrate", "transform-csv"]);
  console.log(
   colors.green("Files ingestion and CSV transformation successful."),
  );
@@ -222,7 +222,7 @@ try {
  console.log(
   colors.green(`Loading DRH Edge UI... at http://localhost:9000/drh/index.sql`),
  );
- await executeCommand(["surveilr", "web-ui", "--port", "9000"]);
+ await executeCommand([toolCmd, "web-ui", "--port", "9000"]);
 } catch (error) {
  console.error(colors.red("Error starting DRH Edge UI:"), error.message);
  Deno.exit(1);
