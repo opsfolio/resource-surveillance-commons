@@ -30,8 +30,8 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infra Assurance",
-    description: "Infra Assurance",
+    caption: "Infrastructure Assurance",
+    description: "Infrastructure Assurance",
   })
   "infra/assurance/index.sql"() {
     return this.SQL`
@@ -63,22 +63,20 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+export async function assuranceSQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
-      async statelessIpSQL() {
+      async statelessPolicySQL() {
         // read the file from either local or remote (depending on location of this file)
         return await spn.TypicalSqlPageNotebook.fetchText(
           import.meta.resolve("./stateless-ia.surveilr.sql"),
         );
       }
 
-      async orchestrateStatefulIcSQL() {
+      async orchestrateStatefulIaSQL() {
         // read the file from either local or remote (depending on location of this file)
-        // optional, for better performance:
-        // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-ia.surveilr.sql"),
+        // return await spn.TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
         // );
       }
     }(),
@@ -88,5 +86,9 @@ if (import.meta.main) {
     new orch.OrchestrationSqlPages(),
     new iaSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await assuranceSQL()).join("\n"));
 }
