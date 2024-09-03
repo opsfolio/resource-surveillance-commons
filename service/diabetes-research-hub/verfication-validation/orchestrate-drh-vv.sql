@@ -1,116 +1,90 @@
--- Create a temporary table to define the expected schema
-CREATE TEMP TABLE expected_schema (
-    table_name TEXT,
-    column_name TEXT,
-    column_type TEXT,
-    is_primary_key INTEGER,
-    not_null INTEGER -- Add this column to indicate whether a column should be NOT NULL
-);
 
--- Insert expected schema details for various tables
-INSERT INTO expected_schema (table_name, column_name, column_type, is_primary_key, not_null) VALUES
--- uniform_resource_institution table
-('uniform_resource_institution', 'institution_id', 'TEXT', 1, 1),
-('uniform_resource_institution', 'institution_name', 'TEXT', 0, 1),
-('uniform_resource_institution', 'city', 'TEXT', 0, 1),
-('uniform_resource_institution', 'state', 'TEXT', 0, 1),
-('uniform_resource_institution', 'country', 'TEXT', 0, 1),
+-- Create a view that represents the expected schema with required columns and properties
+CREATE VIEW IF NOT EXISTS expected_schema_view AS
+SELECT 
+'uniform_resource_institution' AS table_name, 'institution_id' AS column_name, 'TEXT' AS column_type, 1 AS is_primary_key, 1 AS not_null
+UNION ALL SELECT 'uniform_resource_institution', 'institution_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_institution', 'city', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_institution', 'state', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_institution', 'country', 'TEXT', 0, 1
 
+UNION ALL SELECT 'uniform_resource_lab', 'lab_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_lab', 'lab_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_lab', 'lab_pi', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_lab', 'institution_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_lab', 'study_id', 'TEXT', 0, 1
 
--- uniform_resource_lab table
-('uniform_resource_lab', 'lab_id', 'TEXT', 1, 1),
-('uniform_resource_lab', 'lab_name', 'TEXT', 0, 1),
-('uniform_resource_lab', 'lab_pi', 'TEXT', 0, 1),
-('uniform_resource_lab', 'institution_id', 'TEXT', 0, 1),
-('uniform_resource_lab', 'study_id', 'TEXT', 0, 1),
+UNION ALL SELECT 'uniform_resource_study', 'study_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_study', 'study_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'start_date', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'end_date', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'treatment_modalities', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'funding_source', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'nct_number', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_study', 'study_description', 'TEXT', 0, 1
 
+UNION ALL SELECT 'uniform_resource_site', 'site_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_site', 'study_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_site', 'site_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_site', 'site_type', 'TEXT', 0, 1
 
--- uniform_resource_study table
-('uniform_resource_study', 'study_id', 'TEXT', 1, 1),
-('uniform_resource_study', 'study_name', 'TEXT', 0, 1),
-('uniform_resource_study', 'start_date', 'TEXT', 0, 1),
-('uniform_resource_study', 'end_date', 'TEXT', 0, 1),
-('uniform_resource_study', 'treatment_modalities', 'TEXT', 0, 1),
-('uniform_resource_study', 'funding_source', 'TEXT', 0, 1),
-('uniform_resource_study', 'nct_number', 'TEXT', 0, 1),
-('uniform_resource_study', 'study_description', 'TEXT', 0, 1),
+UNION ALL SELECT 'uniform_resource_participant', 'participant_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_participant', 'study_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'site_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'diagnosis_icd', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'med_rxnorm', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'treatment_modality', 'TEXT', 0, 0
+UNION ALL SELECT 'uniform_resource_participant', 'gender', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'race_ethnicity', 'TEXT', 0, 0
+UNION ALL SELECT 'uniform_resource_participant', 'age', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'bmi', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'baseline_hba1c', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'diabetes_type', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_participant', 'study_arm', 'TEXT', 0, 1
 
+UNION ALL SELECT 'uniform_resource_investigator', 'investigator_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_investigator', 'investigator_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_investigator', 'email', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_investigator', 'institution_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_investigator', 'study_id', 'TEXT', 0, 1
 
--- uniform_resource_site table
-('uniform_resource_site', 'site_id', 'TEXT', 1, 1),
-('uniform_resource_site', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_site', 'site_name', 'TEXT', 0, 1),
-('uniform_resource_site', 'site_type', 'TEXT', 0, 1),
+UNION ALL SELECT 'uniform_resource_publication', 'publication_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_publication', 'publication_title', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_publication', 'digital_object_identifier', 'TEXT', 0, 0
+UNION ALL SELECT 'uniform_resource_publication', 'publication_site', 'TEXT', 0, 0
+UNION ALL SELECT 'uniform_resource_publication', 'study_id', 'TEXT', 0, 1
 
+UNION ALL SELECT 'uniform_resource_author', 'author_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_author', 'name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_author', 'email', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_author', 'investigator_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_author', 'study_id', 'TEXT', 0, 1
 
--- uniform_resource_participant table
-('uniform_resource_participant', 'participant_id', 'TEXT', 1, 1),
-('uniform_resource_participant', 'study_id', 'TEXT', 0, 1),
-('uniform_resource_participant', 'site_id', 'TEXT', 0, 1),
-('uniform_resource_participant', 'diagnosis_icd', 'TEXT', 0, 1),
-('uniform_resource_participant', 'med_rxnorm', 'TEXT', 0, 1),
-('uniform_resource_participant', 'treatment_modality', 'TEXT', 0, 0),
-('uniform_resource_participant', 'gender', 'TEXT', 0, 1),
-('uniform_resource_participant', 'race_ethnicity', 'TEXT', 0, 0),
-('uniform_resource_participant', 'age', 'TEXT', 0, 1),
-('uniform_resource_participant', 'bmi', 'TEXT', 0, 1),
-('uniform_resource_participant', 'baseline_hba1c', 'TEXT', 0, 1),
-('uniform_resource_participant', 'diabetes_type', 'TEXT', 0, 1),
-('uniform_resource_participant', 'study_arm', 'TEXT', 0, 1),
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'metadata_id', 'TEXT', 1, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'devicename', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'device_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'source_platform', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'patient_id', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'file_name', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'file_format', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'file_upload_date', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'data_start_date', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'data_end_date', 'TEXT', 0, 1
+UNION ALL SELECT 'uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 1;
 
-
--- uniform_resource_investigator table
-('uniform_resource_investigator', 'investigator_id', 'TEXT', 1, 1),
-('uniform_resource_investigator', 'investigator_name', 'TEXT', 0, 1),
-('uniform_resource_investigator', 'email', 'TEXT', 0, 1),
-('uniform_resource_investigator', 'institution_id', 'TEXT', 0, 1),
-('uniform_resource_investigator', 'study_id', 'TEXT', 0, 1),
-
-
--- uniform_resource_publication table
-('uniform_resource_publication', 'publication_id', 'TEXT', 1, 1),
-('uniform_resource_publication', 'publication_title', 'TEXT', 0, 1),
-('uniform_resource_publication', 'digital_object_identifier', 'TEXT', 0, 0),
-('uniform_resource_publication', 'publication_site', 'TEXT', 0, 0),
-('uniform_resource_publication', 'study_id', 'TEXT', 0, 1),
-
-
--- uniform_resource_author table
-('uniform_resource_author', 'author_id', 'TEXT', 1, 1),
-('uniform_resource_author', 'name', 'TEXT', 0, 1),
-('uniform_resource_author', 'email', 'TEXT', 0, 1),
-('uniform_resource_author', 'investigator_id', 'TEXT', 0, 1),
-('uniform_resource_author', 'study_id', 'TEXT', 0, 1),
-
-
--- uniform_resource_cgm_file_metadata table
-('uniform_resource_cgm_file_metadata', 'metadata_id', 'TEXT', 1, 1),
-('uniform_resource_cgm_file_metadata', 'devicename', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'device_id', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'source_platform', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'patient_id', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'file_name', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'file_format', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'file_upload_date', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'data_start_date', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'data_end_date', 'TEXT', 0, 1),
-('uniform_resource_cgm_file_metadata', 'study_id', 'TEXT', 0, 1);
-
-
--- Schema Validation
-
-CREATE TEMP TABLE temp_session_info AS
+-- Create or Replace Temp Session Info View
+DROP VIEW IF EXISTS temp_session_info;
+CREATE TEMP VIEW temp_session_info AS
 SELECT
     orchestration_session_id,
     (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = orchestration_session_id LIMIT 1) AS orchestration_session_entry_id
-FROM orchestration_session where orchestration_nature_id = 'V&V'
+FROM orchestration_session 
+WHERE orchestration_nature_id = 'V&V'
 LIMIT 1;
 
-
--- Validate the schema to check for missing columns
-
-
-CREATE TEMP TABLE temp_SchemaValidationMissingColumns AS
+-- Create or Replace Temp Schema Validation Missing Columns View
+DROP VIEW IF EXISTS temp_SchemaValidationMissingColumns;
+CREATE TEMP VIEW temp_SchemaValidationMissingColumns AS
 SELECT 
     'Schema Validation: Missing Columns' AS heading,
     e.table_name,
@@ -120,7 +94,7 @@ SELECT
     'Missing column: ' || e.column_name || ' in table ' || e.table_name AS status,
     'Include the ' || e.column_name || ' in table ' || e.table_name AS remediation
 FROM 
-    expected_schema e
+    expected_schema_view e
 LEFT JOIN (
     SELECT 
         m.name AS table_name,
@@ -140,8 +114,7 @@ LEFT JOIN (
 WHERE 
     a.column_name IS NULL;
 
-
-
+--  Insert Operation into orchestration_session_issue Table
 INSERT INTO orchestration_session_issue (
     orchestration_session_issue_id, 
     session_id, 
@@ -168,12 +141,21 @@ SELECT
 FROM 
     temp_SchemaValidationMissingColumns svc
 JOIN 
-    temp_session_info tsi ON 1=1;
+    temp_session_info tsi ON 1=1
+WHERE NOT EXISTS (
+    SELECT 1 FROM orchestration_session_issue osi
+    WHERE osi.session_id = tsi.orchestration_session_id
+    AND osi.issue_type = svc.heading
+    AND osi.issue_message = svc.status
+    AND osi.issue_column = svc.column_name
+);
+
 
 
 --- Validate the schema to check for additional columns
 
-CREATE TEMP TABLE temp_SchemaValidationAdditionalColumns As
+DROP VIEW IF EXISTS temp_SchemaValidationAdditionalColumns;
+CREATE TEMP VIEW  temp_SchemaValidationAdditionalColumns As
 SELECT 
     'Schema Validation: Additional Columns' AS heading,
     a.table_name,
@@ -199,10 +181,9 @@ FROM
             m.name != 'uniform_resource_transform' AND 
             m.name LIKE 'uniform_resource_%'
     ) a
-LEFT JOIN expected_schema e ON a.table_name = e.table_name AND a.column_name = e.column_name
+LEFT JOIN expected_schema_view e ON a.table_name = e.table_name AND a.column_name = e.column_name
 WHERE 
     e.column_name IS NULL;
-
 
 
 INSERT INTO orchestration_session_issue (
@@ -223,20 +204,20 @@ SELECT
     tsi.orchestration_session_entry_id,
     tsa.heading as issue_type,
     tsa.status as issue_message,
-    NULL AS issue_row,  -- Set as NULL if not applicable
+    NULL AS issue_row, 
     tsa.column_name AS issue_column,
-    NULL AS invalid_value,  -- Set as NULL if not applicable
+    NULL AS invalid_value, 
     tsa.remediation,
-    NULL AS elaboration  -- Set as NULL or provide elaboration if needed
+    NULL AS elaboration  
 FROM 
     temp_SchemaValidationAdditionalColumns tsa
 JOIN 
     temp_session_info tsi ON 1=1;
 
 
--- Data Integrity Checks: Check for invalid age values
 
-CREATE TEMP TABLE temp_DataIntegrityInvalidDates AS
+DROP VIEW IF EXISTS temp_DataIntegrityInvalidDates;
+CREATE TEMP VIEW temp_DataIntegrityInvalidDates AS
 SELECT 
     'Data Integrity Checks: Invalid Dates' AS heading,
     table_name,
@@ -329,12 +310,10 @@ FROM temp_DataIntegrityInvalidDates diid
 JOIN 
     temp_session_info tsi ON 1=1;
 
-
-
 -- Generate SQL for finding empty or NULL values in table
 
-
-CREATE TEMP TABLE DataIntegrityEmptyCells AS
+DROP VIEW IF EXISTS DataIntegrityEmptyCells;
+CREATE TEMP VIEW DataIntegrityEmptyCells AS
     SELECT 
         'Data Integrity Checks: Empty Cells' AS heading,
         table_name,
@@ -1135,8 +1114,8 @@ JOIN
     temp_session_info tsi ON 1=1;
 
 
-
-CREATE TEMP TABLE table_counts AS
+DROP VIEW IF EXISTS table_counts;
+CREATE TEMP VIEW table_counts AS
 SELECT 
     'uniform_resource_study' AS table_name,
     COUNT(*) AS row_count
@@ -1174,8 +1153,9 @@ SELECT 'uniform_resource_author' AS table_name,
     COUNT(*) AS row_count
 FROM uniform_resource_author;
 
--- Step 2: Create a temporary table to store empty table findings
-CREATE TEMP TABLE empty_tables AS
+
+DROP VIEW IF EXISTS empty_tables;
+CREATE TEMP VIEW empty_tables AS
 SELECT 
     table_name,
     row_count,
@@ -1216,9 +1196,3 @@ JOIN
     temp_session_info tsi ON 1=1;
 
 
-DROP TABLE if EXISTS table_counts;
-DROP TABLE if EXISTS empty_tables;
-DROP TABLE if EXISTS DataIntegrityEmptyCells;
-DROP TABLE IF EXISTS temp_DataIntegrityInvalidDates;    
-DROP TABLE IF EXISTS temp_SchemaValidationMissingColumns;
-DROP TABLE IF EXISTS temp_SchemaValidationAdditionalColumns;    

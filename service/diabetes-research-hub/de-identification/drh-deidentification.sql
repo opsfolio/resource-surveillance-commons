@@ -12,7 +12,8 @@ WHERE email IS NOT NULL;
 
 
 -- Create a temporary table
-CREATE TEMP TABLE temp_session_info AS
+DROP VIEW IF EXISTS temp_session_info;
+CREATE TEMP VIEW temp_session_info AS
 SELECT
     orchestration_session_id,
     (SELECT orchestration_session_entry_id FROM orchestration_session_entry WHERE session_id = orchestration_session_id LIMIT 1) AS orchestration_session_entry_id
@@ -86,10 +87,4 @@ SET
     diagnostics_json = '{"status": "completed"}',
     diagnostics_md = 'De-identification process completed'
 WHERE orchestration_session_id = (SELECT orchestration_session_id FROM temp_session_info LIMIT 1);
-
-
--- Drop the temporary table when done
-DROP TABLE temp_session_info;
-
---COMMIT;
 
