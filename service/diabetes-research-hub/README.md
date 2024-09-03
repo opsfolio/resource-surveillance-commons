@@ -11,7 +11,7 @@ verifying the data all within your own environment.
 
 ### Requirements for Previewing the Edge UI:
 
-1. **Surveilr Tool** (use version `0.12.2`)
+1. **Surveilr Tool** (use version `0.12.2` or `0.13.4`)
 2. **Deno Runtime** (requires `deno` v1.40 or above):
    [Deno Installation Guide](https://docs.deno.com/runtime/manual/getting_started/installation/)
 
@@ -39,7 +39,7 @@ You can perform file conversion in two ways:
 
 - Follow the installation instructions at the
   [Surveilr Installation Guide](https://docs.opsfolio.com/surveilr/how-to/installation-guide).
-- Download version `surveilr 0.12.2` from
+- Download version `surveilr 0.12.2` or `surveilr 0.13.4` from
   [Surveilr Releases](https://github.com/opsfolio/releases.opsfolio.com/releases)
   to this folder.
 
@@ -48,8 +48,6 @@ You can perform file conversion in two ways:
 - Run the command `surveilr --version` in command prompt and
   `.\surveilr --version` in powershell.
 - If the tool is installed correctly, it will display the version number.
-
-![image1](./assets/surveilr-version-cmd.png)
 
 ## Multiple Command Execution:
 
@@ -134,7 +132,8 @@ The following SQL scripts will be used:
 
 - drh-deidentification.sql: De-identifies sensitive columns in the study data.
 - stateless-drh-surveilr.sql: Creates database views for SQLPage preview.
-- orchestrate-drh-vv.sql: Performs verification and validation on the study data tables.
+- orchestrate-drh-vv.sql: Performs verification and validation on the study data
+  tables.
 
 **Note**: Reference sample files can be found in the repository folder:
 /service/diabetes-research-hub/study-files.zip
