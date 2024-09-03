@@ -4,13 +4,11 @@ import { $ } from "https://deno.land/x/dax@0.39.2/mod.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
 // # TODO: automatically upgrade surveilr
-// adming merge command
+// admin merge command
 // # TODO: commands
 // # 1. add notebook orchestration: surveilr orchestrate notebooks --cell="%htmlAnchors%" -a "key1=value1" -a "name=starting"
 // # 2. IMAP
-// # 3. use the piping method to execute orchestration
 // # 4. add multitenancy tests
-// // await $`surveilr orchestrate -n "dd" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/anonymize-sample/de-identification/deidentification.sql -s ${REPO_DIR}/pattern/privacy/anonymize-sample/de-identification/`;
 
 const E2E_TEST_DIR = path.join(Deno.cwd(), "assurance");
 const ZIP_URL =
@@ -158,60 +156,79 @@ Deno.test("file ingestion", async (t) => {
     assertEquals(result[0][0], 3);
   });
 
-  // await t.step("compliance violations", () => {
-  //     db.execute(`
-  //         DROP VIEW IF EXISTS compliance_violations;
-  //         CREATE VIEW compliance_violations AS
-  //         SELECT
-  //             ur.uniform_resource_id,
-  //             ur.uri,
-  //             isfpe.file_path_abs,
-  //             CASE
-  //                 WHEN ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%' THEN 'Sensitive Data Exposure'
-  //                 WHEN ur.content LIKE '%password%' OR ur.content LIKE '%credit card%' THEN 'PII Exposure'
-  //                 ELSE 'Other Violation'
-  //             END AS violation_type
-  //         FROM uniform_resource ur
-  //         JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
-  //         WHERE ur.content LIKE '%confidential%' OR ur.content LIKE '%secret%'
-  //         OR ur.content LIKE '%password%' OR ur.content LIKE '%credit card%';
-  //     `);
+  db.close();
+});
 
-  //     const result = db.query(
-  //         `SELECT COUNT(*) AS count FROM compliance_violations`,
-  //     );
-  //     console.log({ result });
-  //     assertEquals(result.length, 1);
-  //     assertEquals(result[0][0], 0);
-  // });
+Deno.test("multitenancy file ingestion", async (t) => {
+  const multitenancyRssdPath = path.join(
+    E2E_TEST_DIR,
+    "resource-surveillance-multitenancy-e2e.sqlite.db",
+  );
 
-  // await t.step("potentially risky files", () => {
-  //     db.execute(`
-  //        DROP VIEW IF EXISTS potential_risk_files;
-  //         CREATE VIEW potential_risk_files AS
-  //         SELECT
-  //             ur.uniform_resource_id,
-  //             ur.uri,
-  //             ur.content_digest,
-  //             CASE
-  //                 WHEN ur.nature LIKE '%executable%' THEN 'Executable'
-  //                 WHEN ur.nature LIKE '%script%' THEN 'Script'
-  //                 WHEN isfpe.file_extn IN ('.exe', '.dll', '.bat', '.ps1', '.sh') THEN 'Suspicious Extension'
-  //                 ELSE 'Other'
-  //             END AS risk_category
-  //         FROM uniform_resource ur
-  //         JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
-  //         WHERE ur.nature LIKE '%executable%' OR ur.nature LIKE '%script%'
-  //         OR isfpe.file_extn IN ('.exe', '.dll', '.bat', '.ps1', '.sh');
-  //     `);
+  if (await Deno.stat(multitenancyRssdPath).catch(() => null)) {
+    await Deno.remove(multitenancyRssdPath).catch(() => false);
+  }
 
-  //     const result = db.query(
-  //         `SELECT COUNT(*) AS count FROM potential_risk_files`,
-  //     );
-  //     console.log({ result });
-  //     assertEquals(result.length, 1);
-  //     // assertEquals(result[0][0], 0);
-  // });
+  const tenantId = "assurance_id";
+  const tenantName = "rsc-end-to-end-tester";
+
+  await t.step("ingest files with tenant id and name", async () => {
+    const ingestResult =
+      await $`surveilr ingest files -d ${multitenancyRssdPath} -r ${INGEST_DIR}/10k_synthea_covid19_csv -r ${TEST_FIXTURES_DIR} --tenant-id=${tenantId} --tenant-name=${tenantName}`;
+
+    assertEquals(
+      ingestResult.code,
+      0,
+      `❌ Error: Failed to ingest data in ${INGEST_DIR}/10k_synthea_covid19_csv`,
+    );
+
+    assertExists(
+      await Deno.stat(multitenancyRssdPath).catch(() => null),
+      `❌ Error: ${multitenancyRssdPath} does not exist`,
+    );
+  });
+
+  const db = new DB(multitenancyRssdPath);
+
+  const partyTypeId = db.query<[string]>(
+    "SELECT party_type_id FROM party_type WHERE value = ?1 LIMIT 1",
+    ["Organization"],
+  );
+  const organizationPartyTypeId = partyTypeId[0][0];
+
+  // select from organization using the tenantId as party_id
+  await t.step("verify organization details", () => {
+    const result = db.query<[string]>(
+      "SELECT name FROM organization WHERE party_id = ?",
+      [tenantId],
+    );
+    const name = result[0][0];
+    assertEquals(
+      name,
+      tenantName,
+      `❌ Error: organization details don't match in ${multitenancyRssdPath}`,
+    );
+  });
+
+  // select from party and the party_id must be the same as the tenantId, party_type_id must be the same as the organizationPartyTypeId, party_name as tenamtName
+  await t.step("verify party details", () => {
+    const result = db.query<[string, string]>(
+      "SELECT party_type_id, party_name FROM party WHERE party_id = ?",
+      [tenantId],
+    );
+    const party_type_id = result[0][0];
+    const party_name = result[0][0];
+    assertEquals(
+      party_type_id,
+      organizationPartyTypeId,
+      `❌ Error: partye details don't match in ${multitenancyRssdPath}`,
+    );
+    assertEquals(
+      party_name,
+      tenantName,
+      `❌ Error: party details don't match in ${multitenancyRssdPath}`,
+    );
+  });
 
   db.close();
 });

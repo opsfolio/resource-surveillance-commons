@@ -35,7 +35,7 @@ To execute all tests and ensure that `surveilr` is functioning correctly:
 1. Run the tests using Deno:
 
     ```bash
-    deno test -A  # Executes all tests
+    deno test -A ./assurance/  # Executes all tests
     ```
 
 The `-A` flag provides all necessary permissions for the tests to run, including file system access and network permissions.
