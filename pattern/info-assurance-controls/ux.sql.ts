@@ -11,7 +11,7 @@ import {
 function icNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/infra/control",
+    parentPath: "/info/control",
   });
 }
 
@@ -30,17 +30,17 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infra Controls",
-    description: "Infra Controls",
+    caption: "Information Assurance Controls",
+    description: "Information Assurance Controls",
   })
-  "infra/control/index.sql"() {
+  "info/control/index.sql"() {
     return this.SQL`
     SELECT
     'card'             as component
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/infra/control/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     control_regimes;`;
   }
@@ -50,7 +50,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 1,
   })
-  "infra/control/control.sql"() {
+  "info/control/control.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
       -- SELECT 'table' AS component;
@@ -60,10 +60,10 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/infra/control/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     control_regimes;
-`;
+  `;
   }
 
   @icNav({
@@ -71,7 +71,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 2,
   })
-  "infra/control/control_regime.sql"() {
+  "info/control/control_regime.sql"() {
     return this.SQL`
   SELECT
     'title' AS component,
@@ -79,7 +79,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'card' as component
     SELECT audit_type_name  as title,
       'arrow-big-right'       as icon,
-     '/infra/control/controls.sql?id=' ||audit_type_id || '' as link
+     '/info/control/controls.sql?id=' ||audit_type_id || '' as link
       FROM control_regimes WHERE control_regime_id = $id::TEXT;
     `;
   }
@@ -89,7 +89,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 3,
   })
-  "infra/control/controls.sql"() {
+  "info/control/controls.sql"() {
     return this.SQL`
     SELECT
     'title' AS component,
@@ -97,31 +97,98 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'table' as component,
     'Control code' AS markdown;
     SELECT
-    '[' || control_code || '](/infra/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
+    '[' || control_code || '](/info/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
     common_criteria as "Common criteria",
     fii as "Fii Id",
     question as "Question"
       FROM control WHERE audit_type_id = $id::TEXT;
     `;
   }
+
+  @icNav({
+    caption: "Control Details",
+    description: ``,
+    siblingOrder: 4,
+  })
+  "info/control/control_detail.sql"() {
+    return this.SQL`
+     select
+    'card'             as component,
+    1               as columns;
+    SELECT
+      'title' AS component,
+      common_criteria AS contents
+    FROM
+      control
+    WHERE
+      control_id = $id::TEXT
+    SELECT
+      'title' AS component,
+      "Control Code" AS contents,
+  3        as level;
+      SELECT
+      'text' AS component,
+      control_code AS contents
+      FROM
+      control
+    WHERE
+      control_id = $id::TEXT
+      SELECT
+      'title' AS component,
+      "Control Question" AS contents,
+      3        as level;
+         select
+    'card'             as component,
+    1               as columns;
+    select question as title
+    FROM
+      control
+    WHERE
+      control_id = $id::TEXT
+      SELECT
+      'title' AS component,
+      "Expected Evidence" AS contents,
+      3         as level;
+  select
+    'card'             as component,
+    1               as columns;
+    select expected_evidence as title
+    FROM
+      control
+    WHERE
+      control_id = $id::TEXT
+         SELECT
+      'title' AS component,
+      "Mapped Requirements" AS contents,
+      3       as level;
+      SELECT
+    'card'             as component,
+    1               as columns
+    select fii as title
+    FROM
+      control
+    WHERE
+      control_id = $id::TEXT
+    `;
+  }
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+
+export async function controlSQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
-      async statelessIpSQL() {
+      async statelessControlSQL() {
         // read the file from either local or remote (depending on location of this file)
         return await spn.TypicalSqlPageNotebook.fetchText(
           import.meta.resolve("./stateless-ic.surveilr.sql"),
         );
       }
 
-      async orchestrateStatefulIcSQL() {
+      async orchestrateStatefulControlSQL() {
         // read the file from either local or remote (depending on location of this file)
-        // optional, for better performance:
-        // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-ic.surveilr.sql"),
+        // return await spn.TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
         // );
       }
     }(),
@@ -131,5 +198,9 @@ if (import.meta.main) {
     new orch.OrchestrationSqlPages(),
     new icSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await controlSQL()).join("\n"));
 }

@@ -11,7 +11,7 @@ import {
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/infra/policy",
+    parentPath: "/info/policy",
   });
 }
 
@@ -30,10 +30,10 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infra Policies",
-    description: "Infra Policies",
+    caption: "Information Assurance Policies",
+    description: "Information Assurance Policies",
   })
-  "infra/policy/index.sql"() {
+  "info/policy/index.sql"() {
     return this.SQL`
         select
     'card'             as component,
@@ -41,35 +41,16 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
     UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
     'arrow-big-right'       as icon,
-    '/infra/policy/policy_list.sql?segment=' || segment || '' as link
+    '/info/policy/policy_list.sql?segment=' || segment || '' as link
     FROM policy_dashboard;`;
   }
-
-  // @ipNav({
-  //   caption: "Policy Dashboard",
-  //   description: ``,
-  //   siblingOrder: 1,
-  // })
-  // "infra/policy_dashboard.sql"() {
-  //   return this.SQL`
-  //     ${this.activePageTitle()}
-  //     select
-  //   'card'             as component,
-  //   3                 as columns;
-  //   select
-  //   UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
-  //   'arrow-big-right'       as icon,
-  //   '/infra/policy_list.sql?segment=' || segment || '' as link
-  //   FROM policy_dashboard;
-  //     `;
-  // }
 
   @ipNav({
     caption: "Policy List",
     description: ``,
     siblingOrder: 2,
   })
-  "infra/policy/policy_list.sql"() {
+  "info/policy/policy_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -78,7 +59,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/infra/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $segment::TEXT AND segment1=""
 
         UNION ALL
@@ -86,7 +67,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
         SELECT
           REPLACE(segment1, '-', ' ') as title,
           'chevrons-down' as icon,
-          '/infra/policy/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
+          '/info/policy/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
       FROM
           policy_list
       WHERE
@@ -103,7 +84,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 3,
   })
-  "infra/policy/policy_inner_list.sql"() {
+  "info/policy/policy_inner_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -112,7 +93,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/infra/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $parentfolder::TEXT AND segment1= $segment::TEXT;
       `;
   }
@@ -122,7 +103,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 4,
   })
-  "infra/policy/policy_detail.sql"() {
+  "info/policy/policy_detail.sql"() {
     return this.SQL`
 
     select 'card' as component,
@@ -137,22 +118,20 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
-
-if (import.meta.main) {
-  const SQL = await spn.TypicalSqlPageNotebook.SQL(
+export async function policySQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
     new class extends spn.TypicalSqlPageNotebook {
-      async statelessIpSQL() {
+      async statelessPolicySQL() {
         // read the file from either local or remote (depending on location of this file)
         return await spn.TypicalSqlPageNotebook.fetchText(
           import.meta.resolve("./stateless-ip.surveilr.sql"),
         );
       }
 
-      async orchestrateStatefulIcSQL() {
+      async orchestrateStatefulPolicySQL() {
         // read the file from either local or remote (depending on location of this file)
-        // optional, for better performance:
-        // return await TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./orchestrate-stateful-ip.surveilr.sql"),
+        // return await spn.TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
         // );
       }
     }(),
@@ -162,5 +141,9 @@ if (import.meta.main) {
     new orch.OrchestrationSqlPages(),
     new ipSqlPages(),
   );
-  console.log(SQL.join("\n"));
+}
+
+// this will be used by any callers who want to serve it as a CLI with SDTOUT
+if (import.meta.main) {
+  console.log((await policySQL()).join("\n"));
 }
