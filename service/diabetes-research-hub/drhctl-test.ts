@@ -102,7 +102,7 @@ function executeSqlCommands(sqlCommands: string) {
   const db = new DB(dbFilePath);
   db.execute(sqlCommands); // Execute the SQL commands
   db.close();
-  console.log(colors.green("SQL commands executed successfully."));
+  console.log(colors.green("UX Load commands executed successfully."));
  } catch (error) {
   console.error(colors.red("Error executing SQL commands:"), error.message);
   Deno.exit(1);
@@ -127,7 +127,7 @@ const dbFilePath = "./resource-surveillance.sqlite.db";
 const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
  deidentificationSQL;
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
-const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
+//const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
 let deidentificationSQL: string;
 let vvSQL: string;
@@ -141,9 +141,10 @@ try {
  vvSQL = await fetchSqlContent(
   `${RSC_BASE_URL}/verfication-validation/orchestrate-drh-vv.sql`,
  );
- uxSQL = await fetchSqlContent(
+ /*uxSQL = await fetchSqlContent(
   `${RSC_BASE_URL}/ux.auto.sql`,
- );
+ );*/
+ uxSQL = await fetchUxSqlContent(); // Fetch UX SQL content
 } catch (error) {
  console.error(
   colors.red(
@@ -162,14 +163,14 @@ console.log(colors.cyan(`Starting the process for folder: ${folderName}`));
 
 try {
  console.log(colors.dim(`Ingesting files from folder: ${folderName}...`));
- await executeCommand([toolCmd, "ingest", "files", "-r", `${folderName}/`]);
+ await executeCommand(["surveilr", "ingest", "files", "-r", `${folderName}/`]);
 } catch (error) {
  console.error(colors.red("Error ingesting files:"), error.message);
  Deno.exit(1);
 }
 
 try {
- await executeCommand([toolCmd, "orchestrate", "transform-csv"]);
+ await executeCommand(["surveilr", "orchestrate", "transform-csv"]);
  console.log(
   colors.green("Files ingestion and CSV transformation successful."),
  );
@@ -210,7 +211,7 @@ try {
 
 try {
  console.log(colors.dim(`Performing UX orchestration: ${folderName}...`));
- await executeCommand([toolCmd, "orchestrate", "-n", "v&v"], uxSQLSupplier);
+ executeSqlCommands(uxSQL); // Execute UX SQL commands
  console.log(colors.green("UX orchestration completed successfully."));
 } catch (error) {
  console.error(colors.red("Error during UX orchestration:"), error.message);
@@ -221,7 +222,7 @@ try {
  console.log(
   colors.green(`Loading DRH Edge UI... at http://localhost:9000/drh/index.sql`),
  );
- await executeCommand([toolCmd, "web-ui", "--port", "9000"]);
+ await executeCommand(["surveilr", "web-ui", "--port", "9000"]);
 } catch (error) {
  console.error(colors.red("Error starting DRH Edge UI:"), error.message);
  Deno.exit(1);
