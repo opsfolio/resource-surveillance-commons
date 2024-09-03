@@ -129,15 +129,6 @@ const deidentificationSQLSupplier: FlexibleTextSupplierSync = () =>
 const vvSQLSupplier: FlexibleTextSupplierSync = () => vvSQL;
 const uxSQLSupplier: FlexibleTextSupplierSync = () => uxSQL;
 
-// let uxSQL: string;
-
-// try {
-//  const uxSQLContent = await drhux.drhSQL();
-//  uxSQL = uxSQLContent.join("\n");
-// } catch (error) {
-//  console.error(colors.red("Error fetching UX SQL content:"), error.message);
-//  Deno.exit(1);
-// }
 
 let deidentificationSQL: string;
 let vvSQL: string;
