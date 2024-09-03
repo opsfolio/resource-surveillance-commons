@@ -141,14 +141,7 @@ SELECT
 FROM 
     temp_SchemaValidationMissingColumns svc
 JOIN 
-    temp_session_info tsi ON 1=1
-WHERE NOT EXISTS (
-    SELECT 1 FROM orchestration_session_issue osi
-    WHERE osi.session_id = tsi.orchestration_session_id
-    AND osi.issue_type = svc.heading
-    AND osi.issue_message = svc.status
-    AND osi.issue_column = svc.column_name
-);
+    temp_session_info tsi ON 1=1;
 
 
 
