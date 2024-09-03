@@ -65,3 +65,21 @@ Deno.test("initialize empty rssd", async (t) => {
     await Deno.remove(emptyRssdPath).catch(() => false);
   });
 });
+
+Deno.test("merge RSSDs", async () => {
+  const mergeResult = await $`surveilr admin merge`;
+  assertEquals(
+    mergeResult.code,
+    0,
+    `❌ Error: Failed to merge RSSDs`,
+  );
+
+  const aggregatedRssdPath = path.join(
+    E2E_TEST_DIR,
+    "resource-surveillance-aggregated.sqlite.db",
+  );
+  assertExists(
+    await Deno.stat(aggregatedRssdPath).catch(() => null),
+    `❌ Error: RSSD: ${aggregatedRssdPath} was not created`,
+  );
+});
