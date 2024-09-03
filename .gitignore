@@ -5,6 +5,7 @@ surveilr.exe
 # when testing in this repo, we might have created default RSSDs
 resource-surveillance.sqlite.db
 *e2e*.db
+resource-surveillance-aggregated.sqlite.db
 
 # when testing in this repo, we might have ingest samples / exemplars
 ingest/

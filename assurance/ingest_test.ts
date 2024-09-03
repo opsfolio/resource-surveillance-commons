@@ -8,7 +8,6 @@ import { DB } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 // # TODO: commands
 // # 1. add notebook orchestration: surveilr orchestrate notebooks --cell="%htmlAnchors%" -a "key1=value1" -a "name=starting"
 // # 2. IMAP
-// # 4. add multitenancy tests
 
 const E2E_TEST_DIR = path.join(Deno.cwd(), "assurance");
 const ZIP_URL =

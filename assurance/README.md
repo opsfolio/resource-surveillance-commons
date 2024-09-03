@@ -21,6 +21,13 @@ This script showcases the `surveilr orchestrate` command along with its various 
 
 This test script focuses on all current SQLite-specific functions provided by `surveilr`. It demonstrates how to effectively use these functions within the `surveilr` environment. 
 
+### 3. [Admin](./admin_test.ts)
+
+This test script shows the administrative capabilities of `surveilr`, including, but not limited to:
+- Initializing and empty RSSD
+- Merging multiple RSSDs
+- Getting the current schema of all tables in the `surveilr`.
+
 ## Prerequisites
 
 To run these tests, ensure that you have the following installed on your system:
