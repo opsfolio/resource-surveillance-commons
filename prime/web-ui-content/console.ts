@@ -105,7 +105,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
 
       -- Drop and create the table for storing navigation entries
       -- for testing only: DROP TABLE IF EXISTS sqlpage_aide_navigation;
-      CREATE TABLE sqlpage_aide_navigation (
+      CREATE TABLE IF NOT EXISTS sqlpage_aide_navigation (
           path TEXT NOT NULL, -- the "primary key" within namespace
           caption TEXT NOT NULL, -- for human-friendly general-purpose name
           namespace TEXT NOT NULL, -- if more than one navigation tree is required
