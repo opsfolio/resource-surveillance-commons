@@ -104,7 +104,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
       WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';
 
       -- Drop and create the table for storing navigation entries
-      DROP TABLE IF EXISTS sqlpage_aide_navigation;
+      -- for testing only: DROP TABLE IF EXISTS sqlpage_aide_navigation;
       CREATE TABLE sqlpage_aide_navigation (
           path TEXT NOT NULL, -- the "primary key" within namespace
           caption TEXT NOT NULL, -- for human-friendly general-purpose name
@@ -119,6 +119,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
           -- CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
           CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
       );
+      DELETE FROM sqlpage_aide_navigation WHERE path LIKE '/console/%';
 
       -- all @navigation decorated entries are automatically added to this.navigation
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
