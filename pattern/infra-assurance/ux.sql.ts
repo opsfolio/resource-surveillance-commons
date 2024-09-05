@@ -47,7 +47,7 @@ export class InfraAssuranceSqlPages extends spn.TypicalSqlPageNotebook {
   @iaNav({
     caption: "Infrastructure Assurance",
     description:
-      `The Infra Assurance project focuses on managing and overseeing assets and
+      `The Infra Assurance focuses on managing and overseeing assets and
 portfolios within an organization. This project provides tools and processes to
 ensure the integrity, availability, and effectiveness of assets and portfolios,
 supporting comprehensive assurance and compliance efforts.`,
@@ -58,7 +58,7 @@ supporting comprehensive assurance and compliance efforts.`,
         select
     'card'             as component,
     3                 as columns;
-    select name as title FROM boundery;`;
+    select name as title FROM boundary;`;
   }
 }
 

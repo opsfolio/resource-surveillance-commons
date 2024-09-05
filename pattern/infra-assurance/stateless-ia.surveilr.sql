@@ -24,10 +24,10 @@ CREATE VIEW uniform_resource_summary AS
     FROM
         uniform_resource;
 
-DROP VIEW IF EXISTS boundery;
-CREATE VIEW boundery AS
+DROP VIEW IF EXISTS boundary;
+CREATE VIEW boundary AS
    SELECT 
-    json_extract(inner.value, '$.b:DisplayName') AS displayName,
+    json_extract(outer.value, '$.a:Value.Properties.a:anyType[0].b:DisplayName') AS displayName,
     json_extract(inner.value, '$.b:Value.#text') AS name,
     json_extract(outer.value, '$.a:Value.@i:type') as type
 FROM 
