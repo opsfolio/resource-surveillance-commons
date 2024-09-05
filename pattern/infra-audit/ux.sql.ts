@@ -46,7 +46,12 @@ export class InfraAuditSqlPages extends spn.TypicalSqlPageNotebook {
 
   @iaNav({
     caption: "Infrastructure Audits",
-    description: "Infrastructure Audits",
+    description:
+      `The Infra Audit is designed to manage and streamline audits across
+various frameworks, including HIPAA, HITRUST, AICPA, and others. This project
+provides a comprehensive platform for conducting, tracking, and reporting on
+compliance audits, ensuring that your organization meets the necessary
+regulatory requirements.`,
     siblingOrder: 2,
   })
   "opsfolio/infra/audit/index.sql"() {
@@ -89,7 +94,7 @@ export class InfraAuditSqlPages extends spn.TypicalSqlPageNotebook {
            TRUE AS search,
            'Session' AS markdown;
 
-    SELECT '[' || title || '](/infra/audit/session_detail.sql?id=' || audit_type_id  || '&sessionid=' || audit_session_id || ')' AS "Session",
+    SELECT '[' || title || '](/opsfolio/infra/audit/session_detail.sql?id=' || audit_type_id  || '&sessionid=' || audit_session_id || ')' AS "Session",
            audit_type AS "Audit Type",
            due_date AS "Due Date",
            tenant_name AS "Tenant"
@@ -111,7 +116,7 @@ export class InfraAuditSqlPages extends spn.TypicalSqlPageNotebook {
     select 'table' as component,
     'Control code' AS markdown;
     SELECT
-    '[' || control_code || '](/infra/audit/control_detail.sql?id=' || control_id || ')' AS "Control code",
+    '[' || control_code || '](/opsfolio/infra/audit/control_detail.sql?id=' || control_id || ')' AS "Control code",
     common_criteria as "Common criteria",
     question as "Question"
       FROM control WHERE CAST(audit_type_id AS TEXT)=CAST($id AS TEXT);
@@ -125,10 +130,17 @@ export class InfraAuditSqlPages extends spn.TypicalSqlPageNotebook {
   })
   "opsfolio/infra/audit/control_detail.sql"() {
     return this.SQL`
-    SELECT 'card' as component
-    SELECT question  as title, common_criteria
-      FROM control WHERE CAST(control_id AS TEXT)=CAST($id AS TEXT);
-    `;
+    SELECT
+      'title' AS component
+      select 'table' as component
+      SELECT
+      fii AS "FII",
+      question AS "Question",
+      common_criteria as "Common criteria",
+      expected_evidence as "Evidence",
+      control_regime as "Control Regime"
+        FROM control WHERE CAST(control_id AS TEXT)=CAST($id AS TEXT);
+      `;
   }
 }
 
@@ -154,27 +166,6 @@ export async function auditSQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new InfraAuditSqlPages(),
-  );
-}
-
-export async function opsfolioAuditSQL() {
-  return await spn.TypicalSqlPageNotebook.SQL(
-    new class extends spn.TypicalSqlPageNotebook {
-      async statelessAuditSQL() {
-        // read the file from either local or remote (depending on location of this file)
-        return await spn.TypicalSqlPageNotebook.fetchText(
-          import.meta.resolve("./stateless-ia.surveilr.sql"),
-        );
-      }
-
-      async orchestrateStatefulIaSQL() {
-        // read the file from either local or remote (depending on location of this file)
-        // return await spn.TypicalSqlPageNotebook.fetchText(
-        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
-        // );
-      }
-    }(),
     new InfraAuditSqlPages(),
   );
 }
