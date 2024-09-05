@@ -11,34 +11,50 @@ import {
 function iaNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/infra/audits",
+    parentPath: "/opsfolio",
   });
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class iaSqlPages extends spn.TypicalSqlPageNotebook {
+export class InfraAuditSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
     return this.SQL`
       -- delete all /ip-related entries and recreate them in case routes are changed
-      DELETE FROM sqlpage_aide_navigation WHERE path like '/ia%';
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/opsfolio/infra/audit%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
     `;
   }
 
   @spn.navigationPrimeTopLevel({
+    caption: "Opsfolio",
+    description: "Opsfolio",
+  })
+  "opsfolio/index.sql"() {
+    return this.SQL`
+    select
+     'card'             as component,
+     3                 as columns;
+      SELECT caption as title, COALESCE(url, path) as link, description
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/opsfolio' AND sibling_order = 2
+       ORDER BY sibling_order;`;
+  }
+
+  @iaNav({
     caption: "Infrastructure Audits",
     description: "Infrastructure Audits",
+    siblingOrder: 2,
   })
-  "infra/audit/index.sql"() {
+  "opsfolio/infra/audit/index.sql"() {
     return this.SQL`
     SELECT 'card' as component
     SELECT name  as title,
     'arrow-big-right' as icon,
-    '/infra/audit/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/opsfolio/infra/audit/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     tenant_based_control_regime WHERE tenant_id = '239518031485599747' AND parent_id == ''`;
   }
@@ -46,15 +62,15 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
   @iaNav({
     caption: "Control Regimes",
     description: ``,
-    siblingOrder: 1,
+    siblingOrder: 3,
   })
-  "infra/audit/control_regime.sql"() {
+  "opsfolio/infra/audit/control_regime.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
       SELECT 'card' as component
       SELECT name  as title,
       'arrow-big-right' as icon,
-      '/infra/audit/session_list.sql?id=' ||control_regime_id || '' as link
+      '/opsfolio/infra/audit/session_list.sql?id=' ||control_regime_id || '' as link
       FROM
       tenant_based_control_regime WHERE tenant_id = '239518031485599747' AND parent_id = $id:: Text`;
   }
@@ -64,7 +80,7 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 1,
   })
-  "infra/audit/session_list.sql"() {
+  "opsfolio/infra/audit/session_list.sql"() {
     return this.SQL`
     ${this.activePageTitle()}
 
@@ -87,7 +103,7 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 1,
   })
-  "infra/audit/session_detail.sql"() {
+  "opsfolio/infra/audit/session_detail.sql"() {
     return this.SQL`
     SELECT
     'title' AS component,
@@ -107,7 +123,7 @@ export class iaSqlPages extends spn.TypicalSqlPageNotebook {
     description: ``,
     siblingOrder: 1,
   })
-  "infra/audit/control_detail.sql"() {
+  "opsfolio/infra/audit/control_detail.sql"() {
     return this.SQL`
     SELECT 'card' as component
     SELECT question  as title, common_criteria
@@ -138,7 +154,28 @@ export async function auditSQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new iaSqlPages(),
+    new InfraAuditSqlPages(),
+  );
+}
+
+export async function opsfolioAuditSQL() {
+  return await spn.TypicalSqlPageNotebook.SQL(
+    new class extends spn.TypicalSqlPageNotebook {
+      async statelessAuditSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        return await spn.TypicalSqlPageNotebook.fetchText(
+          import.meta.resolve("./stateless-ia.surveilr.sql"),
+        );
+      }
+
+      async orchestrateStatefulIaSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        // return await spn.TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
+        // );
+      }
+    }(),
+    new InfraAuditSqlPages(),
   );
 }
 

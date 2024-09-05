@@ -11,56 +11,77 @@ import {
 function icNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/info/control",
+    parentPath: "/opsfolio",
   });
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class icSqlPages extends spn.TypicalSqlPageNotebook {
+export class InfoAssuranceControlsSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
     return this.SQL`
       -- delete all /ip-related entries and recreate them in case routes are changed
-      DELETE FROM sqlpage_aide_navigation WHERE path like '/ic%';
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/opsfolio/info/control%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
     `;
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Information Assurance Controls",
-    description: "Information Assurance Controls",
+    caption: "Opsfolio",
+    description: "Opsfolio",
   })
-  "info/control/index.sql"() {
+  "opsfolio/index.sql"() {
     return this.SQL`
+    select
+     'card'             as component,
+     3                 as columns;
+      SELECT caption as title, COALESCE(url, path) as link, description
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/opsfolio' AND sibling_order = 2
+       ORDER BY sibling_order;`;
+  }
+
+  @icNav({
+    caption: "Information Assurance Controls",
+    description:
+      `The Infra Controls project is designed to manage and implement controls specific
+to various audit requirements, such as CC1001, CC1002, and others. This project
+provides a platform for defining, applying, and tracking the effectiveness of
+these controls, ensuring that your organization meets the necessary standards
+for audit compliance.`,
+    siblingOrder: 2,
+  })
+  "opsfolio/info/control/control_dashboard.sql"() {
+    return this.SQL`
+      ${this.activePageTitle()}
     SELECT
     'card'             as component
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/opsfolio/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
-    control_regimes;`;
+    control_regimes;
+  `;
   }
 
   @icNav({
     caption: "Control Regimes",
     description: ``,
-    siblingOrder: 1,
+    siblingOrder: 3,
   })
-  "info/control/control.sql"() {
+  "opsfolio/info/control/control.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
-      -- SELECT 'table' AS component;
-      -- SELECT * FROM policy_dashboard;
     SELECT
     'card'             as component
    SELECT DISTINCT
     control_regime  as title,
     'arrow-big-right'       as icon,
-    '/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
+    '/opsfolio/info/control/control_regime.sql?id=' ||control_regime_id || '' as link
     FROM
     control_regimes;
   `;
@@ -69,9 +90,9 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
   @icNav({
     caption: "Audit Types",
     description: ``,
-    siblingOrder: 2,
+    siblingOrder: 4,
   })
-  "info/control/control_regime.sql"() {
+  "opsfolio/info/control/control_regime.sql"() {
     return this.SQL`
   SELECT
     'title' AS component,
@@ -79,7 +100,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'card' as component
     SELECT audit_type_name  as title,
       'arrow-big-right'       as icon,
-     '/info/control/controls.sql?id=' ||audit_type_id || '' as link
+     '/opsfolio/info/control/controls.sql?id=' ||audit_type_id || '' as link
       FROM control_regimes WHERE control_regime_id = $id::TEXT;
     `;
   }
@@ -87,9 +108,9 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
   @icNav({
     caption: "Control List",
     description: ``,
-    siblingOrder: 3,
+    siblingOrder: 5,
   })
-  "info/control/controls.sql"() {
+  "opsfolio/info/control/controls.sql"() {
     return this.SQL`
     SELECT
     'title' AS component,
@@ -97,7 +118,7 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
     select 'table' as component,
     'Control code' AS markdown;
     SELECT
-    '[' || control_code || '](/info/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
+    '[' || control_code || '](/opsfolio/info/control/control_detail.sql?id=' || control_id || ')' AS "Control code",
     common_criteria as "Common criteria",
     fii as "Fii Id",
     question as "Question"
@@ -108,9 +129,9 @@ export class icSqlPages extends spn.TypicalSqlPageNotebook {
   @icNav({
     caption: "Control Details",
     description: ``,
-    siblingOrder: 4,
+    siblingOrder: 6,
   })
-  "info/control/control_detail.sql"() {
+  "opsfolio/info/control/control_detail.sql"() {
     return this.SQL`
      select
     'card'             as component,
@@ -196,7 +217,7 @@ export async function controlSQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new icSqlPages(),
+    new InfoAssuranceControlsSqlPages(),
   );
 }
 
