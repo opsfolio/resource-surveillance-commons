@@ -11,46 +11,66 @@ import {
 function ipNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/info/policy",
+    parentPath: "/opsfolio",
   });
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class ipSqlPages extends spn.TypicalSqlPageNotebook {
+export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
     return this.SQL`
       -- delete all /ip-related entries and recreate them in case routes are changed
-      DELETE FROM sqlpage_aide_navigation WHERE path like '/ip%';
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/opsfolio/info/policy%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
     `;
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Information Assurance Policies",
-    description: "Information Assurance Policies",
+    caption: "Opsfolio",
+    description: "Opsfolio",
   })
-  "info/policy/index.sql"() {
+  "opsfolio/index.sql"() {
     return this.SQL`
-        select
-    'card'             as component,
-    3                 as columns;
     select
-    UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
-    'arrow-big-right'       as icon,
-    '/info/policy/policy_list.sql?segment=' || segment || '' as link
-    FROM policy_dashboard;`;
+     'card'             as component,
+     3                 as columns;
+      SELECT caption as title, COALESCE(url, path) as link, description
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/opsfolio' AND sibling_order = 2
+       ORDER BY sibling_order;`;
+  }
+
+  @ipNav({
+    caption: "Information Assurance Policies",
+    description:
+      `The Infra Policies project is designed to display and create views for policies
+specific to tenants within the Opsfolio platform. These policies are ingested
+from Markdown (.md) or Markdown with JSX (.mdx) files, originating from
+Opsfolio, and are stored in the uniform_resource table.`,
+    siblingOrder: 2,
+  })
+  "opsfolio/info/policy/policy_dashboard.sql"() {
+    return this.SQL`
+    select
+     'card'             as component,
+     3                 as columns;
+     select
+     UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
+     'arrow-big-right'       as icon,
+     '/opsfolio/info/policy/policy_list.sql?segment=' || segment || '' as link
+     FROM policy_dashboard;`;
   }
 
   @ipNav({
     caption: "Policy List",
     description: ``,
-    siblingOrder: 2,
+    siblingOrder: 3,
   })
-  "info/policy/policy_list.sql"() {
+  "opsfolio/info/policy/policy_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -59,7 +79,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/opsfolio/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $segment::TEXT AND segment1=""
 
         UNION ALL
@@ -67,7 +87,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
         SELECT
           REPLACE(segment1, '-', ' ') as title,
           'chevrons-down' as icon,
-          '/info/policy/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
+          '/opsfolio/info/policy/policy_inner_list.sql?parentfolder=' || parentfolder || '&segment=' || segment1  as link
       FROM
           policy_list
       WHERE
@@ -82,9 +102,9 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Policy Inner List",
     description: ``,
-    siblingOrder: 3,
+    siblingOrder: 4,
   })
-  "info/policy/policy_inner_list.sql"() {
+  "opsfolio/info/policy/policy_inner_list.sql"() {
     return this.SQL`
       ${this.activePageTitle()}
         select
@@ -93,7 +113,7 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
     select
         title,
         'arrow-big-right'       as icon,
-        '/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
+        '/opsfolio/info/policy/policy_detail.sql?id=' || uniform_resource_id || '' as link
         FROM policy_list WHERE parentfolder = $parentfolder::TEXT AND segment1= $segment::TEXT;
       `;
   }
@@ -101,9 +121,9 @@ export class ipSqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Policy Detail",
     description: ``,
-    siblingOrder: 4,
+    siblingOrder: 5,
   })
-  "info/policy/policy_detail.sql"() {
+  "opsfolio/info/policy/policy_detail.sql"() {
     return this.SQL`
 
     select 'card' as component,
@@ -139,7 +159,7 @@ export async function policySQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new ipSqlPages(),
+    new InfoAssurancePolicySqlPages(),
   );
 }
 

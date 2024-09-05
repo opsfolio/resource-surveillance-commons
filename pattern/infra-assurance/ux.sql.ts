@@ -11,54 +11,54 @@ import {
 function iaNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
   return spn.navigationPrime({
     ...route,
-    parentPath: "/infra/assurance",
+    parentPath: "/opsfolio",
   });
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class iaSqlPages extends spn.TypicalSqlPageNotebook {
+export class InfraAssuranceSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
     return this.SQL`
       -- delete all /ip-related entries and recreate them in case routes are changed
-      DELETE FROM sqlpage_aide_navigation WHERE path like '/ip%';
+      DELETE FROM sqlpage_aide_navigation WHERE path like '/opsfolio/infra/assurance%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
     `;
   }
 
   @spn.navigationPrimeTopLevel({
-    caption: "Infrastructure Assurance",
-    description: "Infrastructure Assurance",
+    caption: "Opsfolio",
+    description: "Opsfolio",
   })
-  "infra/assurance/index.sql"() {
+  "opsfolio/index.sql"() {
+    return this.SQL`
+    select
+     'card'             as component,
+     3                 as columns;
+      SELECT caption as title, COALESCE(url, path) as link, description
+        FROM sqlpage_aide_navigation
+       WHERE namespace = 'prime' AND parent_path = '/opsfolio' AND sibling_order = 2
+       ORDER BY sibling_order;`;
+  }
+
+  @iaNav({
+    caption: "Infrastructure Assurance",
+    description:
+      `The Infra Assurance project focuses on managing and overseeing assets and
+portfolios within an organization. This project provides tools and processes to
+ensure the integrity, availability, and effectiveness of assets and portfolios,
+supporting comprehensive assurance and compliance efforts.`,
+    siblingOrder: 2,
+  })
+  "opsfolio/infra/assurance/index.sql"() {
     return this.SQL`
         select
     'card'             as component,
     3                 as columns;
-    select
-    name as title
-    FROM boundery;`;
-  }
-
-  @iaNav({
-    caption: "Bounderies",
-    description: ``,
-    siblingOrder: 1,
-  })
-  "infra/assurance/boundery.sql"() {
-    return this.SQL`
-      ${this.activePageTitle()}
-    SELECT
-    'card'             as component
-   SELECT
-    name as title,
-    'arrow-big-right'       as icon
-    FROM
-    boundery;
-`;
+    select name as title FROM boundery;`;
   }
 }
 
@@ -84,7 +84,7 @@ export async function assuranceSQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new iaSqlPages(),
+    new InfraAssuranceSqlPages(),
   );
 }
 
