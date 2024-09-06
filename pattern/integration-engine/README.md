@@ -1,8 +1,8 @@
-# Integration Engine (IE) for Secure Electronic Data Exchange
+# Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Data Preparation 
 
 ### Table of Contents
 
-- [Introduction to the Integration Engine (IE)](#introduction-to-the-integration-engine-ie)
+- [Introduction to Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-integration-engine-ie)
 - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
 - [Integration Engine (IE) features and use cases](#integration-engine-ie-features-and-use-cases)
 - [Features and Capabilities](#features-and-capabilities)
@@ -26,50 +26,42 @@
   - [Integration with Third-Party Databases and Webhooks](#integration-with-third-party-databases-and-webhooks)
 - [Resource surveillance (surveilr)](#resource-surveillance-surveilr)
 
-## Introduction to the Integration Engine (IE)
+## Introduction to the Resource Surveillance Integration Engine (RSIE)
 
-The **Integration Engine (IE)** module handles message exchanges between the
-systems it operates on and third-party systems. It plays a crucial role in
-facilitating seamless electronic data exchange between the **IE** module and
-healthcare practices, ensuring that critical information is transferred
-efficiently to support clinical and administrative operations. Its primary goal
-is to enable the smooth transfer of **clinical operations data**, **patient
-data**,**pharmacy** and **billing information**, thus improving operational
-efficiency and enhancing the overall quality of service delivery.
+The **Resource Surveillance Integration Engine (RSIE)** is a stateful data
+preparation and integration platform for multiple systems that need to integrate
+and  operate on common data in a local-first, edge-based manner.
 
-These data exchanges ensure that both the **IE** module and the practice can
-operate more efficiently while maintaining high data accuracy. Furthermore, the
-**patient charge data** is integrated to support billing, allowing practices to
-manage reimbursements effectively through their existing systems.
+- Stateful means that the RSIE is not just passing data between multiple sytems
+  but allows storing the data in an opinionated universal schema with full SQL
+  querying support.
+- Local-first means that content should be prepared and processed locally
+  _before_ going to a cloud or central server.
+- Edge-based means that data should be handled as close to where the data is
+  collected rather than everything being done centrally.
 
-The **IE** module supports a variety of technologies to ensure smooth
-communication and data transfer. It enables file placement in designated
-ingestions folders using technologies like **WebDAV**, **SFTP**, and **virtual
-printers**. It works with various message formats including **HL7**, **FHIR**,
+A typical use for RSIE's stateful, local-first, edge-based is for complex
+medical data integration tasks. While RSIE can help with almost any integration
+tasks, RSIE is particularly useful to help integrate **clinical operations 
+data**, **patient data**, **pharmacy** and **billing information** to and from
+multiple systems.
+
+RSIE supports a variety of technologies to ensure smooth communication and data
+transfer. It provides opinionated architecture and design guidance for file placement
+in designated ingestions folders using technologies like **WebDAV**, **SFTP**, and 
+**virtual printers**. It works with various message formats including **HL7**, **FHIR**,
 **JSON**, and **XML**, while also supporting file types such as **CSV**,
 **Excel**, and custom formats. The module can connect directly to customer
 systems via **SQL** for database-level exchanges, and it integrates with webhook
 APIs to trigger actions based on data retrieved from third-party databases.
 
-In addition to simplifying data exchange processes, the **IE** module ensures
-**HIPAA-compliant security** for sensitive patient data, using point-to-point
-encryption methods. This robust encryption system guarantees that only the
-practice and the **IE** module can decrypt and view the exchanged data. Designed
-for efficiency and low maintenance, the **IE** module leverages reliable,
-well-understood technologies to meet industry standards and provide secure,
-high-quality data exchange that enhances the effectiveness of healthcare service
-delivery.
+In addition to simplifying data exchange processes, RSIE's local-first, stateful, 
+edge-based architecture helps reduce sensitive data exposure (HIPAA-compliance)
+by allowing data to be anonymized or deidentified before going to central servers.
 
-The Integration Engine operates through a small, yet powerful and easy manageable application that resides on any PC or server in the cloud with highly secure environment. Its primary role is to collect data from the host systems ( the
-system where the ), and securely transmit designated third-party systems, it also collect/process data from the third party system and transfer the same to the practice’s systems in a secure way. This process is fundamental to ensuring
+The Integration Engine operates through a small, yet powerful and easy manageable application that resides on any device like a phone, workstations and laptop PCs, or servers in the cloud with highly secure environment. Its primary role is to collect data from the host systems (the
+system where the data originates), and securely transmit designated third-party systems, it also collect/process data from the third party system and transfer the same to the source systems in a secure way. This process is fundamental to ensuring
 that sensitive healthcare data is shared safely and efficiently across different platforms.
-
-The **IE** module automates key aspects of data exchange, eliminating the need for double entry, reducing the risk of inaccuracies, and simplifying the various clinical process for healthcare providers. It supports the exchange of three key types of data with practice systems:
-
-1. **Clinical Operations**: Facilitates lead identification and scheduling, care coordination, and other operational tasks to ensure smooth delivery of services.
-2. **Clinical Patient Data**: Facilitating the exchange of patient vitals, treatment plans, progress notes, and other clinical information.
-3. **Patient Billing Information**: Integrating billing codes, insurance details, and payment records to streamline the financial aspects of patient care.
-
 
 ## Electronic Data Exchange Overview
 
