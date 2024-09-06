@@ -199,19 +199,19 @@ systems communicate securely via protocols like **REST API**, **HL7**, and **FHI
 
 ```mermaid
   graph TB
-    subgraph HostSystem["Host Application Platform on Prem or Cloud Hosted"]
-        CHFHIR[IE Message or File Processor]
+    subgraph HostSystem[Host Application]
+        CHFHIR[Message or File Processor]
         CHA[REST API/Webhooks]
-        CHFS[Ingestion Files Polling Service, Sync]
+        CHFS[Polling Service, Sync]
         CHFHIRS[(Message Hub or Store)]
-        
+     
         CHFHIR --> CHFHIRS
         CHA --> CHFHIR
         CHFS --> CHA
     end
 
     MobileApp[Host System Mobile App]
-    DesktopApp[Host System Desktop App or EHR User]
+    DesktopApp[Desktop App or EHR User]
 
     MobileApp --> CHA
     DesktopApp --> CHA
@@ -225,9 +225,9 @@ systems communicate securely via protocols like **REST API**, **HL7**, and **FHI
         WSCT[EHR or Third-Party Systems]
     end
 
-    subgraph IEAppliance["IE Appliance in the Client Trusted Boundary"]
+    subgraph IEAppliance[IE-Client Trusted Boundary]
         MsgSyncSrv[File Polling service or Sync]
-        IEMsgProcessInterface[IE Message Process Interface]
+        IEMsgProcessInterface[Message Process Interface]
         IngestionCenter[Ingestion Center]
         VirtualPrinter[Virtual Printer]
         MirthConnect[Mirth Connect Mirth+HL7]
@@ -243,7 +243,6 @@ systems communicate securely via protocols like **REST API**, **HL7**, and **FHI
 
     OnPremEHRUser1[EHR User1]
     OnPremEHRUser2[EHR User2]
-
     CHFHIR --> FIREWALL1
     FIREWALL1 --> INTERNET
     INTERNET --> FIREWALL2
@@ -252,14 +251,13 @@ systems communicate securely via protocols like **REST API**, **HL7**, and **FHI
     OnPremEHRUser1 --> OnPremEHR
     OnPremEHRUser2 --> OnPremEHR
 
-    style HostSystem fill:#f0f0f0,stroke:#333,stroke-width:2px
     style IEAppliance fill:#f0f0f0,stroke:#333,stroke-width:2px
     style CloudEHR fill:#f0f0f0,stroke:#333,stroke-width:2px
     style INTERNET fill:#66b3ff,stroke:#333,stroke-width:2px
     style FIREWALL1 fill:#ff6666,stroke:#333,stroke-width:2px
     style FIREWALL2 fill:#ff6666,stroke:#333,stroke-width:2px
-    style CHFHIR fill:#FFA500,stroke:#333,stroke-width:2px
     style MsgSyncSrv fill:#FFA500,stroke:#333,stroke-width:2px
+    style CHFS fill:#FFA500,stroke:#333,stroke-width:2px
 ```
 
 ### Components Breakdown
