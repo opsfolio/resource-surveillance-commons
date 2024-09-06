@@ -1,4 +1,4 @@
-# Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Data Preparation 
+# Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation 
 
 ### Table of Contents
 
