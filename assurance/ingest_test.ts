@@ -34,6 +34,16 @@ export async function countFilesInDirectory(
   return fileCount;
 }
 
+async function countCSVRows(filePath: string): Promise<number> {
+  const csvContent = await Deno.readTextFile(filePath);
+  const rows = csvContent.split("\n");
+  const nonEmptyRows = rows.filter((row) => row.trim() !== "");
+  // removes the column definition
+  return nonEmptyRows.length - 1;
+}
+
+let initialIngestFileCount = 0;
+
 Deno.test("file ingestion", async (t) => {
   await t.step({
     name: "",
@@ -120,6 +130,7 @@ Deno.test("file ingestion", async (t) => {
     ) + (await countFilesInDirectory(TEST_FIXTURES_DIR));
 
     const files = Number(result[0][0]);
+    initialIngestFileCount = files;
     assert(filesInDir > files);
   });
 
@@ -216,17 +227,103 @@ Deno.test("multitenancy file ingestion", async (t) => {
       [tenantId],
     );
     const party_type_id = result[0][0];
-    const party_name = result[0][0];
+    const party_name = result[0][1];
     assertEquals(
       party_type_id,
       organizationPartyTypeId,
-      `❌ Error: partye details don't match in ${multitenancyRssdPath}`,
+      `❌ Error: party details don't match in ${multitenancyRssdPath}`,
     );
     assertEquals(
       party_name,
       tenantName,
       `❌ Error: party details don't match in ${multitenancyRssdPath}`,
     );
+  });
+
+  db.close();
+});
+
+
+Deno.test("csv auto transformation", async (t) => {
+  const csvAutoTeansformationRssd = path.join(
+    E2E_TEST_DIR,
+    "csv-autotransformation.e2e .sqlite.db",
+  );
+
+  await t.step("ingest file syncing", async () => {
+    const ingestResult =
+      await $`surveilr ingest files -d ${csvAutoTeansformationRssd} -r ${TEST_FIXTURES_DIR} --csv-transform-auto`;
+    assertEquals(
+      ingestResult.code,
+      0,
+      `❌ Error: Failed to ingest data in ${csvAutoTeansformationRssd}`,
+    );
+  });
+
+  const db = new DB(csvAutoTeansformationRssd);
+
+  await t.step("confirm duplicate uniform resources", () => {
+    db.execute(`
+      DROP VIEW IF EXISTS file_change_history;
+      CREATE VIEW file_change_history AS
+      SELECT
+          ur.uniform_resource_id,
+          ur.uri,
+          COUNT(DISTINCT isfp.ingest_session_id) AS ingest_session_count,
+          GROUP_CONCAT(DISTINCT isfp.ingest_session_id) AS ingest_sessions,
+          MIN(ing_sess.ingest_started_at) AS first_seen,
+          MAX(ing_sess.ingest_started_at) AS last_seen
+      FROM uniform_resource ur
+      JOIN ur_ingest_session_fs_path_entry isfpe ON ur.uniform_resource_id = isfpe.uniform_resource_id
+      JOIN ur_ingest_session_fs_path isfp ON isfpe.ingest_fs_path_id = isfp.ur_ingest_session_fs_path_id
+      JOIN ur_ingest_session ing_sess ON isfp.ingest_session_id = ing_sess.ur_ingest_session_id
+      GROUP BY ur.uniform_resource_id, ur.uri;
+  `);
+
+    const result = db.query(
+      `SELECT COUNT(*) AS count FROM file_change_history`,
+    );
+    assertEquals(result.length, 1);
+
+    const files = Number(result[0][0]);
+    initialIngestFileCount = files;
+    assertEquals(files, initialIngestFileCount);
+  });
+
+  let initialnumberOfConvertedRecords = 0;
+
+  await t.step("transformed csv tables", async () => {
+    const result = db.query<[number]>(
+      `SELECT COUNT(*) AS count FROM uniform_resource_allergies`,
+    );
+    assertEquals(result.length, 1);
+    const numberOfConvertedRecords = result[0][0];
+    console.log({ numberOfConvertedRecords })
+    initialnumberOfConvertedRecords = numberOfConvertedRecords;
+
+    const csvRows = await countCSVRows(`${TEST_FIXTURES_DIR}/allergies.csv`);
+    assertEquals(numberOfConvertedRecords, csvRows);
+  });
+
+  await t.step("re transform csvs without any change", async () => {
+    const ingestResult =
+      await $`surveilr ingest files -d ${csvAutoTeansformationRssd} -r ${TEST_FIXTURES_DIR} --csv-transform-auto`;
+    assertEquals(
+      ingestResult.code,
+      0,
+      `❌ Error: Failed to ingest data in ${TEST_FIXTURES_DIR}`,
+    );
+  });
+
+  await t.step("retain number of transformed csv records", () => {
+    const result = db.query<[number]>(
+      `SELECT COUNT(*) AS count FROM uniform_resource_allergies`,
+    );
+    assertEquals(result.length, 1);
+    const numberOfConvertedRecords = result[0][0];
+    console.log({ numberOfConvertedRecords })
+
+    assertEquals(numberOfConvertedRecords, initialnumberOfConvertedRecords);
   });
 
   db.close();
