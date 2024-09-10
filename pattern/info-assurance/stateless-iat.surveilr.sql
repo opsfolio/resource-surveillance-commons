@@ -34,40 +34,83 @@ DROP VIEW IF EXISTS web_application;
 
 CREATE VIEW IF NOT EXISTS web_application AS
 SELECT DISTINCT
-    json_extract(value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
+    json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
 FROM 
-    uniform_resource_transform,
-    json_each(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel.Borders."a:KeyValueOfguidanyType"'))
-WHERE  json_extract(value, '$."a:Value"."@i:type"') = 'StencilEllipse'
-    AND json_extract(value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'Web Application';
+   uniform_resource_transform,
+    json_each(
+        CASE 
+            WHEN json_type(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')) = 'array' 
+            THEN json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')
+            ELSE json_array(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel'))
+        END
+    ) AS drawing_surface,
+    json_each(
+        json_extract(drawing_surface.value, '$.Borders."a:KeyValueOfguidanyType"')
+    ) AS border
+WHERE  json_extract(border.value, '$."a:Value"."@i:type"') = 'StencilEllipse'
+    AND json_extract(border.value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'Web Application';
 
 DROP VIEW IF EXISTS managed_application;
 
 CREATE VIEW IF NOT EXISTS managed_application AS
 SELECT DISTINCT
-    json_extract(value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
+    json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
 FROM 
     uniform_resource_transform,
-    json_each(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel.Borders."a:KeyValueOfguidanyType"'))
-WHERE  json_extract(value, '$."a:Value"."@i:type"') = 'StencilEllipse' 
-    AND json_extract(value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'Managed Application';
+    json_each(
+        CASE 
+            WHEN json_type(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')) = 'array' 
+            THEN json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')
+            ELSE json_array(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel'))
+        END
+    ) AS drawing_surface,
+    json_each(
+        json_extract(drawing_surface.value, '$.Borders."a:KeyValueOfguidanyType"')
+    ) AS border
+WHERE  json_extract(border.value, '$."a:Value"."@i:type"') = 'StencilEllipse' 
+    AND json_extract(border.value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'Managed Application';
     
 CREATE VIEW IF NOT EXISTS sql_database AS
 SELECT DISTINCT
-    json_extract(value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
+    json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS Title
 FROM 
-    uniform_resource_transform,
-    json_each(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel.Borders."a:KeyValueOfguidanyType"'))
-WHERE  json_extract(value, '$."a:Value"."@i:type"') = 'StencilParallelLines'
-    AND json_extract(value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'SQL Database';
+ uniform_resource_transform,
+    json_each(
+        CASE 
+            WHEN json_type(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')) = 'array' 
+            THEN json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')
+            ELSE json_array(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel'))
+        END
+    ) AS drawing_surface,
+    json_each(
+        json_extract(drawing_surface.value, '$.Borders."a:KeyValueOfguidanyType"')
+    ) AS border
+WHERE  json_extract(border.value, '$."a:Value"."@i:type"') = 'StencilParallelLines'
+    AND json_extract(border.value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'SQL Database';
 
 CREATE VIEW IF NOT EXISTS boundaries AS
-SELECT 
-    json_extract(value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS boundary
-FROM 
+SELECT DISTINCT
+    json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') AS boundary
+    FROM 
     uniform_resource_transform,
-    json_each(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel.Borders."a:KeyValueOfguidanyType"'))
-WHERE json_extract(value, '$."a:Value"."@i:type"') = 'BorderBoundary'
-    AND (json_extract(value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'Other Browsers Boundaries' 
-         OR json_extract(value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') = 'CorpNet Trust Boundary')
-    AND json_extract(value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') NOT LIKE '%.%.%.%';
+    json_each(
+        CASE 
+            WHEN json_type(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')) = 'array' 
+            THEN json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel')
+            ELSE json_array(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel'))
+        END
+    ) AS drawing_surface,
+    json_each(
+        json_extract(drawing_surface.value, '$.Borders."a:KeyValueOfguidanyType"')
+    ) AS border
+    WHERE 
+    json_extract(border.value, '$."a:Value"."@i:type"') = 'BorderBoundary'
+    AND (
+        json_extract(border.value, '$."a:Value".Properties."a:anyType"[0]."b:DisplayName"') IN (
+            'Other Browsers Boundaries', 
+            'CorpNet Trust Boundary', 
+            'Generic Trust Border Boundary'
+        )
+    )
+    AND json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') NOT LIKE '%.%.%.%'
+    AND json_extract(border.value, '$."a:Value".Properties."a:anyType"[1]."b:Value"."#text"') LIKE '%Boundar%';
