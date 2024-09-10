@@ -48,17 +48,43 @@ export class InfraAssuranceSqlPages extends spn.TypicalSqlPageNotebook {
     caption: "Infrastructure Assurance",
     description:
       `The Infra Assurance focuses on managing and overseeing assets and
-portfolios within an organization. This project provides tools and processes to
-ensure the integrity, availability, and effectiveness of assets and portfolios,
-supporting comprehensive assurance and compliance efforts.`,
+      portfolios within an organization. This project provides tools and processes to
+      ensure the integrity, availability, and effectiveness of assets and portfolios,
+      supporting comprehensive assurance and compliance efforts.`,
     siblingOrder: 2,
   })
   "opsfolio/infra/assurance/index.sql"() {
     return this.SQL`
-        select
+    SELECT
     'card'             as component,
     3                 as columns;
-    select name as title FROM boundary;`;
+    SELECT
+    name AS title,
+    '/opsfolio/infra/assurance/boundary_list.sql?boundary=' || name || '' as link,
+    'Assets ' || (SELECT count(boundary)  FROM server_data WHERE boundary = border_boundary.name) AS footer_md
+    FROM
+        border_boundary;`;
+  }
+
+  @iaNav({
+    caption: "Boundary List",
+    description: ``,
+    siblingOrder: 3,
+  })
+  "opsfolio/infra/assurance/boundary_list.sql"() {
+    return this.SQL`
+      ${this.activePageTitle()}
+        select
+      'card'             as component,
+      3 as columns;
+    select
+        server              as title,
+        'Assets ' || count(server) AS footer_md
+        FROM asset_service_view WHERE boundary = $boundary::TEXT GROUP BY server;
+
+       SELECT 'table' AS component;
+          SELECT * FROM server_data WHERE boundary=$boundary::TEXT;
+      `;
   }
 }
 
