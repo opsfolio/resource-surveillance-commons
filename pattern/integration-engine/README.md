@@ -1,36 +1,45 @@
-# Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation 
+# Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation
 
 ### Table of Contents
 
-- [Introduction to Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-integration-engine-ie)
-- [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
-- [Integration Engine (IE) features and use cases](#integration-engine-ie-features-and-use-cases)
-- [Features and Capabilities](#features-and-capabilities)
-- [Message Handling](#message-handling)
-- [Technical Summary](#technical-summary)
-  - [Components Breakdown](#components-breakdown)
-    - [1. **Host application platform and its components**](#1-host-application-platform-and-its-components)
-    - [2. **Host Application Platform Sync or Message Polling Server (WebDAV Protocol)**](#2-host-application-platform-sync-or-message-polling-server-webdav-protocol)
-    - [3. **Message Processing module**](#3-message-processing-module)
-    - [4. **Firebase**](#4-firebase)
-    - [5. **Internet and Firewalls**](#5-internet-and-firewalls)
-    - [6. **EHR OnPrem and Cloud Hosted**](#6-ehr-onprem-and-cloud-hosted)
-    - [7. **Ingestion Center and Virtual Printer**](#7-ingestion-center-and-virtual-printer)
-    - [8. **Mirth Connect + HL7**](#8-mirth-connect--hl7)
-    - [9. **Samba Server**](#9-samba-server)
-    - [10. **Sequelize ORM**](#10-sequelize-orm)
-    - [11. **EHR, Practice Management, EMR, Billing Systems**](#11-ehr-practice-management-emr-billing-systems)
-- [Various Use Cases and Sequence Diagrams](#various-use-cases-and-sequence-diagrams)
-  - [File Exchange with Third-Party Systems/Network Locations](#file-exchange-with-third-party-systemsnetwork-locations)
-  - [Outbound Message Integration with Third-Party Database](#outbound-message-integration-with-third-party-database)
-  - [Integration with Third-Party Databases and Webhooks](#integration-with-third-party-databases-and-webhooks)
-- [Resource surveillance (surveilr)](#resource-surveillance-surveilr)
+- [Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation](#resource-surveillance-integration-engine-rsie-for-local-first-edge-based-stateful-data-aggregation)
+ 
+  - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
+  - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
+  - [Resource Surveillance Integration Engine (`RSIE`) features and use cases](#resource-surveillance-integration-engine-rsie-features-and-use-cases)
+  - [Resource Surveillance Integration Engine (RSIE) Ingestion/Integration Pipeline](#resource-surveillance-integration-engine-rsie-ingestionintegration-pipeline)
+    - [Real-Time and Offline Processing](#real-time-and-offline-processing)
+    - [Improved Reliability](#improved-reliability)
+    - [Security and Compliance](#security-and-compliance)
+  - [Separation of Content Acquisition and Stateful Ingestion](#separation-of-content-acquisition-and-stateful-ingestion)
+    - [Content Acquisition](#content-acquisition)
+    - [Stateful Ingestion](#stateful-ingestion)
+    - [Data Synchronization and Aggregation](#data-synchronization-and-aggregation)
+  - [Content Acquisition: Flexible Methods](#content-acquisition-flexible-methods)
+  - [Capturable Executables for Enhanced Data Preparation](#capturable-executables-for-enhanced-data-preparation)
+    - [Data Validation and Sanitization](#data-validation-and-sanitization)
+    - [File Naming Pattern for Capturable Executables (CEs)](#file-naming-pattern-for-capturable-executables-ces)
+  - [Stateful Ingestion](#stateful-ingestion-1)
+    - [Key Functions of Stateful Ingestion](#key-functions-of-stateful-ingestion)
+    - [Data Storage](#data-storage)
+    - [Stateful Context Management](#stateful-context-management)
+  - [Web UI for Viewing Ingested Data](#web-ui-for-viewing-ingested-data)
+  - [Data Synchronization and Aggregation](#data-synchronization-and-aggregation-1)
+    - [Key Functions](#key-functions)
+    - [Advanced Analytics and Reporting](#advanced-analytics-and-reporting)
+    - [Integration with Other Systems](#integration-with-other-systems)
+    - [Data Quality and Governance](#data-quality-and-governance)
+  - [Technical Summary](#technical-summary)
+  - [Various Use Cases and Sequence Diagrams](#various-use-cases-and-sequence-diagrams)
+    - [Direct Messaging Service](#direct-messaging-service)
+      - [Overview](#overview)
+  - [Resource surveillance (surveilr)](#resource-surveillance-surveilr)
 
 ## Introduction to the Resource Surveillance Integration Engine (RSIE)
 
 The **Resource Surveillance Integration Engine (RSIE)** is a stateful data
 preparation and integration platform for multiple systems that need to integrate
-and  operate on common data in a local-first, edge-based manner.
+and operate on common data in a local-first, edge-based manner.
 
 - Stateful means that the RSIE is not just passing data between multiple sytems
   but allows storing the data in an opinionated universal schema with full SQL
@@ -42,26 +51,34 @@ and  operate on common data in a local-first, edge-based manner.
 
 A typical use for RSIE's stateful, local-first, edge-based is for complex
 medical data integration tasks. While RSIE can help with almost any integration
-tasks, RSIE is particularly useful to help integrate **clinical operations 
+tasks, RSIE is particularly useful to help integrate **clinical operations
 data**, **patient data**, **pharmacy** and **billing information** to and from
 multiple systems.
 
 RSIE supports a variety of technologies to ensure smooth communication and data
-transfer. It provides opinionated architecture and design guidance for file placement
-in designated ingestions folders using technologies like **WebDAV**, **SFTP**, and 
-**virtual printers**. It works with various message formats including **HL7**, **FHIR**,
-**JSON**, and **XML**, while also supporting file types such as **CSV**,
-**Excel**, and custom formats. The module can connect directly to customer
-systems via **SQL** for database-level exchanges, and it integrates with webhook
-APIs to trigger actions based on data retrieved from third-party databases.
+transfer. It provides opinionated architecture and design guidance for file
+placement in designated ingestions folders using technologies like **WebDAV**,
+**SFTP**, and **virtual printers**. It works with various message formats
+including **HL7**, **FHIR**, **JSON**, and **XML**, while also supporting file
+types such as **CSV**, **Excel**, and custom formats. The module can connect
+directly to customer systems via **SQL** for database-level exchanges, and it
+integrates with webhook APIs to trigger actions based on data retrieved from
+third-party databases.
 
-In addition to simplifying data exchange processes, RSIE's local-first, stateful, 
-edge-based architecture helps reduce sensitive data exposure (HIPAA-compliance)
-by allowing data to be anonymized or deidentified before going to central servers.
+In addition to simplifying data exchange processes, RSIE's local-first,
+stateful, edge-based architecture helps reduce sensitive data exposure
+(HIPAA-compliance) by allowing data to be anonymized or deidentified before
+going to central servers.
 
-The Integration Engine operates through a small, yet powerful and easy manageable application that resides on any device like a phone, workstations and laptop PCs, or servers in the cloud with highly secure environment. Its primary role is to collect data from the host systems (the
-system where the data originates), and securely transmit designated third-party systems, it also collect/process data from the third party system and transfer the same to the source systems in a secure way. This process is fundamental to ensuring
-that sensitive healthcare data is shared safely and efficiently across different platforms.
+The Integration Engine operates through a small, yet powerful and easy
+manageable application that resides on any device like a phone, workstations and
+laptop PCs, or servers in the cloud with highly secure environment. Its primary
+role is to collect data from the host systems (the system where the data
+originates), and securely transmit designated third-party systems, it also
+collect/process data from the third party system and transfer the same to the
+source systems in a secure way. This process is fundamental to ensuring that
+sensitive healthcare data is shared safely and efficiently across different
+platforms.
 
 ## Electronic Data Exchange Overview
 
@@ -80,335 +97,440 @@ standards. The system supports:
    demograhics and billing, progress notes and other information which is
    required to do the various steps/activities in the clinical workflows.
 
-3. **Patient Billing/Pharmacy, refill Information**: Data exchange belongs to
-   this category deals with the exchang of data related to
-   medication/prescription, delivery of medicine and various billing and forms
-   data generated by the practice systems and also those data which is transferred from the third-party EHR systems to streamline the activities involves in the patient care.
+3. **Patient Billing/Pharmacy, refill Information**: Data exchange in this
+   category deals with the exchange of data related to medication/prescription,
+   delivery of medicine, and various billing and forms data generated by
+   practice systems, as well as data transferred from third-party EHR systems to
+   streamline activities involved in patient care.
 
-4. **Data exchange standards for interoperability**: In order to ensure a universal data standard, **Integration Engine** uses the common message standard for the exchange of data whcih include, HL7, FHIR, JSON, XML, CSV,PDF,XLS and direct exachage with the use of Webhooks/APIs between
-   practices systems and third-party systems.
+4. **Data exchange standards for interoperability**: In order to ensure a
+   universal data standard, Integration Engine uses common message standards for
+   data exchange, which include HL7, FHIR, JSON, XML, CSV, PDF, XLS, and direct
+   exchange using Webhooks/APIs between practice systems and third-party
+   systems.
 
-The integration of these data types within practice systems will enhance the efficiency and effectiveness of through an integrated platform,ensuring that patient care is delivered with the highest level of accuracy and security and high level of patient satisfaction benefiting from real-time data exchange that
-supports high-quality patient care.
+The integration of these data types within practice systems will enhance
+efficiency and effectiveness through an integrated platform, ensuring that
+patient care is delivered with the highest level of accuracy, security, and
+patient satisfaction, benefiting from real-time data exchange that supports
+high-quality patient care.
 
-## Integration Engine (IE) features and use cases
+## Resource Surveillance Integration Engine (`RSIE`) features and use cases
 
-The Integration Engine (IE) module handles message exchanges between the systems
-it operates on and third-party systems. The expected features the engine suppors
-are given below,
+The various functional components/layers of the Resource Surveillance
+Integration Engine (RSIE) are given below,
 
-| Features/Uses                         | Details                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ingestion Center                      | Capable of placing files in the ingestion center's Inbound and Outbound folders using technologies such as WebDAV, SFTP, and virtual printer capabilities.                                                                                                                                                  |
-| Message format/standard Support       | The Integration Engine primarily supports message standards like HL7, FHIR, JSON, and XML but can also handle a variety of file types for exchange, such as CSV, Excel, or custom formats. This includes tasks like sending tenant-specific SQL dumps for application-specific data to third-party systems. |
-| Direct SQL access to Customer systems | Supports connecting to customer or client systems' databases via SQL to facilitate information exchange between applications                                                                                                                                                                                |
-| Webhooks                              | Able to invoke various webhook APIs of the application where the Integration Engine is used to transmit data retrieved from the third-party database, enabling further processing within different application modules.                                                                                     |
+| Components/Layers                        | Details                                                                                                                                                                                                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Acquisition of Content (Data)            | Steps involves in the content acquisition i.e preparation of the files/data for ingestion. Technologies such as WebDAV, SFTP, S3, Git and virtual printer capabilities are the part of this layer.                                                                               |
+| Advanced Data Acquisition Layer          | This layer helps users for enhanced data preparation using Capturable Executables(CEs). Wit the support of processing instructions (PI) Capturable Executables(CEs) further helps the user to prepare data with specific message standards like JSON,plain/text etc              |
+| Message format/standard Support          | The Resource Surveillance Integration Engine supports a wide range of message standards like HL7, FHIR, JSON, and XML but can also handle a variety of file types for exchange, such as CSV, Excel, or custom formats.                                                           |
+| Stateful Ingestion                       | Invloves the steps to process the data prepared and store in a opinionated universal schema with full SQL querying support.                                                                                                                                                      |
+| Web UI for Viewing Ingested Data Locally | Resource Surveillance Integration Engine (RSIE) provides a Web UI component that allows users to view ingested data in real time and access data processed offline                                                                                                               |
+| Data Synchronization and Aggregation     | The Data Synchronization and Aggregation phase involves systematically synchronizing and aggregating the ingested and processed data into a central data store. This ensures the data is ready for advanced analytics, reporting, and integration with other supporting systems. |
 
-## Features and Capabilities
+## Resource Surveillance Integration Engine (RSIE) Ingestion/Integration Pipeline
 
-- **Document Exchange:**
+The **Resource Surveillance Integration Engine (RSIE)** is designed to support
+both real-time and offline/batch processing. It ensures flexible and scalable
+data integration across various healthcare systems and other sectors. The
+ingestion/integration processes are divided into several key phases, each
+focused on maximizing performance, security, and reliability for both immediate
+and delayed data processing and querying.
 
-  - Both **inbound** and **outbound** document exchanges are supported, with
-    WebDAV and SFTP protocols. Virtual printer **capability** is optionally
-    supported.
+RSIE’s local-first edge-based architecture allows for distributed, scalable
+processing. It handles both real-time data streams and larger batch processing
+loads without overwhelming the central infrastructure.
 
-- **Third-Party Integration:**
+### Real-Time and Offline Processing
 
-  - The Ingestion Center facilitates two-way document exchange between the
-    application utilizing the Integration Engine and various third-party
-    applications, primarily different EHR (Electronic Health Records) systems.
+- **Real-Time Processing:** The system is capable of processing data as it
+  arrives in real-time.
+- **Offline/Batch Processing:** It also supports offline/batch processing on
+  data.
 
-- **Security and Compliance:**
+### Improved Reliability
 
-  - The Ingestion Center securely exchanges documents and complies with HIPAA
-    regulations.
+RSIE’s ability to store and batch-process data ensures continuous functionality,
+because of its edge-based nature, i.e., it processes data close to its origin.
 
-- **Ease of Setup:**
+### Security and Compliance
 
-  - The Ingestion Center allows for easy setup and file transfer using network
-    mounting with WebDAV or other methods.
+Whether handling real-time data or batch uploads, RSIE maintains strict security
+protocols, anonymizing sensitive information before transmission and ensuring
+compliance with standards like HIPAA.
 
-- **Tenant-Specific Configuration:**
+## Separation of Content Acquisition and Stateful Ingestion
 
-  - Each Ingestion Center is identified with a unique ID, username, and
-    password, ensuring that the centers are tenant-specific and enabling secure
-    file sharing with simple file copy methods, requiring minimal technical
-    knowledge.
+RSIE separates the data acquisition phase from the stateful ingestion process,
+allowing for modular control and optimized handling. This distinction enhances
+both real-time and offline batch processing, enabling the system to continuously
+and efficiently capture, ingest, and store data in a stateful manner.
 
-- **Advanced Integration:**
+### Content Acquisition
 
-  - Advanced features are also supported, such as integration with Mirth-based
-    HL7 platforms or IoT integration platforms.
+Data is collected using several methods, including:
 
-- **Custom Workflows:**
-  - Custom workflows can be developed using workflow engine tools like Node-RED
-    (or other programming platforms) and integrated with the Integration Engine
-    (IE) codebase for extended functionality.
+- **WebDAV**: It enables data acquisition through WebDAV, allowing users to
+  upload files and data directly into designated ingestion locations or folders.
+  This facilitates seamless file transfers from various source systems or data
+  origins.
+- **Virtual Printers**: Allows capturing print jobs (e.g., reports or documents)
+  and storing them in designated ingestion folders for further processing.
+- **API, Direct Uploads and local file systems**: Supports both real-time API
+  data feeds and batch uploads of bulk data from external sources, cloud storage
+  (e.g., Amazon S3, SFTP, Git, IMAP, and Direct Messaging Services).
 
-## Message Handling
+These methods ensure that RSIE can handle both on-demand, real-time data
+integration and batch processing for periodic uploads or delayed data
+preparation and ingestion.
 
-- **Message Transfer Support:**
+### Stateful Ingestion
 
-  - The Ingestion Center supports transferring various types of messages, such
-    as custom JSON or FHIR JSON, which are generated from the application to
-    third-party systems (e.g., on-premises EHRs), through:
-    - Direct message delivery within their network
-    - Processing the message and inserting/updating data in the EHR's database
+Once acquired, data moves to the stateful ingestion layer, where it is
+processed, transformed, enriched, and stored in a universal schema. This layer
+supports both real-time ingestion for immediate analysis and offline processing
+for batch jobs.
 
-- **Message Generation Support:**
+### Data Synchronization and Aggregation
 
-  - It also supports message generation in either custom JSON or FHIR JSON from
-    third-party applications, either by:
-    - Generating custom JSON or FHIR JSON by directly retrieving data from the
-      customer's on-premises database, converting it into the desired JSON
-      format, and sending it to the application platform via the API provided by
-      the application where the Integration Engine is utilized
-    - Sending custom JSON/FHIR JSON generated by the Integration Engine (IE)
-      using data queried from the database, such as patient demographic details,
-      progress notes, relative information, and various document metadata
+After ingestion, RSIE synchronizes and aggregates processed data to a central
+data store. This ensures that both real-time and batch data are available for
+further processing, analysis, and reporting, allowing central systems to perform
+advanced analytics or integrations with other systems.
 
-- **Message Delivery:**
+## Content Acquisition: Flexible Methods
 
-  - The Integration Engine sends messages by querying data from the on-premises
-    database, converting them into custom JSON/FHIR JSON, and delivering them to
-    the application platform through the API.
+RSIE supports multiple content acquisition methods, enabling data collection
+from various sources and modes:
 
-- **No Business Logic:**
+- **WebDAV**: Facilitates seamless file transfers from different source systems.
+- **Virtual Printers**: Captures print jobs for later processing.
+- **API and Direct Uploads**: Handles real-time API data feeds and batch uploads
+  of bulk data from sources like S3 buckets, SFTP, Git, and IMAP.
 
-  - The IE does not perform any business logic other than duplicate message
-    checking to avoid processing messages that have already been handled.
+## Capturable Executables for Enhanced Data Preparation
 
-- **No Ingestion Pipeline Activities:**
-  - The IE does not handle ingestion pipeline activities; it solely manages the
-    exchange of messages and their archival process.
+In typical ingestion pipelines, RSIE ingests files stored in specific locations
+and creates the **Resource Surveillance State Database (RSSD)**. When the source
+of ingestion is processed output from a data source, RSIE leverages **Capturable
+Executables (CEs)** to enhance data preparation. These executables tasks/safe
+scripts that produce the data and in a more special cases do data transformation
+and validation tasks as part of the data preparation pipeline.
+
+### Data Validation and Sanitization
+
+CEs ensure that both real-time/offline data streams and batch files meet
+necessary quality standards. They perform tasks such as:
+
+- **Transformation**: Converts real-time and batch data into standardized
+  formats.
+- **Automation**: Triggers real-time and offline tasks, ensuring efficient data
+  processing.
+
+### File Naming Pattern for Capturable Executables (CEs)
+
+Capturable Executables (CEs) are scripts that can be run with specific arguments
+or behaviors to produce output files, which are then captured and stored in the
+surveillance state database. These scripts are managed through Processing
+Instructions (PIs) embedded in their file names.
+
+The naming pattern for CEs allows for flexible execution and capture of results
+produced by these scripts. This further enable more control to the user to meet
+specific data preparation requirement in the ingestion process.
+
+The file name pattern mainly uses a regular expression, like
+surveilr\[(?P<nature>[^]]*)\] and a few common file name patterns and its
+meaning are given below,
+
+`<filename>.surverilr[json]` – this pattern expect to produce JSON output as the
+result of capturable executable.
+
+`<filename>.surverilr[txt]` – this pattern expect to produce plain text output
+as the result of capturable executable.
+
+`<filename>.surverilr[xyz]` – this pattern is a general notation where `[xyz]`
+is the required output data format. Eg. yml,md, etc.
+
+## Stateful Ingestion
+
+The Stateful Ingestion phase is a pivotal component of the data processing
+pipeline in RSIE. It is responsible for handling data once it has been acquired
+from various sources. In this phase, data is processed, enriched, and stored in
+a standardized format, ensuring that it is ready for both real-time and offline
+analysis. The stateful nature of this layer allows it to maintain the context
+and state of data throughout the ingestion process, supporting seamless and
+efficient data management.
+
+### Key Functions of Stateful Ingestion
+
+- **Data Parsing**: Converts raw data into a structured format that can be
+  easily processed. This may include parsing different data formats such as
+  JSON, XML, CSV) etc.
+- **Validation**: Checks data for correctness and completeness. Invalid or
+  incomplete data is flagged for review or correction.
+- **Transformation**: Applies transformations to standardize data, such as
+  converting units, normalizing values, or mapping fields to a common schema.
+- **Enrichment**: Enhances data by adding supplementary information or context.
+  This might include merging data from multiple sources or applying business
+  rules to add derived fields.
+
+### Data Storage
+
+Processed data is stored in a **universal schema**—a standardized format
+ensuring consistency across datasets. This schema facilitates easy querying,
+analysis, and integration.
+
+### Stateful Context Management
+
+RSIE ensures end-to-end orchestration of the ingestion pipeline, maintaining the
+context of data throughout its lifecycle. Key features include:
+
+- **Session Management**: Tracks data sessions for continuity.
+- **Checkpointing**: Records intermediate states for recovery in case of
+  failures.
+- **State Management**: Maintains the state of data throughout the ingestion
+  process, preserving context and tracking changes. This is crucial for handling
+  updates, managing version history, and ensuring data integrity.
+
+## Web UI for Viewing Ingested Data
+
+RSIE provides a Web UI for users to view ingested data in real-time or access
+processed offline data. Key features include:
+
+- **Data Visualization**: The Web UI module enable easy configurable web
+  components to view the ingested data locally.
+- **Querying Capabilities**: Full SQL querying support enables users to extract
+  and analyze data from both real-time and batch ingestion sources.
+- **Audit and Traceability**: The UI includes tracking features that provide
+  visibility into both real-time and batch data flows, ensuring compliance and
+  security audits are easily conducted.
+
+## Data Synchronization and Aggregation
+
+The **Data Synchronization and Aggregation** phase is the final and critical
+step in the RSIE pipeline. After data has been ingested and processed through
+various stages, this phase ensures that the data is systematically synchronized
+and aggregated into a central data store. This final step consolidates both
+real-time and batch-processed data, making it accessible for advanced analytics,
+reporting, and integration with other supporting systems.
+
+### Key Functions
+
+- **Data Synchronization**: Ensures real-time and batch data are consistently
+  updated in the central repository.
+- **Data Aggregation**: Consolidates data from different sources into a unified
+  structure.
+- **Data Transformation**: Applies transformations to standardize data formats,
+  ensure consistency, and enrich the data (e.g., merging fields, calculating
+  metrics). The data transformation also include anonymizing sensitive
+  information before the transmission.
+
+### Advanced Analytics and Reporting
+
+Consolidated data enables sophisticated analysis and reporting through:
+
+- **Business Intelligence (BI)**: Data visualization tools and dashboards.
+- **Predictive Analytics**: Analyzes historical data to forecast trends.
+- **Custom Reporting**: Generates tailored reports based on user requirements.
+
+### Integration with Other Systems
+
+RSIE facilitates data exchange across different systems through:
+
+- **APIs**: Provides APIs for external systems to access aggregated data.
+- **Data Export**: Exports data in formats like CSV and JSON.
+
+### Data Quality and Governance
+
+RSIE maintains accuracy, consistency, and reliability through:
+
+- **Data Validation**: Ensures data correctness before synchronization.
+- **Audit Trails**: Tracks changes and updates to maintain transparency.
+- **Compliance**: Adheres to data privacy and regulatory standards such as
+  **GDPR** and **HIPAA**.
 
 ## Technical Summary
 
-The following diagram depicts the overall architecture of the integration engine
-(IE) and the data exchange system between **Host Application Platform** and cloud hosted or OnPrem EHRs through an integration engine known as **IE** (Host Application
-Platform Integration Engine). It showcases how data flows between various components like a **mobile app**, **desktop app**, **sync servers**, **Message or File Processor**, and external systems. The primary focus is on how different
-systems communicate securely via protocols like **REST API**, **HL7**, and **FHIR**, using **WebDAV** for file synchronization and **Mirth Connect** for message handling.
+The following diagram depicts the overall architecture of the Resource
+Surveillance Integration Engine (RSIE) in the data acquisition, ingestion,
+transformation, visualization, aggregation, and synchronization pipeline.
 
 ```mermaid
-  graph TB
-    subgraph HostSystem[Host Application]
-        CHFHIR[Message or File Processor]
-        CHA[REST API/Webhooks]
-        CHFS[Polling Service, Sync]
-        CHFHIRS[(Message Hub or Store)]
-     
-        CHFHIR --> CHFHIRS
-        CHA --> CHFHIR
-        CHFS --> CHA
+  graph TD
+    %% Data Acquisition Process
+    subgraph Data Acquisition Process
+        direction LR
+        %% External Sources
+        subgraph External Sources
+            WebDAV[WebDAV]
+            VirtualPrinter[Virtual Printer]
+            APIDirect[API / Direct Upload]
+            ExtData[External Data Sources]
+        end
+
+        %% Capturable Executables (CEs)
+        subgraph CEs [Capturable Executables]
+            DataTransform[Cleaning Pre-Validation]
+            DataProcessing[Process & Generate Data]
+        end
     end
 
-    MobileApp[Host System Mobile App]
-    DesktopApp[Desktop App or EHR User]
-
-    MobileApp --> CHA
-    DesktopApp --> CHA
-    DesktopApp --> CHFS
-
-    FIREWALL1[Firewall]
-    INTERNET((INTERNET))
-    FIREWALL2[Firewall]
-    
-    subgraph CloudEHR[Cloud Hosted EHRs]
-        WSCT[EHR or Third-Party Systems]
-    end
-
-    subgraph IEAppliance[IE-Client Trusted Boundary]
-        MsgSyncSrv[File Polling service or Sync]
-        IEMsgProcessInterface[Message Process Interface]
-        IngestionCenter[Ingestion Center]
-        VirtualPrinter[Virtual Printer]
-        MirthConnect[Mirth Connect Mirth+HL7]
-        ThirdPartyApps[Any 3rd Party Applications]
-        OnPremEHR[OnPrem EHR, eg. CPR+]
+    %% Ingestion Pipeline
+    subgraph Ingestion Pipeline
+        LocalStorage[Ingestion Center]
+        StatefulIngest[Stateful Ingestion]
+        DataEnrich[Enrichment/Transformation]
+        RSSD[(State Schema-RSSD)]
         
-        MsgSyncSrv --> IEMsgProcessInterface
-        IngestionCenter --> VirtualPrinter
-        MirthConnect --> IngestionCenter
-        IEMsgProcessInterface --> OnPremEHR
-        IEMsgProcessInterface --> ThirdPartyApps
     end
 
-    OnPremEHRUser1[EHR User1]
-    OnPremEHRUser2[EHR User2]
-    CHFHIR --> FIREWALL1
-    FIREWALL1 --> INTERNET
-    INTERNET --> FIREWALL2
-    FIREWALL2 --> MsgSyncSrv
-    WSCT <--> INTERNET
-    OnPremEHRUser1 --> OnPremEHR
-    OnPremEHRUser2 --> OnPremEHR
+    %% Synchronization & Aggregation
+    subgraph Data Sync & Aggregation
+        DataSync[Data Synchronization]
+        DataAgg[Data Aggregation]
+        CentralDataStore[(Central Data Store)]
+    end
 
-    style IEAppliance fill:#f0f0f0,stroke:#333,stroke-width:2px
-    style CloudEHR fill:#f0f0f0,stroke:#333,stroke-width:2px
-    style INTERNET fill:#66b3ff,stroke:#333,stroke-width:2px
-    style FIREWALL1 fill:#ff6666,stroke:#333,stroke-width:2px
-    style FIREWALL2 fill:#ff6666,stroke:#333,stroke-width:2px
-    style MsgSyncSrv fill:#FFA500,stroke:#333,stroke-width:2px
-    style CHFS fill:#FFA500,stroke:#333,stroke-width:2px
+    %% Analytics & Reporting
+    subgraph Analytics & Reporting
+        BIAnalytics[BI & Analytics]
+        AdvReporting[Advanced Reporting]
+        MLModule[Machine Learning Module]
+    end
+
+    %% Web UI
+    subgraph Web_UI [Local Web UI]
+        WebUI[Web UI Interface]
+    end
+
+    %% Users
+    subgraph Users
+        EndUsers[End Users]
+        Admins[Administrators]
+    end
+
+    %% Data Flow
+    %% External Sources to Ingestion Pipeline
+    WebDAV -->|Upload Files| LocalStorage
+    VirtualPrinter -->|Send Print Jobs| LocalStorage
+    APIDirect -->|Real-Time Data| LocalStorage
+    ExtData -->|Bulk Data| LocalStorage
+
+    %% CEs to Ingestion Pipeline
+    DataTransform --> DataProcessing
+    DataProcessing --> LocalStorage
+    
+
+    %% Ingestion Pipeline Processes
+    LocalStorage --> StatefulIngest
+    StatefulIngest --> RSSD
+    StatefulIngest --> DataEnrich
+    DataEnrich --> RSSD
+    RSSD --> DataSync
+
+    %% SQLite Database interaction
+    RSSD --> WebUI
+
+    %% Synchronization & Aggregation
+    DataSync --> DataAgg
+    DataAgg --> CentralDataStore
+
+    %% Analytics & Reporting
+    CentralDataStore --> BIAnalytics
+    CentralDataStore --> AdvReporting
+    WebUI --> CentralDataStore
+    BIAnalytics --> MLModule
+    MLModule --> AdvReporting
+
+    %% Users Interaction
+    EndUsers --> WebUI
+    Admins --> WebUI
+    BIAnalytics --> EndUsers
+    AdvReporting --> EndUsers
+    BIAnalytics --> Admins
+    AdvReporting --> Admins
+
+    %% Additional Connections for Extendibility
+    CentralDataStore --> WebUI
+    DataEnrich --> WebUI
+    StatefulIngest --> DataSync
+
+    %% Styling (Optional for better visualization)
+    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef ingestion fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef syncAgg fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef analytics fill:#fbf,stroke:#333,stroke-width:2px;
+    classDef users fill:#ffb,stroke:#333,stroke-width:2px;
+    classDef db fill:#FFA500,stroke:#333,stroke-width:2px
+    class WebDAV,VirtualPrinter,APIDirect,ExtData external;
+    class RSSD db;
+    class LocalStorage,StatefulIngest,DataTransform,DataProcessing,DataEnrich ingestion;
+    class DataSync,DataAgg,CentralDataStore syncAgg;
+    class BIAnalytics,AdvReporting,WebUI,MLModule analytics;
+    class EndUsers,Admins users;
 ```
-
-### Components Breakdown
-
-#### 1. **Host application platform and its components**
-
-- The **Host Application Platform App** serves as the central platform for exchanging clinical data between mobile, desktop, and external systems.
-- Acts as the main application interface. Ideally the IE module run here to collect the messages to be sent to the thrid-party application and also do any transformation etc.
-- The mobile and desktop apps and core APIs, REST API or Webhooks also depicted  in the diagram.
-- The flows of sending and receving files between the third party application  through the interface of the IE is also included in the host application module.
-
-#### 2. **Host Application Platform Sync or Message Polling Server (WebDAV Protocol)**
-
-- Responsible for reading the files form the ingestion center and call the  message processing module of the IE.
-- It also ensure the successful processing of the message and backup it into archive.
-
-#### 3. **Message Processing module**
-
-- This is the core engine of the IE and it takes the input from the sync and process the message, it also do the message conversion, if needed like convert the JSON into FHIR or FHIR JSON to custom JSON etc.
-- Plays a role in clinical data exchange, ensuring the Host Application Platform system can interface with external applications using standardized healthcare messaging formats.
-
-#### 4. **Firebase**
-
-- This is an optional module that store the messages exchanged as FHIR database for later usage. It act as a backup storage module only.
-
-#### 5. **Internet and Firewalls**
-
-- The message exchange is secure over the internet proper firewall maintains the data security encryption etc. It enable secure the communication, ensuring that only authorized data passes between the systems.
-
-#### 6. **EHR OnPrem and Cloud Hosted**
-
-- The Integration engine can able to process the data either in OnPrem and also support the cloud version where API call are used for the exchange of information thrugh webhook or RESTful API call.
-- Handles **EHR (Electronic Health Records)**, **appointments**, **leads**,
-  **vitals**, **progress notes** and **documents**.
-
-#### 7. **Ingestion Center and Virtual Printer**
-
-- The **Ingestion Center** acts as a repository for the files and data exchanged between systems.
-- The **Virtual Printer** allows the system to generate documents (such as PDF) for printing or further processing. It's an optional module of the IE.
-
-#### 8. **Mirth Connect + HL7**
-
-- **Mirth Connect** is an interface engine used for processing healthcare messages using HL7 protocols.
-- Facilitates communication between systems by transforming, filtering, and routing messages between various interfaces.
-
-#### 9. **Samba Server**
-
-- Allows for shared file access within the client trusted boundary.
-- Provides a mechanism for file exchange between systems within the IE Appliance.
-
-#### 10. **Sequelize ORM**
-
-- An Object Relational Mapping (ORM) tool used to interact with databases.
-- In this context, it facilitates data transfer between EHR systems and the database infrastructure, ensuring that clinical data is correctly stored and retrieved.
-
-#### 11. **EHR, Practice Management, EMR, Billing Systems**
-
-- **EHR (Electronic Health Record)**: Stores patient records such as vitals, appointments, and progress notes.
-- **Practice Management System**: Handles administrative functions like appointment scheduling, billing, and tracking patient information.
-- **EMR (Electronic Medical Record)**: Stores medical records such as clinical notes, treatment history, and lab results.
-- **Billing System**: Manages billing codes and reimbursement data for patient charts.
-- This system ensures secure, standardized, and effective data exchange between  healthcare applications, leveraging various protocols and security mechanisms to maintain integrity and confidentiality.
 
 ## Various Use Cases and Sequence Diagrams
 
-### File Exchange with Third-Party Systems/Network Locations
+### Direct Messaging Service
 
-This use case involves third-party application or practice system users
-processing documents using the host application, particularly for tasks like
-e-signature. An ideal scenario is when documents generated by third-party
-systems are sent to the ingestion center for e-signing within the host
-application. The process begins with the third-party system storing documents,
-such as PDFs, in a shared network location accessible by the integration engine
-(IE). The IE connects to this location, retrieves the documents, and stores them
-in an Inbound Ingestion Center using protocols like WebDAV or SFTP. A host
-application user then processes these documents, typically for e-signing, after
-which the host application pushes the processed files to a tenant-specific
-ingestion center for transfer back to the third-party network. Finally, the IE
-copies the processed files back to the third-party system and backs them up,
-ensuring a secure and streamlined document workflow.
+#### Overview
 
-```mermaid
-sequenceDiagram
-  participant ThirdPartyApp as Third-Party Systems/Network Location
-  participant IE as Integration Engine
-  participant IngestionCenter as Ingestion Center
-  participant HostApplication as Host Application
-  actor User as Host Application User
+Direct messaging service is a secure messaging service that facilitates the
+exchange of protected health information (PHI) in compliance with healthcare
+regulations like HIPAA. It is designed to support healthcare providers,
+organizations, and other stakeholders in securely transmitting health-related
+data, ensuring both privacy and integrity.
 
-  ThirdPartyApp ->> ThirdPartyApp: Store document (e.g., PDF) <br/> in a shared location in the client network
-  Note right of ThirdPartyApp: Documents required for various uses in the host application
-  IE ->> ThirdPartyApp: Connect to the network location, read the documents, <br> and copy them to the Inbound Ingestion Center
-  IE ->> IngestionCenter: Store document via WebDAV/SFTP
-  User ->> HostApplication: User processes the document
-  HostApplication ->> IngestionCenter: Push the processed document into <br> the tenant-specific Ingestion Center to <br> transfer to their network location
-  IE ->> ThirdPartyApp: Copy the files from the tenant Ingestion Center to the third-party network location
-  IE ->> IE: Back up the copied files
-```
-
-### Outbound Message Integration with Third-Party Database
-
-The sequence diagram outlines the flow of data exchange between a third-party
-system (EHR), an integration engine (IE), an ingestion center, and a host
-application, with actions initiated by a user. The process begins with a user
-processing data using the host application. The host application then converts
-the processed data into a structured format like JSON or FHIR. This data is
-pushed as a message file into the tenant-specific Outbound Ingestion Center. The
-integration engine reads the message files, extracts and validates the data
-(e.g., FHIR, JSON), and then inserts or updates the data in the third-party
-system's database. After processing, the IE backs up the files and acknowledges
-the successful receipt and processing of the data to the host application. This
-ensures data integrity and reliable and real time communication between the
-systems.
+Health information is exchanged securely between various Electronic Health
+Records (EHR) systems using email-like messages. These messages include contents
+and attachments. The attachments typically consist of medical or discharge
+summaries. A Continuity of Care Document (CCDA) is also often included as an
+attachment, which contains comprehensive patient information such as medication,
+vitals, allergies, lab tests, prescriptions, and provider notes. This
+illustrates the various steps involved in integration workflows, which include
+data acquisition, ingestion, transformation, visualization, synchronization, and
+application integration.
 
 ```mermaid
 sequenceDiagram
+    participant ReceiverClient as phiMail Receiver Client
+    participant ReceiverModule as phiMail Receiver Module
+    participant phiMailServer as phiMail Server
+    participant InboundFolder as Inbound Folder
+    participant surveilr as surveilr
+    participant ProcessedFolder as Processed Folder
+    participant CronJob as Cron Job
+    participant BackupProcess as Backup Process
+    participant ArchiveFolder as Archive Folder
 
-    participant ThirdPartyApp as Third-Party Systems (EHR)
-    participant IE as Integration Engine
-    participant IngestionCenter as Ingestion Center
-    participant HostApplication as Host Application
-    actor User as Host Application User
+    ReceiverClient->>ReceiverModule: 1. Run the phiMail receiving application at regular intervals
+    ReceiverModule->>phiMailServer: 2. Connect to the phiMail server
+    ReceiverModule->>phiMailServer: 3. Check for unread messages
 
-    User->>HostApplication: User processes data using the Host Application
-    HostApplication->>HostApplication: Convert the processed data into JSON/FHIR format
-    HostApplication->>IngestionCenter: Push the processed data as a message file (JSON/FHIR) into the tenant-specific Outbound Ingestion Center
-    IE->>IE: Read the message files, extract data, and validate (e.g., FHIR, JSON)
-    IE-->>ThirdPartyApp: Insert or update data in the third-party database
-    IE->>IE: Backup the files after processing
-    IE->>HostApplication: Acknowledge receipt and processing of data
-```
+    alt Unread messages exist
+        phiMailServer-->>ReceiverModule: 4. Return content, subject, and attachments
+        ReceiverModule->>InboundFolder: 5. Download and save attachments
+        ReceiverModule->>ReceiverModule: Convert subject and content as JSON
+        ReceiverModule->>phiMailServer: 6. Send acknowledgment to phiMail server
+    end
 
-### Integration with Third-Party Databases and Webhooks
+    ReceiverModule->>phiMailServer: 7. Check for delivery status details
 
-This sequence diagram illustrates the data flow between a third-party system
-(EHR) database, an integration engine (IE), a host application, and a Webhook
-API, with actions driven by a user. The IE begins by polling the customer
-database at regular intervals, executing an SQL query to retrieve relevant data.
-The database returns the query results, which the IE processes and converts into
-JSON or FHIR format. The IE then sends the formatted data to the Webhook API for
-further handling. The host application user utilizes this data from various
-application modules for business operations, ensuring efficient data exchange
-and real-time updates across systems.
+    alt Delivery status details exist
+        phiMailServer-->>ReceiverModule: 8. Return delivery status
+        ReceiverModule->>ReceiverModule: 9. Convert delivery status into JSON message
+        ReceiverModule->>InboundFolder: 10. Store delivery status message in Inbound folder
+    end
 
-```mermaid
-sequenceDiagram
+    surveilr->>InboundFolder: 11. Read files
+    surveilr->>surveilr: 12. Ingest files and create RSSD
+    surveilr->>ProcessedFolder: 13. Move files from Inbound to Processed folder
 
-    participant ThirdPartyAppDB as Third-Party Systems (EHR) Database
-    participant IE as Integration Engine
-    participant HostApplication as Host Application
-    participant WebhookAPI as Webhook API
-    actor User as Host Application User
-
-    IE->>IE: Poll for data from customer database at regular intervals
-    IE->>ThirdPartyAppDB: Execute SQL query
-    ThirdPartyAppDB-->>IE: Return query results
-    IE->>IE: Process and convert data into JSON/FHIR format
-    IE->>WebhookAPI: Send data (JSON/FHIR)
-    User->>HostApplication: Utilize data from various application modules for business operations
+    CronJob->>BackupProcess: 14. Trigger backup job at scheduled intervals
+    BackupProcess->>ProcessedFolder: 15. Read files from the Processed folder
+    BackupProcess->>ArchiveFolder: 16. Move files from Processed to Archive folder
 ```
 
 ## Resource surveillance (surveilr)
