@@ -1148,7 +1148,6 @@ export function serviceModels<EmitContext extends SQLa.SqlEmitContext>() {
           "content_digest", // use something like `-` when hash is no computed
           "uri",
           "size_bytes",
-          "last_modified_at",
         ),
       ];
     },
