@@ -120,6 +120,7 @@ export class ConsoleSqlPages extends spn.TypicalSqlPageNotebook {
           CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
       );
       DELETE FROM sqlpage_aide_navigation WHERE path LIKE '/console/%';
+      DELETE FROM sqlpage_aide_navigation WHERE path LIKE '/%';
 
       -- all @navigation decorated entries are automatically added to this.navigation
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
