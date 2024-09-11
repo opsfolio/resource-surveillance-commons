@@ -18,7 +18,7 @@ function dmsNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
-export class dmsSqlPages extends spn.TypicalSqlPageNotebook {
+export class DirectMessageSqlPages extends spn.TypicalSqlPageNotebook {
   // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
   // or `DDL` as general SQL before doing any upserts into sqlpage_files.
   navigationDML() {
@@ -415,7 +415,7 @@ export async function SQL() {
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
-    new dmsSqlPages(),
+    new DirectMessageSqlPages(),
   );
 }
 
