@@ -70,7 +70,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
               SELECT
                   'Verification Log' AS title,
                   '/drh/verification-validation-log/index.sql' AS link,
-                  'Use this section to review the issues found in the file content and take appropriate corrective actions.' AS description,
+                  'Use this section to review the issues identified in the file content and take appropriate corrective actions.' AS description,
                   'table' AS icon,
                   'red' AS color;
 
