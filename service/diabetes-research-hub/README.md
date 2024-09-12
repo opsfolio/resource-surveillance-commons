@@ -39,13 +39,13 @@ Installation steps may vary depending on your operating system.
 
 ### Step 4 : Execute the commands below
 
-1. Clear the cache by running the following command:
+1. **Clear the cache by running the following command:**
 
    ```bash
    deno cache --reload https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts
    ```
 
-2. After clearing the cache, run the single execution command:
+2. **After clearing the cache, run the single execution command:
 
    ```bash
    deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts 'foldername'
@@ -54,17 +54,34 @@ Installation steps may vary depending on your operating system.
 - Replace `foldername` with the name of your folder containing all CSV files to
   be converted.
 
-**Example:**
+  **Example:**
 
-```bash
-deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
-```
+  ```bash
+  deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
+  ```
 
-- Replace `foldername` with the name of your folder containing all CSV files to
-  be converted.
 
-- After the above command completes execution launch your browser and go to
-  [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
+  - After the above command completes execution launch your browser and go to
+    [http://localhost:9000/drh/index.sql](http://localhost:9000/drh/index.sql).
 
-This method provides a streamlined approach to complete the process and see the
-results quickly.
+  This method provides a streamlined approach to complete the process and see the
+  results quickly.
+
+### Step 5 : Verify the Verification Validation Results in the UI
+
+  - Check the below section in UI and Perform the steps as in the second image
+
+  <p align="center">
+   <img src="../diabetes-research-hub/assets/vv-image.png" alt="vv-image">
+  </p>
+
+  <p align="center"><b>Image 1</b></p>   
+
+
+  <p align="center">
+   <img src="../diabetes-research-hub/assets/vv-step-img.png" alt="vv-steps-image">
+  </p>
+
+  <p align="center"><b>Image 2</b></p>
+
+
