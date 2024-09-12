@@ -22,7 +22,7 @@ jobs:
       run: |
         for file in service/diabetes-research-hub/*.sql.ts; do
           output_file="${file%.sql.ts}.auto.sql"
-          deno run --allow-env "$file" > "$output_file"
+          deno run -A "$file" > "$output_file"
         done
 
     - name: Commit and push changes
