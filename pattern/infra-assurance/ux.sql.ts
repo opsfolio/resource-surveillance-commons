@@ -73,7 +73,10 @@ export class InfraAssuranceSqlPages extends spn.TypicalSqlPageNotebook {
   })
   "opsfolio/infra/assurance/boundary_list.sql"() {
     return this.SQL`
-      ${this.activePageTitle()}
+
+      select
+    'title'              as component,
+    $boundary as contents;
         select
       'card'             as component,
       3 as columns;
@@ -82,9 +85,283 @@ export class InfraAssuranceSqlPages extends spn.TypicalSqlPageNotebook {
         'Assets ' || count(server) AS footer_md
         FROM asset_service_view WHERE boundary = $boundary::TEXT GROUP BY server;
 
-       SELECT 'table' AS component;
-          SELECT * FROM server_data WHERE boundary=$boundary::TEXT;
+      SELECT 'table' AS component,
+        TRUE            as sort,
+        TRUE            as search,
+        TRUE    as hover,
+        TRUE    as striped_rows,
+        'Name' as markdown;
+      SELECT
+        '[' || name || '](/opsfolio/infra/assurance/assurance_detail.sql?name=' || name || ')' AS "Name",
+        server as Server,
+        asset_type as "Asset Type",
+        boundary as Boundary,
+        description as Description,
+        port as Port,
+        experimental_version as "Experimental Version",
+        production_version as "Production Version",
+        latest_vendor_version as "Latest Vendor Version",
+        resource_utilization as "Resource Utilization",
+        log_file as "Log File",
+        vendor_link as "Vendor Link",
+        installation_date as "Installation Date",
+        criticality as Criticality,
+        owner as Owner,
+        asset_criticality as "Asset Criticality",
+        asymmetric_keys as "Asymmetric Keys",
+        cryptographic_key as "Cryptographic Key",
+        symmetric_keys as "Symmetric Keys",
+        status as Status
+      FROM server_data WHERE boundary=$boundary::TEXT;
       `;
+  }
+
+  @iaNav({
+    caption: "Infra Assurance Detail",
+    description: ``,
+    siblingOrder: 4,
+  })
+  "opsfolio/infra/assurance/assurance_detail.sql"() {
+    return this.SQL`
+    select
+    'title'              as component,
+    $name as contents;
+    select
+    'html' as component;
+select
+    '<div style="margin-top:15px;">
+   <div style="width:49%; margin-right:1%; float:left; background:#fff;">
+      <div class="border shadow-sm" style="border-radius:8px;">
+         <div class="p-4">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Name</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || name ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+             <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Server</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || server ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Organization id</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || organization_id ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Asset type</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || asset_type ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Asset service type id</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || asset_service_type_id ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Boundary</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || boundary ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Description</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || description ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Port</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || port ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Experimental version</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || experimental_version ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Production version</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || production_version ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Latest vendor version</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || latest_vendor_version ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+             <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Resource utilization</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || resource_utilization ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+         </div>
+      </div>
+   </div>
+
+  <div style="width:49%; margin-right:1%; float:left; background:#fff;">
+      <div class="border shadow-sm" style="border-radius:8px;">
+         <div class="p-4">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Log file</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || log_file ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+             <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Url</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || url ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Vendor link</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || vendor_link ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Installation date</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || installation_date ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Criticality</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || criticality ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Owner</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || owner ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Tag</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || tag ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Asset criticality</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || asset_criticality ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Asymmetric keys</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || asymmetric_keys ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Cryptographic key</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || cryptographic_key ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+           <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Symmetric keys</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || symmetric_keys ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+
+            <aside>
+               <div style="width:39%; margin-right:1%; float:left;">
+                  <div style="font-weight:600;">Status</div>
+               </div>
+               <div style="width:59%; margin-right:1%; float:left; text-align:right;">' || status ||'</div>
+               <div style="clear:both;"></div>
+            </aside>
+            <hr style="margin-top:10px; margin-bottom:10px;">
+         </div>
+      </div>
+   </div>
+</div>' as html
+FROM
+  server_data WHERE name=$name::TEXT`;
   }
 }
 
