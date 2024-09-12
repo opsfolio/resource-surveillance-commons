@@ -477,8 +477,8 @@ JOIN pragma_index_info(idx.name) pi
 WHERE tbl.type = 'table' AND tbl.name NOT LIKE 'sqlite_%';
 
 -- Drop and create the table for storing navigation entries
-DROP TABLE IF EXISTS sqlpage_aide_navigation;
-CREATE TABLE sqlpage_aide_navigation (
+-- for testing only: DROP TABLE IF EXISTS sqlpage_aide_navigation;
+CREATE TABLE IF NOT EXISTS sqlpage_aide_navigation (
     path TEXT NOT NULL, -- the "primary key" within namespace
     caption TEXT NOT NULL, -- for human-friendly general-purpose name
     namespace TEXT NOT NULL, -- if more than one navigation tree is required
@@ -492,6 +492,8 @@ CREATE TABLE sqlpage_aide_navigation (
     -- CONSTRAINT fk_parent_path FOREIGN KEY (namespace, parent_path) REFERENCES sqlpage_aide_navigation(namespace, path),
     CONSTRAINT unq_ns_path UNIQUE (namespace, parent_path, path)
 );
+DELETE FROM sqlpage_aide_navigation WHERE path LIKE '/console/%';
+DELETE FROM sqlpage_aide_navigation WHERE path LIKE '/';
 
 -- all @navigation decorated entries are automatically added to this.navigation
 INSERT INTO sqlpage_aide_navigation (namespace, parent_path, sibling_order, path, url, caption, abbreviated_caption, title, description)
@@ -776,7 +778,8 @@ VALUES
     ('prime', '/drh', 10, '/drh/cgm-data', '/drh/cgm-data/', 'Raw CGM Data', 'Raw CGM Data', NULL, 'Raw CGM Data'),
     ('prime', '/drh', 11, '/drh/ingestion-log', '/drh/ingestion-log/', 'Study Files', 'Study Files', NULL, 'Study Files'),
     ('prime', '/drh', 12, '/drh/study-participant-dashboard', '/drh/study-participant-dashboard/', 'Study Participant Dashboard', 'Study Participant Dashboard', NULL, 'Study Participant Dashboard'),
-    ('prime', '/drh', 13, '/drh/verification-validation-log', '/drh/verification-validation-log/', 'Verfication And Validation Results', 'Verfication And Validation Results', NULL, 'Verfication And Validation Results')
+    ('prime', '/drh', 13, '/drh/verification-validation-log', '/drh/verification-validation-log/', 'Verfication And Validation Results', 'Verfication And Validation Results', NULL, 'Verfication And Validation Results'),
+    ('prime', '/drh', 19, '/drh/participant-related-data', '/drh/participant-related-data/', 'Participant Information', 'Participant Information', NULL, NULL)
 ON CONFLICT (namespace, parent_path, path)
 DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
@@ -1642,109 +1645,123 @@ WITH RECURSIVE breadcrumbs AS (
 SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
-               SELECT
-       ''card''                      as component,
-       ''Welcome to the Diabetes Research Hub'' as title,
-       1                           as columns;
+              SELECT
+      ''card''                      as component,
+      ''Welcome to the Diabetes Research Hub'' as title,
+      1                           as columns;
 
- SELECT
-       ''About'' as title,
-       ''green''                        as color,
-       ''white''                  as background_color,
-       ''The Diabetes Research Hub (DRH) addresses a growing need for a centralized platform to manage and analyze continuous glucose monitor (CGM) data.Our primary focus is to collect data from studies conducted by various researchers. Initially, we are concentrating on gathering CGM data, with plans to collect additional types of data in the future.'' as description,
-       ''home''                 as icon;
+SELECT
+      ''About'' as title,
+      ''green''                        as color,
+      ''white''                  as background_color,
+      ''The Diabetes Research Hub (DRH) addresses a growing need for a centralized platform to manage and analyze continuous glucose monitor (CGM) data.Our primary focus is to collect data from studies conducted by various researchers. Initially, we are concentrating on gathering CGM data, with plans to collect additional types of data in the future.'' as description,
+      ''home''                 as icon;
 
- SELECT
-       ''card''                  as component,
-       ''Dashboard'' as title,
-       1                     as columns;
-
-       SELECT
-     ''Study Participant Dashboard''  as title,
-     ''/drh/study-participant-dashboard/index.sql'' as link,
-     ''The dashboard presents key study details and participant-specific metrics in a clear, organized table format'' as description,
-     ''table''                as icon,
-     ''red''                    as color;
- ;
-
- SELECT
-       ''card''                  as component,
-       ''Features '' as title,
-       8                     as columns;
+SELECT
+      ''card''                  as component,
+      ''Files Log'' as title,
+      1                     as columns;
 
 
 SELECT
-     ''Study Files Log''  as title,
-     ''/drh/ingestion-log/index.sql'' as link,
-     ''This section provides an overview of the files that have been accepted and converted into database format for research purposes'' as description,
-     ''book''                as icon,
-     ''red''                    as color;
+    ''Study Files Log''  as title,
+    ''/drh/ingestion-log/index.sql'' as link,
+    ''This section provides an overview of the files that have been accepted and converted into database format for research purposes'' as description,
+    ''book''                as icon,
+    ''red''                    as color;
 
- ;
+;
 
- SELECT
-     ''Researcher and Associated Information''  as title,
-     ''/drh/researcher-related-data/index.sql'' as link,
-     ''This section provides detailed information about the individuals , institutions and labs involved in the research study.'' as description,
-     ''book''                as icon,
-     ''red''                    as color;
- ;
+SELECT
+      ''card''                  as component,
+      ''File Verification Results'' as title,
+      1                     as columns;
 
- SELECT
-     ''Study Participant ResearchSite Details''  as title,
-     ''/drh/study-related-data/index.sql'' as link,
-     ''This section provides detailed information about the study , the participants and sites involved in the research study.'' as description,
-     ''book''                as icon,
-     ''red''                    as color;
- ;
-
- SELECT
-     ''Author and Publication Details''  as title,
-     ''/drh/author-pub-data/index.sql'' as link,
-     ''Information about research publications and the authors involved in the studies are also collected, contributing to the broader understanding and dissemination of research findings.'' as description,
-      ''book'' AS icon,
-     ''red''                    as color;
- ;
+SELECT
+    ''Verification Log'' AS title,
+    ''/drh/verification-validation-log/index.sql'' AS link,
+    ''Use this section to review the issues found in the file content and take appropriate corrective actions.'' AS description,
+    ''table'' AS icon,
+    ''red'' AS color;
 
 
 
- SELECT
-     ''CGM Meta Data and Associated information''  as title,
-     ''/drh/cgm-associated-data/index.sql'' as link,
-     ''This section provides detailed information about the CGM device used, the relationship between the participant''''s raw CGM tracing file and related metadata, and other pertinent information.'' as description,
-     ''book''                as icon,
-     ''red''                    as color;
-
- ;
+SELECT
+      ''card''                  as component,
+      ''Features '' as title,
+      8                     as columns;
 
 
- SELECT
-     ''Raw CGM Data Description'' AS title,
-     ''/drh/cgm-data/index.sql'' AS link,
-     ''Explore detailed information about glucose levels over time, including timestamp, and glucose value.'' AS description,
-     ''book''                as icon,
-     ''red''                    as color;
-
-
- SELECT
-     ''PHI De-Identification Results'' AS title,
-     ''/drh/deidentification-log/index.sql'' AS link,
-     ''Explore the results of PHI de-identification and review which columns have been modified.'' AS description,
-     ''book''                as icon,
-     ''red''                    as color;
- ;
+SELECT
+    ''Study Participant Dashboard''  as title,
+    ''/drh/study-participant-dashboard/index.sql'' as link,
+    ''The dashboard presents key study details and participant-specific metrics in a clear, organized table format'' as description,
+    ''table''                as icon,
+    ''red''                    as color;
+;
 
 
 
 
 SELECT
-     ''Verification And Validation Results''  as title,
-     ''/drh/verification-validation-log/index.sql'' as link,
-     '' Verification and Validation results are available here.Click here to review the details.'' as description,
-     ''book''                as icon,
-     ''red''                    as color;
+    ''Researcher and Associated Information''  as title,
+    ''/drh/researcher-related-data/index.sql'' as link,
+    ''This section provides detailed information about the individuals , institutions and labs involved in the research study.'' as description,
+    ''book''                as icon,
+    ''red''                    as color;
+;
 
- ;
+SELECT
+    ''Study ResearchSite Details''  as title,
+    ''/drh/study-related-data/index.sql'' as link,
+    ''This section provides detailed information about the study , and sites involved in the research study.'' as description,
+    ''book''                as icon,
+    ''red''                    as color;
+;
+
+SELECT
+    ''Participant Demographics''  as title,
+    ''/drh/participant-related-data/index.sql'' as link,
+    ''This section provides detailed information about the the participants involved in the research study.'' as description,
+    ''book''                as icon,
+    ''red''                    as color;
+;
+
+SELECT
+    ''Author and Publication Details''  as title,
+    ''/drh/author-pub-data/index.sql'' as link,
+    ''Information about research publications and the authors involved in the studies are also collected, contributing to the broader understanding and dissemination of research findings.'' as description,
+     ''book'' AS icon,
+    ''red''                    as color;
+;
+
+
+
+SELECT
+    ''CGM Meta Data and Associated information''  as title,
+    ''/drh/cgm-associated-data/index.sql'' as link,
+    ''This section provides detailed information about the CGM device used, the relationship between the participant''''s raw CGM tracing file and related metadata, and other pertinent information.'' as description,
+    ''book''                as icon,
+    ''red''                    as color;
+
+;
+
+
+SELECT
+    ''Raw CGM Data Description'' AS title,
+    ''/drh/cgm-data/index.sql'' AS link,
+    ''Explore detailed information about glucose levels over time, including timestamp, and glucose value.'' AS description,
+    ''book''                as icon,
+    ''red''                    as color;
+
+
+SELECT
+    ''PHI De-Identification Results'' AS title,
+    ''/drh/deidentification-log/index.sql'' AS link,
+    ''Explore the results of PHI de-identification and review which columns have been modified.'' AS description,
+    ''book''                as icon,
+    ''red''                    as color;
+;
             ',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
@@ -1856,51 +1873,6 @@ SELECT title, link FROM breadcrumbs ORDER BY level DESC;
    SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
    SELECT * from drh_study_data;
 
-   SELECT
-       ''text'' as component,
-       ''
- ## Participant Information
-
- Participants are individuals who volunteer to take part in CGM research studies. Their data is crucial for evaluating the performance of CGM systems and their impact on diabetes management.
-
- ### Participant Details
-
-   - **Participant ID**: A unique identifier assigned to each participant.
-   - **Study ID**: A unique identifier for the study in which the participant is involved.
-   - **Site ID**: The identifier for the site where the participant is enrolled.
-   - **Diagnosis ICD**: The diagnosis code based on the International Classification of Diseases (ICD) system.
-   - **Med RxNorm**: The medication code based on the RxNorm system.
-   - **Treatment Modality**: The type of treatment or intervention administered to the participant.
-   - **Gender**: The gender of the participant.
-   - **Race Ethnicity**: The race and ethnicity of the participant.
-   - **Age**: The age of the participant.
-   - **BMI**: The Body Mass Index (BMI) of the participant.
-   - **Baseline HbA1c**: The baseline Hemoglobin A1c level of the participant.
-   - **Diabetes Type**: The type of diabetes diagnosed for the participant.
-   - **Study Arm**: The study arm or group to which the participant is assigned.
-
-
-       '' as contents_md;
-
-       SET total_rows = (SELECT COUNT(*) FROM drh_participant_data);
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
-
-     -- Display uniform_resource table with pagination
-     SELECT ''table'' AS component,
-           TRUE AS sort,
-           TRUE AS search;
-     SELECT * FROM drh_participant_data
-      LIMIT $limit
-     OFFSET $offset;
-
-     SELECT ''text'' AS component,
-    (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
-    ''(Page '' || $current_page || '' of '' || $total_pages || ") " ||
-    (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
-    AS contents_md;
 
        SELECT
            ''text'' as component,
@@ -2512,30 +2484,170 @@ WITH RECURSIVE breadcrumbs AS (
 SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
-              SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+              
+    SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/verification-validation-log/index.sql'') as contents;
     ;
 
-SELECT
-  ''text'' as component,
-  ''
-  Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.'' as contents;
+    SELECT
+      ''text'' as component,
+      ''
+      Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.'' as contents;
 
-  SET total_rows = (SELECT COUNT(*) FROM drh_vandv_orch_issues);
+
+
+SELECT
+    ''steps'' AS component,
+    TRUE AS counter,
+    ''green'' AS color;
+
+
+SELECT
+    ''Check the Validation Log'' AS title,
+    ''file'' AS icon,
+    ''#'' AS link,
+    ''If the log is empty, no action is required. Your files are good to go! If the log has entries, follow the steps below to fix any issues.'' AS description;
+
+
+SELECT
+    ''Note the Issues'' AS title,
+    ''note'' AS icon,
+    ''#'' AS link,
+    ''Review the log to see what needs fixing for each file. Note them down to make a note on what needs to be changed in each file.'' AS description;
+
+
+SELECT
+    ''Stop the Edge UI'' AS title,
+    ''square-rounded-x'' AS icon,
+    ''#'' AS link,
+    ''Make sure to stop the UI (press CTRL+C in the terminal).'' AS description;
+
+
+SELECT
+    ''Make Corrections in Files'' AS title,
+    ''edit'' AS icon,
+    ''#'' AS link,
+    ''Edit the files according to the instructions provided in the log. For example, if a file is empty, fill it with the correct data.'' AS description;
+
+
+SELECT
+    ''Copy the modified Files to the folder'' AS title,
+    ''copy'' AS icon,
+    ''#'' AS link,
+    ''Once you’ve made the necessary changes, replace the old files with the updated ones in the folder.'' AS description;
+
+
+SELECT
+    ''Execute the automated script again'' AS title,
+    ''retry'' AS icon,
+    ''#'' AS link,
+    ''Run the command again to perform file conversion.'' AS description;
+
+
+SELECT
+    ''Repeat the steps until issues are resolved'' AS title,
+    ''refresh'' AS icon,
+    ''#'' AS link,
+    ''Continue this process until the log is empty and all issues are resolved'' AS description;
+
+
+SELECT
+      ''text'' as component,
+      ''
+      Reminder: Keep updating and re-running the process until you see no entries in the log below.'' as contents;
+
+
+      SET total_rows = (SELECT COUNT(*) FROM drh_vandv_orch_issues);
 SET limit = COALESCE($limit, 50);
 SET offset = COALESCE($offset, 0);
 SET total_pages = ($total_rows + $limit - 1) / $limit;
 SET current_page = ($offset / $limit) + 1;
 
-  SELECT ''table'' AS component,
-  TRUE AS sort,
-  TRUE AS search;
-  SELECT * FROM drh_vandv_orch_issues
-  LIMIT $limit
-  OFFSET $offset;
+      SELECT ''table'' AS component,
+      TRUE AS sort,
+      TRUE AS search;
+      SELECT * FROM drh_vandv_orch_issues
+      LIMIT $limit
+      OFFSET $offset;
 
-  SELECT ''text'' AS component,
+      SELECT ''text'' AS component,
+    (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
+    ''(Page '' || $current_page || '' of '' || $total_pages || ") " ||
+    (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
+    AS contents_md;
+            ',
+      CURRENT_TIMESTAMP)
+  ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
+INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
+      'drh/participant-related-data/index.sql',
+      '              SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
+              SELECT ''breadcrumb'' as component;
+WITH RECURSIVE breadcrumbs AS (
+    SELECT
+        COALESCE(abbreviated_caption, caption) AS title,
+        COALESCE(url, path) AS link,
+        parent_path, 0 AS level,
+        namespace
+    FROM sqlpage_aide_navigation
+    WHERE namespace = ''prime'' AND path = ''/drh/participant-related-data''
+    UNION ALL
+    SELECT
+        COALESCE(nav.abbreviated_caption, nav.caption) AS title,
+        COALESCE(nav.url, nav.path) AS link,
+        nav.parent_path, b.level + 1, nav.namespace
+    FROM sqlpage_aide_navigation nav
+    INNER JOIN breadcrumbs b ON nav.namespace = b.namespace AND nav.path = b.parent_path
+)
+SELECT title, link FROM breadcrumbs ORDER BY level DESC;
+              -- not including page title from sqlpage_aide_navigation
+
+                SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+    FROM sqlpage_aide_navigation
+   WHERE namespace = ''prime'' AND path = ''/drh/participant-related-data/index.sql'') as contents;
+    ;
+
+  SELECT
+      ''text'' as component,
+      ''
+## Participant Information
+
+Participants are individuals who volunteer to take part in CGM research studies. Their data is crucial for evaluating the performance of CGM systems and their impact on diabetes management.
+
+### Participant Details
+
+  - **Participant ID**: A unique identifier assigned to each participant.
+  - **Study ID**: A unique identifier for the study in which the participant is involved.
+  - **Site ID**: The identifier for the site where the participant is enrolled.
+  - **Diagnosis ICD**: The diagnosis code based on the International Classification of Diseases (ICD) system.
+  - **Med RxNorm**: The medication code based on the RxNorm system.
+  - **Treatment Modality**: The type of treatment or intervention administered to the participant.
+  - **Gender**: The gender of the participant.
+  - **Race Ethnicity**: The race and ethnicity of the participant.
+  - **Age**: The age of the participant.
+  - **BMI**: The Body Mass Index (BMI) of the participant.
+  - **Baseline HbA1c**: The baseline Hemoglobin A1c level of the participant.
+  - **Diabetes Type**: The type of diabetes diagnosed for the participant.
+  - **Study Arm**: The study arm or group to which the participant is assigned.
+
+
+      '' as contents_md;
+
+      SET total_rows = (SELECT COUNT(*) FROM drh_participant_data);
+SET limit = COALESCE($limit, 50);
+SET offset = COALESCE($offset, 0);
+SET total_pages = ($total_rows + $limit - 1) / $limit;
+SET current_page = ($offset / $limit) + 1;
+
+    -- Display uniform_resource table with pagination
+    SELECT ''table'' AS component,
+          TRUE AS sort,
+          TRUE AS search;
+    SELECT * FROM drh_participant_data
+     LIMIT $limit
+    OFFSET $offset;
+
+    SELECT ''text'' AS component,
     (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
     ''(Page '' || $current_page || '' of '' || $total_pages || ") " ||
     (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)

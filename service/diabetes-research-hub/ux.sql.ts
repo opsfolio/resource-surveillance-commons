@@ -49,24 +49,11 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
 
               SELECT
                     'card'                  as component,
-                    'Dashboard' as title,
+                    'Files Log' as title,
                     1                     as columns;
 
-                    SELECT
-                  'Study Participant Dashboard'  as title,
-                  '/drh/study-participant-dashboard/index.sql' as link,
-                  'The dashboard presents key study details and participant-specific metrics in a clear, organized table format' as description,
-                  'table'                as icon,
-                  'red'                    as color;
-              ;
 
               SELECT
-                    'card'                  as component,
-                    'Features ' as title,
-                    8                     as columns;
-
-
-             SELECT
                   'Study Files Log'  as title,
                   '/drh/ingestion-log/index.sql' as link,
                   'This section provides an overview of the files that have been accepted and converted into database format for research purposes' as description,
@@ -74,6 +61,37 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
                   'red'                    as color;
 
               ;
+
+              SELECT
+                    'card'                  as component,
+                    'File Verification Results' as title,
+                    1                     as columns;
+
+              SELECT
+                  'Verification Log' AS title,
+                  '/drh/verification-validation-log/index.sql' AS link,
+                  'Use this section to review the issues found in the file content and take appropriate corrective actions.' AS description,
+                  'table' AS icon,
+                  'red' AS color;
+
+
+
+              SELECT
+                    'card'                  as component,
+                    'Features ' as title,
+                    8                     as columns;
+
+
+              SELECT
+                  'Study Participant Dashboard'  as title,
+                  '/drh/study-participant-dashboard/index.sql' as link,
+                  'The dashboard presents key study details and participant-specific metrics in a clear, organized table format' as description,
+                  'table'                as icon,
+                  'red'                    as color;
+              ;
+
+
+
 
               SELECT
                   'Researcher and Associated Information'  as title,
@@ -84,9 +102,17 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
               ;
 
               SELECT
-                  'Study Participant ResearchSite Details'  as title,
+                  'Study ResearchSite Details'  as title,
                   '/drh/study-related-data/index.sql' as link,
-                  'This section provides detailed information about the study , the participants and sites involved in the research study.' as description,
+                  'This section provides detailed information about the study , and sites involved in the research study.' as description,
+                  'book'                as icon,
+                  'red'                    as color;
+              ;
+
+              SELECT
+                  'Participant Demographics'  as title,
+                  '/drh/participant-related-data/index.sql' as link,
+                  'This section provides detailed information about the the participants involved in the research study.' as description,
                   'book'                as icon,
                   'red'                    as color;
               ;
@@ -128,16 +154,6 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
               ;
 
 
-
-
-             SELECT
-                  'Verification And Validation Results'  as title,
-                  '/drh/verification-validation-log/index.sql' as link,
-                  ' Verification and Validation results are available here.Click here to review the details.' as description,
-                  'book'                as icon,
-                  'red'                    as color;
-
-              ;
 
 
        `;
@@ -220,43 +236,6 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
     SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
     SELECT * from drh_study_data;
 
-    SELECT
-        'text' as component,
-        '
-  ## Participant Information
-
-  Participants are individuals who volunteer to take part in CGM research studies. Their data is crucial for evaluating the performance of CGM systems and their impact on diabetes management.
-
-  ### Participant Details
-
-    - **Participant ID**: A unique identifier assigned to each participant.
-    - **Study ID**: A unique identifier for the study in which the participant is involved.
-    - **Site ID**: The identifier for the site where the participant is enrolled.
-    - **Diagnosis ICD**: The diagnosis code based on the International Classification of Diseases (ICD) system.
-    - **Med RxNorm**: The medication code based on the RxNorm system.
-    - **Treatment Modality**: The type of treatment or intervention administered to the participant.
-    - **Gender**: The gender of the participant.
-    - **Race Ethnicity**: The race and ethnicity of the participant.
-    - **Age**: The age of the participant.
-    - **BMI**: The Body Mass Index (BMI) of the participant.
-    - **Baseline HbA1c**: The baseline Hemoglobin A1c level of the participant.
-    - **Diabetes Type**: The type of diabetes diagnosed for the participant.
-    - **Study Arm**: The study arm or group to which the participant is assigned.
-
-
-        ' as contents_md;
-
-        ${pagination.init()}
-
-      -- Display uniform_resource table with pagination
-      SELECT 'table' AS component,
-            TRUE AS sort,
-            TRUE AS search;
-      SELECT * FROM ${viewName}
-       LIMIT $limit
-      OFFSET $offset;
-
-      ${pagination.renderSimpleMarkdown()}
 
         SELECT
             'text' as component,
@@ -693,6 +672,69 @@ ${pagination.renderSimpleMarkdown()}
       '
       Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.' as contents;
 
+
+
+SELECT
+    'steps' AS component,
+    TRUE AS counter,
+    'green' AS color;
+
+
+SELECT
+    'Check the Validation Log' AS title,
+    'file' AS icon,
+    '#' AS link,
+    'If the log is empty, no action is required. Your files are good to go! If the log has entries, follow the steps below to fix any issues.' AS description;
+
+
+SELECT
+    'Note the Issues' AS title,
+    'note' AS icon,
+    '#' AS link,
+    'Review the log to see what needs fixing for each file. Note them down to make a note on what needs to be changed in each file.' AS description;
+
+
+SELECT
+    'Stop the Edge UI' AS title,
+    'square-rounded-x' AS icon,
+    '#' AS link,
+    'Make sure to stop the UI (press CTRL+C in the terminal).' AS description;
+
+
+SELECT
+    'Make Corrections in Files' AS title,
+    'edit' AS icon,
+    '#' AS link,
+    'Edit the files according to the instructions provided in the log. For example, if a file is empty, fill it with the correct data.' AS description;
+
+
+SELECT
+    'Copy the modified Files to the folder' AS title,
+    'copy' AS icon,
+    '#' AS link,
+    'Once you’ve made the necessary changes, replace the old files with the updated ones in the folder.' AS description;
+
+
+SELECT
+    'Execute the automated script again' AS title,
+    'retry' AS icon,
+    '#' AS link,
+    'Run the command again to perform file conversion.' AS description;
+
+
+SELECT
+    'Repeat the steps until issues are resolved' AS title,
+    'refresh' AS icon,
+    '#' AS link,
+    'Continue this process until the log is empty and all issues are resolved' AS description;
+
+
+SELECT
+      'text' as component,
+      '
+      Reminder: Keep updating and re-running the process until you see no entries in the log below.' as contents;
+
+
       ${pagination.init()}
 
       SELECT 'table' AS component,
@@ -705,6 +747,60 @@ ${pagination.renderSimpleMarkdown()}
       ${pagination.renderSimpleMarkdown()}
       `;
   }
+
+
+  @drhNav({
+    caption: "Participant Information",
+    abbreviatedCaption: "Participant Information",
+    siblingOrder: 19,
+  })
+  "drh/participant-related-data/index.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
+    ${this.activePageTitle()}
+
+    SELECT
+        'text' as component,
+        '
+  ## Participant Information
+
+  Participants are individuals who volunteer to take part in CGM research studies. Their data is crucial for evaluating the performance of CGM systems and their impact on diabetes management.
+
+  ### Participant Details
+
+    - **Participant ID**: A unique identifier assigned to each participant.
+    - **Study ID**: A unique identifier for the study in which the participant is involved.
+    - **Site ID**: The identifier for the site where the participant is enrolled.
+    - **Diagnosis ICD**: The diagnosis code based on the International Classification of Diseases (ICD) system.
+    - **Med RxNorm**: The medication code based on the RxNorm system.
+    - **Treatment Modality**: The type of treatment or intervention administered to the participant.
+    - **Gender**: The gender of the participant.
+    - **Race Ethnicity**: The race and ethnicity of the participant.
+    - **Age**: The age of the participant.
+    - **BMI**: The Body Mass Index (BMI) of the participant.
+    - **Baseline HbA1c**: The baseline Hemoglobin A1c level of the participant.
+    - **Diabetes Type**: The type of diabetes diagnosed for the participant.
+    - **Study Arm**: The study arm or group to which the participant is assigned.
+
+
+        ' as contents_md;
+
+        ${pagination.init()}
+
+      -- Display uniform_resource table with pagination
+      SELECT 'table' AS component,
+            TRUE AS sort,
+            TRUE AS search;
+      SELECT * FROM ${viewName}
+       LIMIT $limit
+      OFFSET $offset;
+
+      ${pagination.renderSimpleMarkdown()}
+
+        `;
+  }
+
 }
 
 export async function drhSQL() {
