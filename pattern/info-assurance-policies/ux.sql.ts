@@ -57,6 +57,43 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
     return this.SQL`
     select
      'card'             as component,
+     2                 as columns;
+     select
+    "Policies" as title,
+     'arrow-big-right'       as icon,
+     '/opsfolio/info/policy/policy.sql' as link;
+      select
+    "Evidences" as title,
+     'arrow-big-right'       as icon,
+     '/opsfolio/info/policy/evidence.sql' as link;`;
+  }
+
+  @ipNav({
+    caption: "Policies",
+    description: ``,
+    siblingOrder: 3,
+  })
+  "opsfolio/info/policy/policy.sql"() {
+    return this.SQL`
+    select
+     'card'             as component,
+     3                 as columns;
+     select
+     UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
+     'arrow-big-right'       as icon,
+     '/opsfolio/info/policy/policy_list.sql?segment=' || segment || '' as link
+     FROM policy_dashboard;`;
+  }
+
+  @ipNav({
+    caption: "Evidences",
+    description: ``,
+    siblingOrder: 3,
+  })
+  "opsfolio/info/policy/evidence.sql"() {
+    return this.SQL`
+    select
+     'card'             as component,
      3                 as columns;
      select
      UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
@@ -68,7 +105,7 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Policy List",
     description: ``,
-    siblingOrder: 3,
+    siblingOrder: 4,
   })
   "opsfolio/info/policy/policy_list.sql"() {
     return this.SQL`
@@ -102,7 +139,7 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Policy Inner List",
     description: ``,
-    siblingOrder: 4,
+    siblingOrder: 5,
   })
   "opsfolio/info/policy/policy_inner_list.sql"() {
     return this.SQL`
@@ -121,7 +158,7 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Policy Detail",
     description: ``,
-    siblingOrder: 5,
+    siblingOrder: 6,
   })
   "opsfolio/info/policy/policy_detail.sql"() {
     return this.SQL`
