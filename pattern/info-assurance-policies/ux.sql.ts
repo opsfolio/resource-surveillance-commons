@@ -96,10 +96,15 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
      'card'             as component,
      3                 as columns;
      select
-     UPPER(SUBSTR(title, 1, 1)) || LOWER(SUBSTR(title, 2)) as title,
-     'arrow-big-right'       as icon,
-     '/opsfolio/info/policy/policy_list.sql?segment=' || segment || '' as link
-     FROM policy_dashboard;`;
+'card'             as component,
+3                 as columns;
+SELECT
+A.title as title,
+'arrow-big-right'       as icon,
+replace(b.path, 'opsfolio/info/policy/', '')as link
+FROM vigetallviews A
+inner join sqlpage_files b on A.path=b.path
+ where a.used_path=0;`;
   }
 
   @ipNav({
