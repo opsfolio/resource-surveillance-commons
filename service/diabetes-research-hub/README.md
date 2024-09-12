@@ -45,7 +45,7 @@ Installation steps may vary depending on your operating system.
    deno cache --reload https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts
    ```
 
-2. **After clearing the cache, run the single execution command:
+2. **After clearing the cache, run the single execution command:**
 
    ```bash
    deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts 'foldername'
