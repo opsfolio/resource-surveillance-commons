@@ -146,7 +146,26 @@ UNION ALL
 Select 'SSL Certificate' title,'vissl_certificate'as viewname,'opsfolio/info/policy/vissl_certificate.sql' as path,0 as used_path
 UNION ALL
 Select 'Available Storage' title,'vistorage_available'as viewname,'opsfolio/info/policy/vistorage_available.sql' as path,0 as used_path
+UNION ALL
+Select 'Ram Utilization' title,'viram_utilization'as viewname,'opsfolio/info/policy/viram_utilization.sql' as path,0 as used_path
+UNION ALL
+Select 'Cpu Information' title,'vicpu_infomation'as viewname,'opsfolio/info/policy/vicpu_infomation.sql' as path,0 as used_path
+UNION ALL
+Select 'Removed Accounts' title,'viaccounts_removed'as viewname,'opsfolio/info/policy/viaccounts_removed.sql' as path,0 as used_path
+UNION ALL
+Select 'SSH Settings' title,'vissh_settings'as viewname,'opsfolio/info/policy/vissh_settings.sql' as path,0 as used_path
+UNION ALL
+Select 'Unsuccessful Attempts' title,'viunsuccessful_attempts_log'as viewname,'opsfolio/info/policy/viunsuccessful_attempts_log.sql' as path,0 as used_path
+UNION ALL
+Select 'Authentication' title,'viauthentication'as viewname,'opsfolio/info/policy/viauthentication.sql' as path,0 as used_path
 ;
+
+DELETE FROM sqlpage_files
+WHERE path IN (
+    SELECT a.path
+    FROM sqlpage_files a
+    INNER JOIN vigetallviews b ON a.path = b.path
+);
 
 WITH get_allviewname AS (
     -- Select all table names
@@ -178,8 +197,9 @@ SELECT
     )
     SELECT title, link FROM breadcrumbs ORDER BY level DESC;
     SELECT ''' || title || ''' || '' Table'' AS title, ''#'' AS link;
+    select ''title'' as component,'''||title||''' as contents ;
     
-     SELECT ''table'' AS component;
+    SELECT ''table'' AS component ;
     SELECT  * from  ''' || viewname || ''''
    
 FROM get_allviewname;
@@ -353,5 +373,85 @@ select
   uniform_resource,
   json_each(content)
   where uri='osqueryMfaEnabled';
+  DROP VIEW IF EXISTS viram_utilization;
+CREATE VIEW viram_utilization AS        
+SELECT
+   json_extract(value, '$.memory_free_gb') AS memory_free_gb,
+   json_extract(value, '$.memory_percentage_free') AS memory_percentage_free,
+   json_extract(value, '$.memory_percentage_used') AS memory_percentage_used,
+   json_extract(value, '$.memory_total_gb') AS memory_total_gb
+    FROM
+    uniform_resource,
+    json_each(content)
+    WHERE
+    uri='osqueryMemoryUtilization' order by 
+    last_modified_at desc
+    limit 1;
+
+DROP VIEW IF EXISTS vicpu_infomation;
+CREATE VIEW vicpu_infomation AS     
+SELECT 
+    json_extract(value, '$.cpu_brand') AS cpu_brand,
+    json_extract(value, '$.cpu_physical_cores') AS cpu_physical_cores,
+    json_extract(value, '$.cpu_logical_cores') AS cpu_logical_cores,
+    json_extract(value, '$.computer_name') AS computer_name,
+    json_extract(value, '$.local_hostname') AS local_hostname
+    from uniform_resource,
+    json_each(content) where
+     uri='osquerySystemInfo';    
+
+DROP VIEW IF EXISTS viaccounts_removed;
+CREATE VIEW viaccounts_removed   AS    
+SELECT
+    json_extract(value,'$.description') AS description,
+    json_extract(value,'$.directory') AS directory,
+    json_extract(value,'$.gid') AS gid,
+    json_extract(value,'$.gid_signed') AS gid_signed,
+    json_extract(value,'$.shell') AS shell,
+    json_extract(value,'$.uid') AS uid,
+    json_extract(value,'$.uid_signed') AS uid_signed,
+    json_extract(value,'$.username') AS username,
+    json_extract(value,'$.uuid') AS uuid
+    FROM
+   uniform_resource,
+    json_each(content)
+    where uri ='osqueryRemovedUserAccounts';
+
+
+DROP VIEW IF EXISTS vissh_settings;
+CREATE VIEW vissh_settings  AS     
+select
+   json_extract(value, '$.name') AS Name ,
+   json_extract(value, '$.cmdline') AS cmdline,
+   json_extract(value, '$.path') AS path
+   from
+   uniform_resource,
+   json_each(content)
+   where uri='osquerySshdProcess'; 
+
+DROP VIEW IF EXISTS viunsuccessful_attempts_log;
+CREATE VIEW viunsuccessful_attempts_log AS 
+SELECT
+    json_extract(value, '$.date') AS date,
+    json_extract(value, '$.message') AS message
+    FROM
+    uniform_resource,
+    json_each(content)
+    WHERE
+    uri='authLogInfo' order by created_at desc limit 100;
+
+DROP VIEW IF EXISTS viauthentication;
+CREATE VIEW viauthentication AS      
+select
+  json_extract(value, '$.node') AS node ,
+  json_extract(value, '$.value') AS value,
+  json_extract(value, '$.label') AS label ,
+  json_extract(value, '$.path') AS path
+  from
+  uniform_resource,
+  json_each(content)
+  where uri='osqueryMfaEnabled';
+
+
 
   
