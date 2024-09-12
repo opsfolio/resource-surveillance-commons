@@ -122,10 +122,10 @@ Integration Engine (RSIE) are given below,
 
 | Components/Layers                        | Details                                                                                                                                                                                                                                                                          |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acquisition of Content (Data)            | Steps involves in the content acquisition i.e preparation of the files/data for ingestion. Technologies such as WebDAV, SFTP, S3, Git and virtual printer capabilities are the part of this layer.                                                                               |
-| Advanced Data Acquisition Layer          | This layer helps users for enhanced data preparation using Capturable Executables(CEs). Wit the support of processing instructions (PI) Capturable Executables(CEs) further helps the user to prepare data with specific message standards like JSON,plain/text etc              |
-| Message format/standard Support          | The Resource Surveillance Integration Engine supports a wide range of message standards like HL7, FHIR, JSON, and XML but can also handle a variety of file types for exchange, such as CSV, Excel, or custom formats.                                                           |
-| Stateful Ingestion                       | Invloves the steps to process the data prepared and store in a opinionated universal schema with full SQL querying support.                                                                                                                                                      |
+| Acquisition of Content (Data)            | Steps involves in the content acquisition i.e preparation of the files/data for ingestion. Inaddition to the local files, we can use technologies such as WebDAV, SFTP, AWS S3, Git and Virtual Printer capabilities are the part of this layer.                                                                               |
+| Advanced Data Acquisition Layer          | This layer helps users for enhanced data preparation using Capturable Executables(CEs). With the support of processing instructions (PI) Capturable Executables(CEs) further helps the user to prepare data with specific message standards like JSON,plain/text etc              |
+| Message format/standard Support          | The Resource Surveillance Integration Engine supports a wide range of standards like HL7, FHIR, JSON, and XML but can also handle a variety of file types for exchange, such as CSV, Excel, or custom formats.                                                           |
+| Stateful Ingestion                       | Involves the steps of ingesting and processing data into a structured universal schema with full SQL querying support. RSIE leverages state tables to track the status of ingested files, ensuring that files are not re-ingested unless changes are detected. This approach prevents redundant ingestion, optimizes performance, and supports incremental updates. By maintaining the state of ingested data, RSIE ensures efficient data management, scalability, and transparency, while also providing a clear audit trail of the ingestion history.                                                                                                                                                      |
 | Web UI for Viewing Ingested Data Locally | Resource Surveillance Integration Engine (RSIE) provides a Web UI component that allows users to view ingested data in real time and access data processed offline                                                                                                               |
 | Data Synchronization and Aggregation     | The Data Synchronization and Aggregation phase involves systematically synchronizing and aggregating the ingested and processed data into a central data store. This ensures the data is ready for advanced analytics, reporting, and integration with other supporting systems. |
 
@@ -191,6 +191,39 @@ Once acquired, data moves to the stateful ingestion layer, where it is
 processed, transformed, enriched, and stored in a universal schema. This layer
 supports both real-time ingestion for immediate analysis and offline processing
 for batch jobs.
+
+**File Ingestion**
+
+File ingestion in RSIE involves importing and processing files from a file system into a Resource Surveillance State Database (RSSD) for monitoring and analysis, a process known as "walking the filesystem." This method scans directories and files, extracting their metadata and content to be stored in the RSSD.
+
+**Preparing for Ingestion**
+
+Before starting the ingestion process, it's important to determine which files and directories will be processed. surveilr provides an option that simulates the process without making any changes, ensuring that only the desired files are ingested. This feature is particularly useful for previewing files in the current working directory or specified directories before actual ingestion.
+
+**Performing File Ingestions**
+
+Files can be ingested either from the current working directory (CWD) or specific directories using the -r flag. Users can also utilize regular expressions to target specific directories or files. Ingestion can be followed by displaying statistics on the ingested data using the --stats option, which provides insights into the volume and type of data processed.
+
+Command examples include:
+
+  - Ingesting all files from the CWD or specific directories.
+  -  Previewing files before ingestion.
+  -  Displaying statistics post-ingestion to analyze the ingested content.
+
+**Task Ingestion**
+
+Task ingestion in RSIE allows users to automate the execution of shell tasks and convert their outputs into structured JSON data, which is stored in the uniform_resource table of the Resource Surveillance State Database (RSSD).
+
+RSIE task ingestion allows running one or more Deno Task Shell commands through STDIN, executing them sequentially. The outputs are formatted as JSON (or another specified format) and inserted into the database. Inputs can be either:
+
+  -  **Simple Text:** Non-JSONL text treated as an anonymous command string, executed with the assumption that the output will be in JSON format.
+  -  **JSONL Format:** Text in JSONL format, where each object contains specific attributes. The value of the key is executed as a command, and the output is stored using the key as an identifier.
+
+**IMAP Email Ingestion**
+
+IMAP Email Ingestion in RSIE enables the direct ingestion of IMAP emails into the Resource Surveillance State Database (RSSD). This feature automates the process of retrieving emails from a specified folder and batch size, converting them into structured JSON data, and storing them in the ur_ingest_session_imap_acct_folder_message table of the RSSD.
+
+It works with any email provider that supports IMAP, and for Microsoft 365 users, RSIE offers integration guidance through the Microsoft Graph API, ensuring comprehensive email data access.
 
 ### Data Synchronization and Aggregation
 
@@ -275,11 +308,22 @@ efficient data management.
   This might include merging data from multiple sources or applying business
   rules to add derived fields.
 
+The capabilities of the Resource Surveillance Integration Engine (RSIE) can be extended at multiple levels:
+-	**Content-Level Extensibility:**
+RSIE allows for extensibility at the content level through capturable executables. These scripts generate data in various formats, such as JSON, plain text, or others, which are then ingested and stored in the RSIE state schema, specifically in the uniform_resource table of the Resource Surveillance State Schema.
+- **SQL DDL-Level Extensibility:**
+Capturable executables can also include SQL Data Definition Language (DDL) scripts to create tables or other SQLite database objects, offering extensibility at the database schema level.
+- **Programmatic/Scriptable Extensibility with Integrated TypeScript Integration:**
+RSIE supports programmatic extensibility through integrated TypeScript or Deno tasks. These scripts can be customized to generate the necessary output for ingestion, making RSIE highly adaptable to specific business requirements. This extensibility enables the development of custom logic and workflows to produce data tailored to unique functional needs.
 ### Data Storage
 
-Processed data is stored in a **universal schema**—a standardized format
-ensuring consistency across datasets. This schema facilitates easy querying,
-analysis, and integration.
+Processed data is stored in a **universal schema**, a standardized format that ensures consistency across datasets. This schema, known as the Resource Surveillance State Database (RSSD), facilitates easy querying, analysis, and integration.
+
+
+A Resource Surveillance State Database (RSSD) is a versatile and independent data source created through surveilr, which can be utilized across various tools, services, applications, or integrated into data warehouses once generated. Its independence allows for flexible usage in any computing environment that supports SQLite, enabling seamless integration into different systems and workflows. RSSD is designed to automate the collection of evidence such as code, test results, emails, issues/tickets, and wikis, ensuring compliance with security, privacy, safety, and regulatory standards through machine attestation rather than manual processes.
+To generate an RSSD, the surveilr ingest command can be used for file or task ingestion. For instance, navigating into a directory and running surveilr ingest files will create an RSSD in the target folder. Alternatively, using the -r flag allows ingestion of content from a specified directory without changing directories. The resulting resource-surveillance.sqlite.db file will contain several tables storing the state data.
+In environments with multiple RSSDs, it is important to configure unique identifiers for each database, which can be achieved by appending unique elements such as hostnames to the database filename. This can be done either by setting an environment variable (SURVEILR_STATEDB_FS_PATH) or passing a unique identifier using the -d flag during ingestion. These methods help manage and merge RSSDs across environments, ensuring that each database is easily identifiable.
+The individual RSSD can be merged when we need to aggregate the data for more detailed analysis and integrated into external application or use for data warehouses.
 
 ### Stateful Context Management
 
@@ -287,8 +331,6 @@ RSIE ensures end-to-end orchestration of the ingestion pipeline, maintaining the
 context of data throughout its lifecycle. Key features include:
 
 - **Session Management**: Tracks data sessions for continuity.
-- **Checkpointing**: Records intermediate states for recovery in case of
-  failures.
 - **State Management**: Maintains the state of data throughout the ingestion
   process, preserving context and tracking changes. This is crucial for handling
   updates, managing version history, and ensuring data integrity.
@@ -353,16 +395,15 @@ RSIE maintains accuracy, consistency, and reliability through:
 ## Technical Summary
 
 The following diagram depicts the overall architecture of the Resource
-Surveillance Integration Engine (RSIE) in the data acquisition, ingestion,
-transformation, visualization, aggregation, and synchronization pipeline.
+Surveillance Integration Engine (RSIE) in the data acquisition, ingestion, transformation, visualization, aggregation, and synchronization pipeline.
 
 ```mermaid
   graph TD
     %% Data Acquisition Process
     subgraph Data Acquisition Process
         direction LR
-        %% External Sources
-        subgraph External Sources
+        %% Data Sources
+        subgraph Content Acquisition Methods
             WebDAV[WebDAV]
             VirtualPrinter[Virtual Printer]
             APIDirect[API / Direct Upload]
