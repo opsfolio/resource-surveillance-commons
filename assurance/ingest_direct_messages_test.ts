@@ -1,100 +1,88 @@
-import { assert, assertEquals, assertExists } from "jsr:@std/assert@1";
+import { assertEquals, assertExists } from "jsr:@std/assert@1";
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 import { $ } from "https://deno.land/x/dax@0.39.2/mod.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
-// # TODO: automatically upgrade surveilr
-// adming merge command
-// # TODO: commands
-// # 1. add notebook orchestration: surveilr orchestrate notebooks --cell="%htmlAnchors%" -a "key1=value1" -a "name=starting"
-// # 2. IMAP
-// # 3. use the piping method to execute orchestration
-// # 4. add multitenancy tests
-// // await $`surveilr orchestrate -n "dd" -s https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/privacy/anonymize-sample/de-identification/deidentification.sql -s ${REPO_DIR}/pattern/privacy/anonymize-sample/de-identification/`;
-
 const E2E_TEST_DIR = path.join(Deno.cwd(), "assurance");
 const ZIP_URL =
-    "https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip";
+  "https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip";
 const ZIP_FILE = path.join(E2E_TEST_DIR, "ingest.zip");
 const INGEST_DIR = path.join(E2E_TEST_DIR, "ingest");
-// const INGEST_DIR = "ingest";
 const DEFAULT_RSSD_PATH = path.join(
-    E2E_TEST_DIR,
-    "resource-surveillance-direct-message.sqlite.db",
+  E2E_TEST_DIR,
+  "resource-surveillance-direct-message.e2e.sqlite.db",
 );
-const TEST_FIXTURES_DIR = path.join(E2E_TEST_DIR, "test-fixtures");
 
 export async function countFilesInDirectory(
-    directoryPath: string,
+  directoryPath: string,
 ): Promise<number> {
-    let fileCount = 0;
+  let fileCount = 0;
 
-    for await (const dirEntry of Deno.readDir(directoryPath)) {
-        if (dirEntry.isFile) {
-            fileCount++;
-        }
+  for await (const dirEntry of Deno.readDir(directoryPath)) {
+    if (dirEntry.isFile) {
+      fileCount++;
     }
+  }
 
-    return fileCount;
+  return fileCount;
 }
 
 Deno.test("file ingestion", async (t) => {
-    await t.step({
-        name: "download-zip",
-        fn: async () => {
-            if (!await Deno.stat(ZIP_FILE).catch(() => false)) {
-                await $`wget -P ${E2E_TEST_DIR} ${ZIP_URL}`;
-            }
+  await t.step({
+    name: "download-zip",
+    fn: async () => {
+      if (!await Deno.stat(ZIP_FILE).catch(() => false)) {
+        await $`wget -P ${E2E_TEST_DIR} ${ZIP_URL}`;
+      }
 
-            assertExists(
-                await Deno.stat(ZIP_FILE).catch(() => null),
-                "❌ Error: Data file does not exist after download.",
-            );
+      assertExists(
+        await Deno.stat(ZIP_FILE).catch(() => null),
+        "❌ Error: Data file does not exist after download.",
+      );
 
-            if (!await Deno.stat(INGEST_DIR).catch(() => false)) {
-                const unzipResult =
-                    await $`unzip ${ZIP_FILE} -d ${E2E_TEST_DIR}`;
+      if (!await Deno.stat(INGEST_DIR).catch(() => false)) {
+        const unzipResult = await $`unzip ${ZIP_FILE} -d ${E2E_TEST_DIR}`;
 
-                assertEquals(
-                    unzipResult.code,
-                    0,
-                    "❌ Error: Failed to unzip the data file.",
-                );
-            }
-
-            assertExists(
-                await Deno.stat(INGEST_DIR).catch(() => null),
-                `❌ Error: Ingest directory ${INGEST_DIR} does not exist after unzipping.`,
-            );
-        },
-        ignore: false,
-    });
-    await t.step("surveilr ingest files", async () => {
-        assertExists(
-            await Deno.stat(INGEST_DIR).catch(() => null),
-            `❌ Error: Ingest directory ${INGEST_DIR} before surveilr ingest`,
-        );
-
-        if (await Deno.stat(DEFAULT_RSSD_PATH).catch(() => null)) {
-            await Deno.remove(DEFAULT_RSSD_PATH).catch(() => false);
-        }
-        console.log(INGEST_DIR);
-        const ingestResult =
-            await $`surveilr ingest files -d ${DEFAULT_RSSD_PATH} -r ${INGEST_DIR}`;
         assertEquals(
-            ingestResult.code,
-            0,
-            `❌ Error: Failed to ingest data in ${INGEST_DIR}`,
+          unzipResult.code,
+          0,
+          "❌ Error: Failed to unzip the data file.",
         );
+      }
 
-        assertExists(
-            await Deno.stat(DEFAULT_RSSD_PATH).catch(() => null),
-            `❌ Error: ${DEFAULT_RSSD_PATH} does not exist`,
-        );
-    });
-    const db = new DB(DEFAULT_RSSD_PATH);
-    await t.step("inbox data", async () => {
-        db.execute(`
+      assertExists(
+        await Deno.stat(INGEST_DIR).catch(() => null),
+        `❌ Error: Ingest directory ${INGEST_DIR} does not exist after unzipping.`,
+      );
+    },
+    ignore: false,
+  });
+  await t.step("surveilr ingest files", async () => {
+    assertExists(
+      await Deno.stat(INGEST_DIR).catch(() => null),
+      `❌ Error: Ingest directory ${INGEST_DIR} before surveilr ingest`,
+    );
+
+    if (await Deno.stat(DEFAULT_RSSD_PATH).catch(() => null)) {
+      await Deno.remove(DEFAULT_RSSD_PATH).catch(() => false);
+    }
+    console.log(INGEST_DIR);
+    const ingestResult =
+      await $`surveilr ingest files -d ${DEFAULT_RSSD_PATH} -r ${INGEST_DIR}`;
+    assertEquals(
+      ingestResult.code,
+      0,
+      `❌ Error: Failed to ingest data in ${INGEST_DIR}`,
+    );
+
+    assertExists(
+      await Deno.stat(DEFAULT_RSSD_PATH).catch(() => null),
+      `❌ Error: ${DEFAULT_RSSD_PATH} does not exist`,
+    );
+  });
+  const db = new DB(DEFAULT_RSSD_PATH);
+  await t.step("inbox data", () => {
+    db.execute(`
             DROP VIEW IF EXISTS mail_content_detail;
             CREATE  VIEW mail_content_detail AS
             SELECT
@@ -132,10 +120,10 @@ Deno.test("file ingestion", async (t) => {
 
             FROM
             mail_content_detail mcd;`);
-        const result = db.query(
-            `SELECT COUNT(*) AS count FROM inbox`,
-        );
-        assertEquals(result.length, 1);
-    });
-    db.close();
+    const result = db.query(
+      `SELECT COUNT(*) AS count FROM inbox`,
+    );
+    assertEquals(result.length, 1);
+  });
+  db.close();
 });

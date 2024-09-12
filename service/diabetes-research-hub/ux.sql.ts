@@ -748,7 +748,6 @@ SELECT
       `;
   }
 
-
   @drhNav({
     caption: "Participant Information",
     abbreviatedCaption: "Participant Information",
@@ -800,7 +799,6 @@ SELECT
 
         `;
   }
-
 }
 
 export async function drhSQL() {
