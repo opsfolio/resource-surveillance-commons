@@ -42,13 +42,13 @@ Installation steps may vary depending on your operating system.
 1. **Clear the cache by running the following command:**
 
    ```bash
-   deno cache --reload https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts
+   deno cache --reload https://lib.drh.diabetestechnology.org/service/diabetes-research-hub/drhctl.ts
    ```
 
 2. **After clearing the cache, run the single execution command:**
 
    ```bash
-   deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts 'foldername'
+   deno run -A https://lib.drh.diabetestechnology.org/service/diabetes-research-hub/drhctl.ts 'foldername'
    ```
 
 - Replace `foldername` with the name of your folder containing all CSV files to
@@ -57,7 +57,7 @@ Installation steps may vary depending on your operating system.
   **Example:**
 
   ```bash
-  deno run -A https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/service/diabetes-research-hub/drhctl.ts study-files
+  deno run -A https://lib.drh.diabetestechnology.org/service/diabetes-research-hub/drhctl.ts study-files
   ```
 
 
