@@ -56,7 +56,7 @@ CREATE VIEW policy_dashboard AS
     )
     SELECT
         uniform_resource_id,
-        REPLACE(segment,"-"," ")title,
+        COALESCE(REPLACE(segment, '-', ' '), '') AS title,
         segment,
         url
     FROM final_segment

@@ -47,7 +47,7 @@ export class InfoAssurancePolicySqlPages extends spn.TypicalSqlPageNotebook {
   @ipNav({
     caption: "Information Assurance Policies",
     description:
-      `The Infra Policies is designed to display and create views for policies
+      `The Information Assurance Policies is designed to display and create views for policies
         specific to tenants within the Opsfolio platform. These policies are ingested
         from Markdown (.md) or Markdown with JSX (.mdx) files, originating from
         Opsfolio, and are stored in the uniform_resource table.`,

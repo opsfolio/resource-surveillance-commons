@@ -1,4 +1,4 @@
-# Infromation Assurence Controls
+# Infromation Assurance Controls
 
 The Infra Controls project is designed to manage and implement controls specific
 to various audit requirements, such as CC1001, CC1002, and others. This project
@@ -15,7 +15,7 @@ for audit compliance.
 3. Uniform Resource Storage: All ingested controls are saved and managed within
    the uniform_resource table for efficient retrieval and display.
 
-# `surveilr` Infromation Assurence Policy Service Patterns
+# `surveilr` Infromation Assurance Policy Service Patterns
 
 - `stateless-ic.surveilr.sql` script focuses on creating views that define how
   to extract and present specific policy data from the

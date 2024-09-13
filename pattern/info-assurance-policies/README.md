@@ -1,8 +1,8 @@
-# Infromation Assurence Policies
+# Infromation Assurance Policies
 
-The Infra Policies project is designed to display and create views for policies
-specific to tenants within the Opsfolio platform. These policies are ingested
-from Markdown (.md) or Markdown with JSX (.mdx) files, originating from
+The Information Policies project is designed to display and create views for
+policies specific to tenants within the Opsfolio platform. These policies are
+ingested from Markdown (.md) or Markdown with JSX (.mdx) files, originating from
 Opsfolio, and are stored in the uniform_resource table.
 
 ### Key Features
@@ -14,7 +14,7 @@ Opsfolio, and are stored in the uniform_resource table.
 3. Uniform Resource Storage: All ingested policies are saved and managed within
    the uniform_resource table for efficient retrieval and display.
 
-# `surveilr` Infromation Assurence Policy Service Patterns
+# `surveilr` Infromation Assurance Policy Service Patterns
 
 - `stateless-ip.surveilr.sql` script focuses on creating views that define how
   to extract and present specific policy data from the

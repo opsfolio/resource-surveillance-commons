@@ -1,4 +1,4 @@
-# Infra Assurence
+# Infra Assurance
 
 The Infra Assurance project focuses on managing and overseeing assets and
 portfolios within an organization. This project provides tools and processes to

@@ -14,6 +14,18 @@
 -- Provides a count of total rows, valid JSON rows, invalid JSON rows,
 -- and potential CCDA v4 candidates and bundles based on JSON structure.
 
+DROP VIEW IF EXISTS uniform_resource_summary;
+CREATE VIEW uniform_resource_summary AS
+    SELECT
+        COUNT(*) AS total_rows,
+        SUM(CASE WHEN json_valid(content) THEN 1 ELSE 0 END) AS valid_json_rows,
+        SUM(CASE WHEN json_valid(content) THEN 0 ELSE 1 END) AS invalid_json_rows,
+        SUM(CASE WHEN json_valid(content) AND content ->> '$.resourceType' IS NOT NULL THEN 1 ELSE 0 END) AS ccda_v4_candidates,
+        SUM(CASE WHEN json_valid(content) AND json_type(content -> '$.entry') = 'array' THEN 1 ELSE 0 END) AS ccda_v4_bundle_candidates
+    FROM
+        uniform_resource;
+
+DROP VIEW IF EXISTS control_regimes;
 CREATE VIEW IF NOT EXISTS control_regimes AS
               SELECT
                 reg.name as control_regime,
@@ -24,6 +36,7 @@ CREATE VIEW IF NOT EXISTS control_regimes AS
                   control_regime as audit
               INNER JOIN control_regime as reg ON audit.parent_id = reg.control_regime_id;
 
+DROP VIEW IF EXISTS control_group;
 CREATE VIEW IF NOT EXISTS control_group AS 
           SELECT
               cast("#" as int)  as display_order,
@@ -179,6 +192,7 @@ CREATE VIEW IF NOT EXISTS control_group AS
             GROUP BY
               "Common Criteria";
 
+DROP VIEW IF EXISTS control;
 CREATE VIEW IF NOT EXISTS control AS
             WITH control_regime_cte AS (
               SELECT
