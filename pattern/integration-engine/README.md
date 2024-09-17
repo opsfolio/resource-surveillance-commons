@@ -3,7 +3,7 @@
 ### Table of Contents
 
 - [Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation](#resource-surveillance-integration-engine-rsie-for-local-first-edge-based-stateful-data-aggregation)
-    
+    - [Table of Contents](#table-of-contents)
   - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
   - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
   - [Resource Surveillance Integration Engine (`RSIE`) features and use cases](#resource-surveillance-integration-engine-rsie-features-and-use-cases)
@@ -42,21 +42,22 @@
 
 The **Resource Surveillance Integration Engine (RSIE)** is a stateful data
 preparation and integration platform for multiple systems that need to integrate
-and operate on common data in a local-first, edge-based manner.
+and operate on common data in a local-first, edge-based SQL-centric manner.
 
 - Stateful means that the RSIE is not just passing data between multiple sytems
   but allows storing the data in an opinionated universal schema with full SQL
   querying support.
+- SQL-centric means that data should be queryable and orchestratable via a SQL.
 - Local-first means that content should be prepared and processed locally
   _before_ going to a cloud or central server.
 - Edge-based means that data should be handled as close to where the data is
   collected rather than everything being done centrally.
 
-A typical use for RSIE's stateful, local-first, edge-based is for complex
-medical data integration tasks. While RSIE can help with almost any integration
-tasks, RSIE is particularly useful to help integrate **clinical operations
-data**, **patient data**, **pharmacy** and **billing information** to and from
-multiple systems.
+A typical use for RSIE's stateful, local-first, edge-based SQL-centric
+capabilities is for complex medical data integration tasks. While RSIE can help
+with almost any integration tasks, RSIE is particularly useful to help integrate
+**clinical operations data**, **patient data**, **pharmacy** and **billing
+information** to and from multiple systems.
 
 RSIE supports a variety of technologies to ensure smooth communication and data
 transfer. It provides opinionated architecture and design guidance for file
