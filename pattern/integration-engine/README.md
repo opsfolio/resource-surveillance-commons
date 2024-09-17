@@ -3,7 +3,7 @@
 ### Table of Contents
 
 - [Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation](#resource-surveillance-integration-engine-rsie-for-local-first-edge-based-stateful-data-aggregation)
-    - [Table of Contents](#table-of-contents)
+    
   - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
   - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
   - [Resource Surveillance Integration Engine (`RSIE`) features and use cases](#resource-surveillance-integration-engine-rsie-features-and-use-cases)
@@ -34,6 +34,8 @@
   - [Various Use Cases and Sequence Diagrams](#various-use-cases-and-sequence-diagrams)
     - [Direct Messaging Service](#direct-messaging-service)
       - [Overview](#overview)
+    - [Diabetes Research Hub (DRH)](#diabetes-research-hub-drh)
+      - [Overview](#overview-1)
   - [Resource surveillance (surveilr)](#resource-surveillance-surveilr)
 
 ## Introduction to the Resource Surveillance Integration Engine (RSIE)
@@ -463,120 +465,7 @@ The following diagram depicts the overall architecture of the Resource
 Surveillance Integration Engine (RSIE) in the data acquisition, ingestion,
 transformation, visualization, aggregation, and synchronization pipeline.
 
-```mermaid
-  graph TD
-    %% Data Acquisition Process
-    subgraph Data Acquisition Process
-        direction LR
-        %% Data Sources
-        subgraph Content Acquisition Methods
-            WebDAV[WebDAV]
-            VirtualPrinter[Virtual Printer]
-            APIDirect[API / Direct Upload]
-            ExtData[External Data Sources]
-        end
-
-        %% Capturable Executables (CEs)
-        subgraph CEs [Capturable Executables]
-            DataTransform[Cleaning Pre-Validation]
-            DataProcessing[Process & Generate Data]
-        end
-    end
-
-    %% Ingestion Pipeline
-    subgraph Ingestion Pipeline
-        LocalStorage[Ingestion Center]
-        StatefulIngest[Stateful Ingestion]
-        DataEnrich[Enrichment/Transformation]
-        RSSD[(State Schema-RSSD)]
-        
-    end
-
-    %% Synchronization & Aggregation
-    subgraph Data Sync & Aggregation
-        DataSync[Data Synchronization]
-        DataAgg[Data Aggregation]
-        CentralDataStore[(Central Data Store)]
-    end
-
-    %% Analytics & Reporting
-    subgraph Analytics & Reporting
-        BIAnalytics[BI & Analytics]
-        AdvReporting[Advanced Reporting]
-        MLModule[Machine Learning Module]
-    end
-
-    %% Web UI
-    subgraph Web_UI [Local Web UI]
-        WebUI[Web UI Interface]
-    end
-
-    %% Users
-    subgraph Users
-        EndUsers[End Users]
-        Admins[Administrators]
-    end
-
-    %% Data Flow
-    %% External Sources to Ingestion Pipeline
-    WebDAV -->|Upload Files| LocalStorage
-    VirtualPrinter -->|Send Print Jobs| LocalStorage
-    APIDirect -->|Real-Time Data| LocalStorage
-    ExtData -->|Bulk Data| LocalStorage
-
-    %% CEs to Ingestion Pipeline
-    DataTransform --> DataProcessing
-    DataProcessing --> LocalStorage
-    
-
-    %% Ingestion Pipeline Processes
-    LocalStorage --> StatefulIngest
-    StatefulIngest --> RSSD
-    StatefulIngest --> DataEnrich
-    DataEnrich --> RSSD
-    RSSD --> DataSync
-
-    %% SQLite Database interaction
-    RSSD --> WebUI
-
-    %% Synchronization & Aggregation
-    DataSync --> DataAgg
-    DataAgg --> CentralDataStore
-
-    %% Analytics & Reporting
-    CentralDataStore --> BIAnalytics
-    CentralDataStore --> AdvReporting
-    WebUI --> CentralDataStore
-    BIAnalytics --> MLModule
-    MLModule --> AdvReporting
-
-    %% Users Interaction
-    EndUsers --> WebUI
-    Admins --> WebUI
-    BIAnalytics --> EndUsers
-    AdvReporting --> EndUsers
-    BIAnalytics --> Admins
-    AdvReporting --> Admins
-
-    %% Additional Connections for Extendibility
-    CentralDataStore --> WebUI
-    DataEnrich --> WebUI
-    StatefulIngest --> DataSync
-
-    %% Styling (Optional for better visualization)
-    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef ingestion fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef syncAgg fill:#bfb,stroke:#333,stroke-width:2px;
-    classDef analytics fill:#fbf,stroke:#333,stroke-width:2px;
-    classDef users fill:#ffb,stroke:#333,stroke-width:2px;
-    classDef db fill:#FFA500,stroke:#333,stroke-width:2px
-    class WebDAV,VirtualPrinter,APIDirect,ExtData external;
-    class RSSD db;
-    class LocalStorage,StatefulIngest,DataTransform,DataProcessing,DataEnrich ingestion;
-    class DataSync,DataAgg,CentralDataStore syncAgg;
-    class BIAnalytics,AdvReporting,WebUI,MLModule analytics;
-    class EndUsers,Admins users;
-```
+![Resource Surveillance Integration Engine (RSIE) Dataflow diagram](assets/resource-surveillance-integration-engine-data-flow.drawio.svg)
 
 ## Various Use Cases and Sequence Diagrams
 
@@ -639,6 +528,41 @@ sequenceDiagram
     BackupProcess->>ProcessedFolder: 15. Read files from the Processed folder
     BackupProcess->>ArchiveFolder: 16. Move files from Processed to Archive folder
 ```
+
+### Diabetes Research Hub (DRH)
+
+#### Overview
+
+**The Diabetes Research Hub (DRH)** is designed to meet the growing demand for a
+centralized platform that facilitates the management and analysis of continuous
+glucose monitor (CGM) data. As CGM technology becomes increasingly accessible
+and widely used, the need for an organized hub to interpret this data is crucial
+for both clinicians and engineers. The DRH enables real-world data analysis for
+two primary objectives:
+
+- **Identifying Effects of Diet, Behavior, and Sleep:** CGM data offers valuable
+  insights into glycemic patterns across diverse populations, including
+  individuals with diabetes, prediabetes, obesity, and those without diabetes.
+  By understanding how factors such as diet, behavior, and sleep influence
+  glucose levels, researchers can uncover key patterns that contribute to better
+  health outcomes.
+- **Predicting and Preventing Complications:** Population-level CGM data has
+  significant potential in predicting, preventing, and treating complications
+  associated with diabetes. This focus aligns with broader goals in population
+  health management, where early identification of trends can lead to more
+  effective interventions and improved long-term health outcomes. The DRH is
+  built to be adaptable, integrating additional datasets beyond CGM data, such
+  as:
+
+  - Electronic Health Records (EHRs)
+  - Wearable Devices
+  - Patient-Reported Outcomes (PROs)
+  - Other Datasets (e.g., social determinants of health, environmental factors,
+    or genetic data)
+
+This flexibility makes DRH a comprehensive platform for diabetes research,
+helping researchers explore a wide array of factors that influence diabetes and
+its complications.
 
 ## Resource surveillance (surveilr)
 
