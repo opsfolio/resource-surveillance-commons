@@ -120,7 +120,7 @@ Deno.test("file ingestion", async (t) => {
             GROUP BY ur.uniform_resource_id, ur.uri;
         `);
 
-    const result = db.query(
+    const result = db.query<[number]>(
       `SELECT COUNT(*) AS count FROM file_change_history`,
     );
     assertEquals(result.length, 1);
@@ -129,7 +129,7 @@ Deno.test("file ingestion", async (t) => {
       `${INGEST_DIR}/10k_synthea_covid19_csv`,
     ) + (await countFilesInDirectory(TEST_FIXTURES_DIR));
 
-    const files = Number(result[0][0]);
+    const files = result[0][0];
     initialIngestFileCount = files;
     assert(filesInDir > files);
   });
@@ -279,12 +279,12 @@ Deno.test("csv auto transformation", async (t) => {
       GROUP BY ur.uniform_resource_id, ur.uri;
   `);
 
-    const result = db.query(
+    const result = db.query<[number]>(
       `SELECT COUNT(*) AS count FROM file_change_history`,
     );
     assertEquals(result.length, 1);
 
-    const files = Number(result[0][0]);
+    const files = result[0][0];
     initialIngestFileCount = files;
     assertEquals(files, initialIngestFileCount);
   });
