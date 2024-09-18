@@ -27,7 +27,6 @@ async function observeSqlPageFiles(db: string) {
     `SELECT path, length(contents) as contentsSize, last_modified as modifiedAt FROM sqlpage_files;`,
   );
   const stdErr = sqliteResult.stderr().trim();
-  console.log({ res: sqliteResult.stdout().trim() })
   if (stdErr.length) console.log(brightRed(stdErr));
   return {
     db: resolve(db),
