@@ -3,7 +3,7 @@
 ### Table of Contents
 
 - [Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation](#resource-surveillance-integration-engine-rsie-for-local-first-edge-based-stateful-data-aggregation)
-    - [Table of Contents](#table-of-contents)
+  
   - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
   - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
   - [Resource Surveillance Integration Engine (`RSIE`) features and use cases](#resource-surveillance-integration-engine-rsie-features-and-use-cases)
