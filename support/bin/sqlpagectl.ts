@@ -18,11 +18,13 @@ const DEV_DEFAULT_PORT = 9000;
 const DEV_DEFAULT_DB = Deno.env.get("SURVEILR_STATEDB_FS_PATH") ??
   "resource-surveillance.sqlite.db";
 
-async function observeSqlPageFiles(db: string) {
+async function observeSqlPageFiles(db: string, fallBackToSqlite3: boolean) {
   const dbFileStat = Deno.lstatSync(db);
+  const command = fallBackToSqlite3
+    ? ["sqlite3", db, "--json"]
+    : ["surveilr", "shell", "-d", db];
   const sqliteResult = await spawnedResult(
-    // ["sqlite3", db, "--json"],
-    ["surveilr", "shell", "-d", db],
+    command,
     undefined,
     `SELECT path, length(contents) as contentsSize, last_modified as modifiedAt FROM sqlpage_files;`,
   );
@@ -56,6 +58,7 @@ async function executeSqlite3(
   file: string,
   db: string,
   showModifiedUrlsOnChange: boolean,
+  fallBackToSqlite3: boolean,
 ) {
   let sqlScript: string | null = "";
 
@@ -76,15 +79,17 @@ async function executeSqlite3(
   }
 
   const observeBefore = showModifiedUrlsOnChange
-    ? await observeSqlPageFiles(db)
+    ? await observeSqlPageFiles(db, fallBackToSqlite3)
     : null;
-  // const sqlResult = await spawnedResult(["sqlite3", db], undefined, sqlScript);
-  const sqlResult = await spawnedResult(["surveilr", "shell", "-d", db], undefined, sqlScript);
+  const command = fallBackToSqlite3
+    ? ["sqlite3", db]
+    : ["surveilr", "shell", "-d", db];
+  const sqlResult = await spawnedResult(command, undefined, sqlScript);
   if (sqlResult.success) {
+    const executedCommand = fallBackToSqlite3 ? "sqlite3" : `surveilr shell -d`;
     console.log(
       dim(`✅`),
-      // brightGreen(`cat ${relative(".", file)} | sqlite3 ${db}`),
-      brightGreen(`cat ${relative(".", file)} | surveilr shell -d ${db}`),
+      brightGreen(`cat ${relative(".", file)} | ${executedCommand} ${db}`),
     );
   } else {
     // if you change the name of this file, update watchFiles(...) call and gitignore
@@ -114,7 +119,7 @@ async function executeSqlite3(
   console.log(brightRed(sqlResult.stderr()));
 
   const observeAfter = showModifiedUrlsOnChange
-    ? await observeSqlPageFiles(db)
+    ? await observeSqlPageFiles(db, fallBackToSqlite3)
     : null;
   return {
     sqlScript,
@@ -157,6 +162,7 @@ async function watchFiles(
     readonly start?: () => Promise<void>;
   },
   showModifiedUrlsOnChange: boolean,
+  fallBackToSqlite3: boolean,
 ) {
   try {
     console.log(
@@ -177,6 +183,7 @@ async function watchFiles(
               path,
               db,
               showModifiedUrlsOnChange,
+              fallBackToSqlite3,
             );
             if (showModifiedUrlsOnChange) {
               const spFiles = result?.sqlPageFilesModified?.sort((a, b) =>
@@ -221,12 +228,14 @@ function sqlPageDevAction(options: {
   readonly standalone: boolean;
   readonly restartSqlpageOnChange: true;
   readonly showModifiedUrlsOnChange: boolean;
+  readonly sqlite3: boolean;
 }) {
   const {
     port,
     standalone,
     restartSqlpageOnChange,
     showModifiedUrlsOnChange,
+    sqlite3,
   } = options;
   const db = DEV_DEFAULT_DB;
 
@@ -307,6 +316,7 @@ function sqlPageDevAction(options: {
     db,
     sqlPageService,
     showModifiedUrlsOnChange,
+    sqlite3,
   );
 
   sqlPageService.start();
@@ -324,5 +334,6 @@ await new Command()
     .option("-s, --standalone", "Run standalone SQLPage instead of surveilr embedded", { default: false })
     .option("--restart-sqlpage-on-change", "Restart the SQLPage server on each change, needed for SQLite", { default: true })
     .option("--show-modified-urls-on-change", "After reloading sqlpage_files, show the recently modified URLs", { default: false })
+    .option("--sqlite3", "Fallback to using sqlite3 instead of surveilr shell", { default: false })
     .action(sqlPageDevAction)
   .parse(Deno.args ?? ["dev"]);
