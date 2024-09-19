@@ -94,36 +94,40 @@ messages are appropriately processed and stored for further analysis.
 
 ## Try it out on any device without this repo (if you're just using the SQL scripts)
 
-Prepare the directory with sample files, download direct message inbox samples, download surveilr, and create resource-surveillance.sqlite.db RSSD file that will contain queryable direct message inbox content data and attachments including pdf and CCDA xml files.
+Prepare the directory with sample files, download direct message inbox samples,
+download surveilr, and create resource-surveillance.sqlite.db RSSD file that
+will contain queryable direct message inbox content data and attachments
+including pdf and CCDA xml files.
 
 ```bash
 # prepare a working directory
 $ mkdir -p /tmp/direct-messages
 $ cd /tmp/direct-messages
 ```
+
 Prepare the sample files for ingestion
+
 ```bash
 # download the sample direct messages zip file using the below command.
 $ wget https://github.com/opsfolio/resource-surveillance-commons/raw/main/pattern/direct-messaging-service/ingest.zip
 ```
 
-Extract the zip file 
+Extract the zip file
+
 ```bash
 $ unzip ./ingest.zip
 ```
 
-Once unzipped, you should see the sample files in the ingest folder. The 'direct-messages' 
-directory structure should look like this:
+Once unzipped, you should see the sample files in the ingest folder. The
+'direct-messages' directory structure should look like this:
 
-``` bash
-
+```bash
 direct-messages
 ├── ingest
     ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.xml
     ├── 20240808171534044_messageDeliveryStatus.json
     ├── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_content.json
     └── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.pdf
-
 ```
 
 Now
@@ -134,7 +138,9 @@ into 'direct-messages' directory, then ingest and query the data:
 # ingest the files in the "ingest/" directory, creating resource-surveillance.sqlite.db
 $ ./surveilr ingest files -r ingest/
 ```
+
 After ingestion your directory structure should look like this
+
 ```
 direct-messages
 ├── ingest
@@ -144,12 +150,13 @@ direct-messages
 │   └── 00000191-31c8-a179-d9f7-ae67ed7c3b80_20240808171502355_sample.pdf
 └── resource-surveillance.sqlite.db            # SQLite database
 ```
+
 Post-ingestion, `surveilr` is no longer required, the `ingest` directory can be
 ignored, only `sqlite3` is required because all content is in the
-```resource-surveillance.sqlite.db``` SQLite database which does not require any
+`resource-surveillance.sqlite.db` SQLite database which does not require any
 other dependencies.
 
-``` bash
+```bash
 # use SQLPage to preview content (be sure `deno` v1.40 or above is installed)
 $ deno run https://raw.githubusercontent.com/opsfolio/resource-surveillance-commons/main/pattern/direct-messaging-service/ux.sql.ts | sqlite3 resource-surveillance.sqlite.db
 
@@ -185,12 +192,13 @@ reporting tools, DBeaver, DataGrip, or any other SQLite data access tools.
 
 #### Extract the Zip File
 
-Before beginning the ingestion process, extract the sample files from the zip archive named `ingest.zip`.
+Before beginning the ingestion process, extract the sample files from the zip
+archive named `ingest.zip`.
 
 ### Verify the Directory Structure
 
-Once unzipped, you should see the sample files in the ingest folder. The 'direct-messaging-service' 
-directory structure should look like this:
+Once unzipped, you should see the sample files in the ingest folder. The
+'direct-messaging-service' directory structure should look like this:
 
 ```
 .
@@ -256,3 +264,17 @@ changes, you can use _watch mode_ instead.
 
 See: [`sqlpagectl.ts`](../../support/bin/sqlpagectl.ts).
 
+## How to Run the Tests
+
+To execute test and ensure that `surveilr` is functioning correctly:
+
+1. Run the tests using Deno:
+
+   ```bash
+   deno test -A  # Executes test
+   ```
+   This process will create an 'assurance' folder, where you can find the files
+   related to the test, including the database and ingestion folder
+
+The `-A` flag provides all necessary permissions for the tests to run, including
+file system access and network permissions.
