@@ -21,7 +21,8 @@ const DEV_DEFAULT_DB = Deno.env.get("SURVEILR_STATEDB_FS_PATH") ??
 async function observeSqlPageFiles(db: string) {
   const dbFileStat = Deno.lstatSync(db);
   const sqliteResult = await spawnedResult(
-    ["sqlite3", db, "--json"],
+    // ["sqlite3", db, "--json"],
+    ["surveilr", "shell", "-d", db],
     undefined,
     `SELECT path, length(contents) as contentsSize, last_modified as modifiedAt FROM sqlpage_files;`,
   );
@@ -77,11 +78,13 @@ async function executeSqlite3(
   const observeBefore = showModifiedUrlsOnChange
     ? await observeSqlPageFiles(db)
     : null;
-  const sqlResult = await spawnedResult(["sqlite3", db], undefined, sqlScript);
+  // const sqlResult = await spawnedResult(["sqlite3", db], undefined, sqlScript);
+  const sqlResult = await spawnedResult(["surveilr", "shell", "-d", db], undefined, sqlScript);
   if (sqlResult.success) {
     console.log(
       dim(`✅`),
-      brightGreen(`cat ${relative(".", file)} | sqlite3 ${db}`),
+      // brightGreen(`cat ${relative(".", file)} | sqlite3 ${db}`),
+      brightGreen(`cat ${relative(".", file)} | surveilr shell -d ${db}`),
     );
   } else {
     // if you change the name of this file, update watchFiles(...) call and gitignore
