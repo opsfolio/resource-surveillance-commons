@@ -65,3 +65,11 @@ time-consuming to re-run the same command in the CLI manually each time a file
 changes, you can use _watch mode_ instead.
 
 See: [`sqlpagectl.ts`](../../support/bin/sqlpagectl.ts).
+
+## Running Tests
+
+To run the test cases for this project, use the following command:
+
+```bash
+deno test -A ./info_assurance_controls_test.ts
+```
