@@ -3,9 +3,7 @@
 ### Table of Contents
 
 - [Resource Surveillance Integration Engine (`RSIE`) for Local-first Edge-based Stateful Data Aggregation](#resource-surveillance-integration-engine-rsie-for-local-first-edge-based-stateful-data-aggregation)
-  
-  - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
-  - [Electronic Data Exchange Overview](#electronic-data-exchange-overview)
+   - [Introduction to the Resource Surveillance Integration Engine (RSIE)](#introduction-to-the-resource-surveillance-integration-engine-rsie)
   - [Resource Surveillance Integration Engine (`RSIE`) features and use cases](#resource-surveillance-integration-engine-rsie-features-and-use-cases)
   - [Resource Surveillance Integration Engine (RSIE) Ingestion/Integration Pipeline](#resource-surveillance-integration-engine-rsie-ingestionintegration-pipeline)
     - [Real-Time and Offline Processing](#real-time-and-offline-processing)
@@ -31,12 +29,7 @@
     - [Integration with Other Systems](#integration-with-other-systems)
     - [Data Quality and Governance](#data-quality-and-governance)
   - [Technical Summary](#technical-summary)
-  - [Various Use Cases and Sequence Diagrams](#various-use-cases-and-sequence-diagrams)
-    - [Direct Messaging Service](#direct-messaging-service)
-      - [Overview](#overview)
-    - [Diabetes Research Hub (DRH)](#diabetes-research-hub-drh)
-      - [Overview](#overview-1)
-  - [Resource surveillance (surveilr)](#resource-surveillance-surveilr)
+  - [Resource Surveillance Integration Engine (RSIE) - Data Flow Overview](#resource-surveillance-integration-engine-rsie---data-flow-overview)
 
 ## Introduction to the Resource Surveillance Integration Engine (RSIE)
 
@@ -53,21 +46,23 @@ and operate on common data in a local-first, edge-based SQL-centric manner.
 - Edge-based means that data should be handled as close to where the data is
   collected rather than everything being done centrally.
 
-A typical use for RSIE's stateful, local-first, edge-based SQL-centric
-capabilities is for complex medical data integration tasks. While RSIE can help
-with almost any integration tasks, RSIE is particularly useful to help integrate
-**clinical operations data**, **patient data**, **pharmacy** and **billing
-information** to and from multiple systems.
+RSIE's stateful, local-first, edge-based, SQL-centric capabilities are ideal for
+complex data integration tasks. While it can support a wide range of integration
+needs, RSIE is particularly valuable for integrating **clinical operations
+data**, **patient records**, **pharmacy**, and **billing information** across
+multiple systems. Beyond these use cases, RSIE also plays a crucial role in data
+processing and analysis pipelines, supporting **infrastructure assurance**,
+**audits**, **content assembler**, and more.
 
-RSIE supports a variety of technologies to ensure smooth communication and data
-transfer. It provides opinionated architecture and design guidance for file
-placement in designated ingestions folders using technologies like **WebDAV**,
-**SFTP**, and **virtual printers**. It works with various message formats
-including **HL7**, **FHIR**, **JSON**, and **XML**, while also supporting file
-types such as **CSV**, **Excel**, and custom formats. The module can connect
-directly to customer systems via **SQL** for database-level exchanges, and it
-integrates with webhook APIs to trigger actions based on data retrieved from
-third-party databases.
+RSIE leverages a wide range of technologies to facilitate seamless communication
+and data transfer. It offers an opinionated architecture with design guidelines
+for file placement in specific ingestion folders, utilizing technologies such as
+**WebDAV**, **SFTP**, and **virtual printers**. It supports multiple message
+formats, including **HL7**, **FHIR**, **JSON**, and **XML**, alongside file
+types like **CSV**, **Excel**, and custom formats. Additionally, the module can
+connect to customer database systems through **Capturable Executables**,
+enabling database-level exchanges. The processed data can then be integrated
+with the host or third-party systems for further analysis and reporting.
 
 In addition to simplifying data exchange processes, RSIE's local-first,
 stateful, edge-based architecture helps reduce sensitive data exposure
@@ -79,45 +74,10 @@ manageable application that resides on any device like a phone, workstations and
 laptop PCs, or servers in the cloud with highly secure environment. Its primary
 role is to collect data from the host systems (the system where the data
 originates), and securely transmit designated third-party systems, it also
-collect/process data from the third party system and transfer the same to the
-source systems in a secure way. This process is fundamental to ensuring that
-sensitive healthcare data is shared safely and efficiently across different
-platforms.
-
-## Electronic Data Exchange Overview
-
-**Integration Engine (IE)** utilizes a secure and reliable data exchange method,
-ensuring that all patient information is transmitted in compliance with industry
-standards. The system supports:
-
-1. **Clinical Operating and Patient Data**: This requires managing patient data
-   for various uses within the **Digital Health Technology Solution** to support
-   ultimate patient care, coordination, and other operational tasks to ensure
-   smooth delivery of services and patient satisfaction.
-
-2. **Patient medication and continuity of care (COC) Data**: Facilitating the
-   exchange of patient treatment plans, progress notes, and other clinical
-   information with the partner EHR system and also transfer of patient
-   demograhics and billing, progress notes and other information which is
-   required to do the various steps/activities in the clinical workflows.
-
-3. **Patient Billing/Pharmacy, refill Information**: Data exchange in this
-   category deals with the exchange of data related to medication/prescription,
-   delivery of medicine, and various billing and forms data generated by
-   practice systems, as well as data transferred from third-party EHR systems to
-   streamline activities involved in patient care.
-
-4. **Data exchange standards for interoperability**: In order to ensure a
-   universal data standard, Integration Engine uses common message standards for
-   data exchange, which include HL7, FHIR, JSON, XML, CSV, PDF, XLS, and direct
-   exchange using Webhooks/APIs between practice systems and third-party
-   systems.
-
-The integration of these data types within practice systems will enhance
-efficiency and effectiveness through an integrated platform, ensuring that
-patient care is delivered with the highest level of accuracy, security, and
-patient satisfaction, benefiting from real-time data exchange that supports
-high-quality patient care.
+collects and processes data from third-party systems and securely transfers it
+to central systems for analysis and decision-making. This process is fundamental
+to ensuring that sensitive data is shared safely and efficiently across
+different platforms.
 
 ## Resource Surveillance Integration Engine (`RSIE`) features and use cases
 
@@ -468,118 +428,27 @@ transformation, visualization, aggregation, and synchronization pipeline.
 
 ![Resource Surveillance Integration Engine (RSIE) Dataflow diagram](assets/resource-surveillance-integration-engine-data-flow.drawio.svg)
 
-## Various Use Cases and Sequence Diagrams
+## Resource Surveillance Integration Engine (RSIE) - Data Flow Overview
 
-### Direct Messaging Service
+- The RSIE operates as a local-first, edge-based, SQL-centric platform designed
+  to integrate and process data from various sources and formats. It enables
+  secure file acquisition through traditional OS file systems, cloud storage
+  (e.g., AWS S3), web-based file management (WebDAV), and secure transfer
+  protocols (SFTP). Additionally, it supports multi-source file acquisition and
+  digital document conversion through virtual printers.
 
-#### Overview
+- Ingestion pipelines handle structured and unstructured data, including formats
+  such as JSON, XML, CSV, and industry-standard protocols like HL7, FHIR, and
+  EDI. Data can be transformed into queryable formats like JSON and columnar
+  storage formats (e.g., Parquet) to optimize for analytics and reporting.
 
-Direct messaging service is a secure messaging service that facilitates the
-exchange of protected health information (PHI) in compliance with healthcare
-regulations like HIPAA. It is designed to support healthcare providers,
-organizations, and other stakeholders in securely transmitting health-related
-data, ensuring both privacy and integrity.
+- RSIE’s flexible architecture allows integration with PLM systems like GitHub
+  and Jira, ERP systems, and messaging platforms. Custom SQL tables, built-in
+  SQL views, and transformation capabilities enable users to store, process, and
+  analyze data across multiple databases, including SQLite, PostgreSQL, MySQL,
+  and cloud-based systems like DuckDB.
 
-Health information is exchanged securely between various Electronic Health
-Records (EHR) systems using email-like messages. These messages include contents
-and attachments. The attachments typically consist of medical or discharge
-summaries. A Continuity of Care Document (CCDA) is also often included as an
-attachment, which contains comprehensive patient information such as medication,
-vitals, allergies, lab tests, prescriptions, and provider notes. This
-illustrates the various steps involved in integration workflows, which include
-data acquisition, ingestion, transformation, visualization, synchronization, and
-application integration.
-
-```mermaid
-sequenceDiagram
-    participant ReceiverClient as phiMail Receiver Client
-    participant ReceiverModule as phiMail Receiver Module
-    participant phiMailServer as phiMail Server
-    participant InboundFolder as Inbound Folder
-    participant surveilr as surveilr
-    participant ProcessedFolder as Processed Folder
-    participant CronJob as Cron Job
-    participant BackupProcess as Backup Process
-    participant ArchiveFolder as Archive Folder
-
-    ReceiverClient->>ReceiverModule: 1. Run the phiMail receiving application at regular intervals
-    ReceiverModule->>phiMailServer: 2. Connect to the phiMail server
-    ReceiverModule->>phiMailServer: 3. Check for unread messages
-
-    alt Unread messages exist
-        phiMailServer-->>ReceiverModule: 4. Return content, subject, and attachments
-        ReceiverModule->>InboundFolder: 5. Download and save attachments
-        ReceiverModule->>ReceiverModule: Convert subject and content as JSON
-        ReceiverModule->>phiMailServer: 6. Send acknowledgment to phiMail server
-    end
-
-    ReceiverModule->>phiMailServer: 7. Check for delivery status details
-
-    alt Delivery status details exist
-        phiMailServer-->>ReceiverModule: 8. Return delivery status
-        ReceiverModule->>ReceiverModule: 9. Convert delivery status into JSON message
-        ReceiverModule->>InboundFolder: 10. Store delivery status message in Inbound folder
-    end
-
-    surveilr->>InboundFolder: 11. Read files
-    surveilr->>surveilr: 12. Ingest files and create RSSD
-    surveilr->>ProcessedFolder: 13. Move files from Inbound to Processed folder
-
-    CronJob->>BackupProcess: 14. Trigger backup job at scheduled intervals
-    BackupProcess->>ProcessedFolder: 15. Read files from the Processed folder
-    BackupProcess->>ArchiveFolder: 16. Move files from Processed to Archive folder
-```
-
-### Diabetes Research Hub (DRH)
-
-#### Overview
-
-**The Diabetes Research Hub (DRH)** is designed to meet the growing demand for a
-centralized platform that facilitates the management and analysis of continuous
-glucose monitor (CGM) data. As CGM technology becomes increasingly accessible
-and widely used, the need for an organized hub to interpret this data is crucial
-for both clinicians and engineers. The DRH enables real-world data analysis for
-two primary objectives:
-
-- **Identifying Effects of Diet, Behavior, and Sleep:** CGM data offers valuable
-  insights into glycemic patterns across diverse populations, including
-  individuals with diabetes, prediabetes, obesity, and those without diabetes.
-  By understanding how factors such as diet, behavior, and sleep influence
-  glucose levels, researchers can uncover key patterns that contribute to better
-  health outcomes.
-- **Predicting and Preventing Complications:** Population-level CGM data has
-  significant potential in predicting, preventing, and treating complications
-  associated with diabetes. This focus aligns with broader goals in population
-  health management, where early identification of trends can lead to more
-  effective interventions and improved long-term health outcomes. The DRH is
-  built to be adaptable, integrating additional datasets beyond CGM data, such
-  as:
-
-  - Electronic Health Records (EHRs)
-  - Wearable Devices
-  - Patient-Reported Outcomes (PROs)
-  - Other Datasets (e.g., social determinants of health, environmental factors,
-    or genetic data)
-
-This flexibility makes DRH a comprehensive platform for diabetes research,
-helping researchers explore a wide array of factors that influence diabetes and
-its complications.
-
-## Resource surveillance (surveilr)
-
-Resource surveillance (surveilr) is a command-line edge tool (single binary)
-designed for file monitoring, processing, and ingestion, typically used in data
-pipelines or automated workflows. It is often employed to watch specific
-directories, detect changes, and trigger actions when files are added, modified,
-or removed. The tool can be integrated into various systems where real-time file
-handling is crucial, such as data processing applications, automated backup
-solutions, and ETL (Extract, Transform, Load) processes.
-
-| Features list                                                                | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Multi-source data ingestion and complete orchestration in the data pipelines | STDOUT content, SQL content, Single files and archives, IMAP (emails) yml, HL7, FHIR, JSON, CSV, XML, Product Lifecycle Management (PLM) systems, Conversations (Twitter, Discord, Slack, etc.)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Feature at a glance                                                          | **File Monitoring:** surveilr continuously monitors specified directories for any file changes, such as additions, deletions, or modifications. It can be configured to watch multiple directories simultaneously. It works idempotently even in large number of files and folders.<br><br>**Ingestion (File and Task):**<br>_File ingestion_ reads and processes files from a file system into a structured database for monitoring and analysis, we can do transformation as needed, and storing them in a database.<br>_Task Ingestion_ helps us to automate the execution of shell tasks, transforming the outputs into structured JSON data that is inserted into the uniform_resource table in the RSSD.<br><br>**Custom Commands and Actions (capturable executable):**<br>Users can define custom actions that surveilr should perform when a file event occurs. These actions might include executing scripts, moving files, or triggering other programs using the ingested output to the input of other task or scripts etc.<br>CEs allow you to pass in arguments or behaviors to the ingest command that allows certain patterns of files to be executed in a safe shell, and their STDOUT and STDERR captured and stored in uniform_resource. These scripts are referred to as \_capturable executables_ or CEs and are influenced through _Processing Instructions_ (PIs) in file names. |
-| Data transformation capabilities                                             | Multiple transformation types also supported by surveilr examples, XML to JSON conversion, YAML and TOML processing, CSV handling, Excel workbook processing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Advanced data processing Integration capabilities                            | _**Uniform resource tables (RSSD)**_<br>Bespoke SQL views, Built-in convenience SQL views, Bespoke Tables etc., Multiple integration capabilities, FDW (pull), DuckDB (push via ATTACH), SQLPage, SQLite RSSPs, ETL/ELT support.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Compatibility with various presentation layers                               | Pgweb, DBeaver, PostgREST, platformatic.dev etc...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| OS/Platform                                                                  | Windows, macOS and Linux                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+- The system features a web-based user interface (Surveilr Web UI) for SQL
+  querying and content management, alongside a console that supports SQL
+  navigation, orchestration, and auditing, making RSIE a powerful tool for
+  scalable, secure, and efficient data integration and processing.
