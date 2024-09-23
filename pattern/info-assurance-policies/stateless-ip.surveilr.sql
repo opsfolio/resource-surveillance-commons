@@ -180,8 +180,24 @@ UNION ALL
 Select 'Disable USB device' title,'vidisable_usb_device'as viewname,'opsfolio/info/policy/vidisable_usb_device.sql' as path,0 as used_path
 UNION ALL
 Select 'Fraud assessment' title,'vifraud_assessment'as viewname,'opsfolio/info/policy/vifraud_assessment.sql' as path,0 as used_path
-
-
+UNION ALL
+Select 'Sample Tickets For Terminated Employees Have Been Revoked.(Gitlab)' title,'vigitlab_terminated_employee'as viewname,'opsfolio/info/policy/vigitlab_terminated_employee.sql' as path,0 as used_path
+UNION ALL
+Select 'Gitlab Tickets' title,'vigitlab_sample_ticket'as viewname,'opsfolio/info/policy/vigitlab_sample_ticket.sql' as path,0 as used_path
+UNION ALL
+Select 'Sample User Access Provisioning Ticket' title,'visample_access_provisioning_ticket'as viewname,'opsfolio/info/policy/visample_access_provisioning_ticket.sql' as path,0 as used_path
+UNION ALL
+Select 'Disaster Recovery Test Reports' title,'vidisaster_recovery_reports'as viewname,'opsfolio/info/policy/vidisaster_recovery_reports.sql' as path,0 as used_path
+UNION ALL
+Select 'Disaster Recovery Test Result' title,'vidisaster_recovery_reports'as viewname,'opsfolio/info/policy/vidisaster_recovery_reports.sql' as path,0 as used_path
+UNION ALL
+Select 'Sample Change Management Git Ticket' title,'visample_change_management_ticket'as viewname,'opsfolio/info/policy/visample_change_management_ticket.sql' as path,0 as used_path
+UNION ALL
+Select 'Medigy-Closed Gitlab Tickets' title,'vimedigy_closed_gitlab_tickets'as viewname,'opsfolio/info/policy/vimedigy_closed_gitlab_tickets.sql' as path,0 as used_path
+UNION ALL
+Select 'Medigy-Open Gitlab Tickets' title,'vimedigy_open_gitlab_tickets'as viewname,'opsfolio/info/policy/vimedigy_open_gitlab_tickets.sql' as path,0 as used_path
+UNION ALL
+Select 'Penetration Test Report' title,'vipenetration_test_report'as viewname,'opsfolio/info/policy/vipenetration_test_report.sql' as path,0 as used_path
 
 
 ;
@@ -611,3 +627,175 @@ sia.existing_controls, sia.priority_id, sia.reported_date, p.person_first_name |
 p1.person_first_name || ' ' ||p1.person_last_name as Responsible_Person , sia.created_at, ior.impact
 FROM security_impact_analysis sia inner join impact_of_risk ior on (sia.security_impact_analysis_id = ior.security_impact_analysis_id) join person p on p.person_id = sia.reported_by_id
 join person p1 on p1.person_id=sia.responsible_by_id join vulnerability v on v.vulnerability_id = sia.vulnerability_id join asset_risk ar on ar.asset_risk_id = sia.asset_risk_id;
+
+DROP VIEW IF EXISTS vigitlab_terminated_employee;
+CREATE VIEW vigitlab_terminated_employee AS 
+SELECT
+    i.issue_id AS Issue,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE
+    i.url LIKE '%issues/838%';
+
+
+DROP VIEW IF EXISTS vigitlab_sample_ticket;
+CREATE VIEW vigitlab_sample_ticket AS 
+   SELECT 
+    json_extract(ur.content, '$.iid') AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    uniform_resource AS ur ON i.uniform_resource_id = ur.uniform_resource_id
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE 
+    p.name="www.medigy.com"  AND Issues=838;
+
+ DROP VIEW IF EXISTS visample_access_provisioning_ticket;
+CREATE VIEW visample_access_provisioning_ticket AS 
+    SELECT
+    i.issue_id AS Issue,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE
+    i.url LIKE '%issues/509%';
+
+
+DROP VIEW IF EXISTS vidisaster_recovery_reports;
+CREATE VIEW vidisaster_recovery_reports AS 
+   SELECT
+    i.issue_id AS Issue,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE
+    i.url LIKE '%issues/667%';
+
+DROP VIEW IF EXISTS visample_change_management_ticket;
+CREATE VIEW visample_change_management_ticket AS 
+   SELECT
+    i.issue_id AS Issue,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE
+    i.url LIKE '%issues/671%';
+
+DROP VIEW IF EXISTS vimedigy_closed_gitlab_tickets;
+CREATE VIEW vimedigy_closed_gitlab_tickets AS 
+SELECT 
+    json_extract(ur.content, '$.iid') AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    uniform_resource AS ur ON i.uniform_resource_id = ur.uniform_resource_id
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE 
+    p.name="www.medigy.com" AND i.state="closed";   
+
+DROP VIEW IF EXISTS vimedigy_open_gitlab_tickets;
+CREATE VIEW vimedigy_open_gitlab_tickets AS 
+SELECT 
+    json_extract(ur.content, '$.iid') AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    uniform_resource AS ur ON i.uniform_resource_id = ur.uniform_resource_id
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE 
+    p.name="www.medigy.com" AND i.state="opened";   
+
+
+DROP VIEW IF EXISTS vipenetration_test_report;
+CREATE VIEW vipenetration_test_report AS 
+SELECT
+    i.issue_id AS Issue,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE
+    i.url LIKE '%issues/662%';  
+
+
+    
