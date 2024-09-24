@@ -35,7 +35,7 @@ FROM
   json_each(json_extract(content, '$.ThreatModel.DrawingSurfaceList.DrawingSurfaceModel.Borders.a:KeyValueOfguidanyType')) AS outer,
   json_each(json_extract(outer.value, '$.a:Value.Properties.a:anyType')) AS inner
 WHERE 
-  json_array_length(json_extract(outer.value, '$.a:Value.Properties.a:anyType')) >= 2 AND json_extract(inner.value, '$.b:Value.#text')!="" 
+  json_array_length(json_extract(outer.value, '$.a:Value.Properties.a:anyType')) >= 2 AND json_extract(inner.value, '$.b:Value.#text') IS NOT NULL
   AND json_extract(outer.value, '$.a:Value.@i:type') = 'BorderBoundary' AND json_extract(inner.value, '$.b:Value.#text') LIKE '%Boundary';
 
 DROP VIEW IF EXISTS asset_service_view;

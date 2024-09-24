@@ -198,6 +198,20 @@ UNION ALL
 Select 'Medigy-Open Gitlab Tickets' title,'vimedigy_open_gitlab_tickets'as viewname,'opsfolio/info/policy/vimedigy_open_gitlab_tickets.sql' as path,0 as used_path
 UNION ALL
 Select 'Penetration Test Report' title,'vipenetration_test_report'as viewname,'opsfolio/info/policy/vipenetration_test_report.sql' as path,0 as used_path
+UNION ALL
+Select 'Firewall Inbound Rules' title,'vifirewall_inbound_rules'as viewname,'opsfolio/info/policy/vifirewall_inbound_rules.sql' as path,0 as used_path
+UNION ALL
+Select 'Firewall Outbound Rules' title,'vifirewall_outbound_rules'as viewname,'opsfolio/info/policy/vifirewall_outbound_rules.sql' as path,0 as used_path
+UNION ALL
+Select 'Firewall' title,'vifirewall'as viewname,'opsfolio/info/policy/vifirewall.sql' as path,0 as used_path
+UNION ALL
+Select 'Open Github Tickets' title,'viopen_github_tickets'as viewname,'opsfolio/info/policy/viopen_github_tickets.sql' as path,0 as used_path
+UNION ALL
+Select 'Closed Github Tickets' title,'viclosed_github_tickets'as viewname,'opsfolio/info/policy/viclosed_github_tickets.sql' as path,0 as used_path
+UNION ALL
+Select 'Open Github Tickets-Polyglot' title,'viopen_github_tickets_polyglot'as viewname,'opsfolio/info/policy/viopen_github_tickets_polyglot.sql' as path,0 as used_path
+UNION ALL
+Select 'Closed Github Tickets-Polyglot' title,'viclosed_github_tickets_polyglot'as viewname,'opsfolio/info/policy/viclosed_github_tickets_polyglot.sql' as path,0 as used_path
 
 
 ;
@@ -798,4 +812,122 @@ WHERE
     i.url LIKE '%issues/662%';  
 
 
-    
+DROP VIEW IF EXISTS vifirewall_inbound_rules;
+CREATE VIEW vifirewall_inbound_rules AS 
+SELECT
+    json_extract(value, '$.id') AS id,
+    json_extract(value, '$.title') AS title,
+    json_extract(value, '$.category') AS category,
+    json_extract(value, '$.from_id') AS from_id,
+    json_extract(value, '$.to_id') AS to_id
+FROM
+    uniform_resource,
+    json_each(content)
+WHERE
+     uri = 'steampipeListDoFirewallInboundRules'; 
+
+DROP VIEW IF EXISTS vifirewall_outbound_rules;
+CREATE VIEW vifirewall_outbound_rules AS 
+SELECT
+    json_extract(value, '$.id') AS id,
+    json_extract(value, '$.title') AS title,
+    json_extract(value, '$.category') AS category,
+    json_extract(value, '$.from_id') AS from_id,
+    json_extract(value, '$.to_id') AS to_id
+FROM
+    uniform_resource,
+    json_each(content)
+WHERE
+     uri = 'steampipeListDoFirewallOutboundRules';
+
+DROP VIEW IF EXISTS vifirewall;
+CREATE VIEW vifirewall AS 
+   SELECT
+    json_extract(value, '$.firewalls') AS firewalls,
+    json_extract(value, '$.status') AS status
+    FROM
+    uniform_resource,
+    json_each(content)
+    WHERE
+     uri = 'steampipeListDoFirewalls';
+
+
+DROP VIEW IF EXISTS viopen_github_tickets;
+CREATE VIEW viopen_github_tickets AS 
+SELECT 
+    i.issue_number AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE 
+    p.name="suite.opsfolio.com" AND i.state="OPEN";
+
+DROP VIEW IF EXISTS viclosed_github_tickets;
+CREATE VIEW  viclosed_github_tickets AS 
+SELECT 
+    i.issue_number AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id
+WHERE 
+    p.name="suite.opsfolio.com" AND i.state="CLOSED"; 
+
+DROP VIEW IF EXISTS viopen_github_tickets_polyglot;
+CREATE VIEW  viopen_github_tickets_polyglot AS 
+SELECT 
+    i.issue_number AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id 
+WHERE 
+    p.name="polyglot-prime" AND i.state="OPEN";
+
+DROP VIEW IF EXISTS viclosed_github_tickets_polyglot;
+CREATE VIEW  viclosed_github_tickets_polyglot AS 
+SELECT 
+    i.issue_number AS Issues,
+    i.title,
+    i.url,
+    i.body AS Description,
+    i.state,
+    i.created_at,
+    i.updated_at,
+    u.login AS assigned_to
+FROM 
+    ur_ingest_session_plm_acct_project_issue AS i
+LEFT JOIN 
+    ur_ingest_session_plm_user AS u ON i.assigned_to = u.ur_ingest_session_plm_user_id
+JOIN 
+    ur_ingest_session_plm_acct_project AS p ON p.ur_ingest_session_plm_acct_project_id = i.ur_ingest_session_plm_acct_project_id 
+WHERE 
+    p.name="polyglot-prime" AND i.state="CLOSED";
