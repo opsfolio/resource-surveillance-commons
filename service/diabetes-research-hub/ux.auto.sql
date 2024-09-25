@@ -783,15 +783,19 @@ VALUES
     ('prime', '/drh', 19, '/drh/participant-related-data', '/drh/participant-related-data/', 'Participant Information', 'Participant Information', NULL, NULL)
 ON CONFLICT (namespace, parent_path, path)
 DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
+INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
+('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
+('/site/public.sql', 'DRH Public Site', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
+('/site/dtsorg.sql', 'DTS Main Site', 'prime', '/site', 2, 'https://www.diabetestechnology.org/index.shtml', NULL, NULL, NULL);
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'shell/shell.json',
       '{
   "component": "shell",
-  "title": "Resource Surveillance State Database (RSSD)",
-  "icon": "database",
+  "title": "Diabetes Research Hub",
+  "icon": "",
   "layout": "fluid",
   "fixed_top_menu": true,
-  "link": "/",
+  "link": "https://drh.diabetestechnology.org/",
   "menu_item": [
     {
       "link": "/",
@@ -804,90 +808,114 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
     "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/handlebars.min.js",
     "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js"
   ],
-  "footer": "Resource Surveillance Web UI"
+  "footer": "Resource Surveillance Web UI",
+  "image": "./assets/diabetic-research-hub-logo.png"
 };',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'shell/shell.sql',
       'SELECT ''shell'' AS component,
-       ''Resource Surveillance State Database (RSSD)'' AS title,
-       ''database'' AS icon,
+       ''Diabetes Research Hub'' AS title,
+       NULL AS icon,
        ''fluid'' AS layout,
        true AS fixed_top_menu,
-       ''/'' AS link,
+       ''https://drh.diabetestechnology.org/'' AS link,
        ''{"link":"/","title":"Home"}'' AS menu_item,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js'' AS javascript,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/sql.min.js'' AS javascript,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/handlebars.min.js'' AS javascript,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js'' AS javascript,
        json_object(
-              ''link'', ''/ur'',
-              ''title'', ''Uniform Resource'',
-              ''submenu'', (
-                  SELECT json_group_array(
-                      json_object(
-                          ''title'', title,
-                          ''link'', link,
-                          ''description'', description
-                      )
-                  )
-                  FROM (
-                      SELECT
-                          COALESCE(abbreviated_caption, caption) as title,
-                          COALESCE(url, path) as link,
-                          description
-                      FROM sqlpage_aide_navigation
-                      WHERE namespace = ''prime'' AND parent_path = ''/ur''
-                      ORDER BY sibling_order
-                  )
-              )
-          ) as menu_item,
+            ''link'', ''/ur'',
+            ''title'', ''Uniform Resource'',
+            ''submenu'', (
+                SELECT json_group_array(
+                    json_object(
+                        ''title'', title,
+                        ''link'', link,
+                        ''description'', description
+                    )
+                )
+                FROM (
+                    SELECT
+                        COALESCE(abbreviated_caption, caption) as title,
+                        COALESCE(url, path) as link,
+                        description
+                    FROM sqlpage_aide_navigation
+                    WHERE namespace = ''prime'' AND parent_path = ''/ur''
+                    ORDER BY sibling_order
+                )
+            )
+        ) as menu_item,
        json_object(
-              ''link'', ''/console'',
-              ''title'', ''Console'',
-              ''submenu'', (
-                  SELECT json_group_array(
-                      json_object(
-                          ''title'', title,
-                          ''link'', link,
-                          ''description'', description
-                      )
-                  )
-                  FROM (
-                      SELECT
-                          COALESCE(abbreviated_caption, caption) as title,
-                          COALESCE(url, path) as link,
-                          description
-                      FROM sqlpage_aide_navigation
-                      WHERE namespace = ''prime'' AND parent_path = ''/console''
-                      ORDER BY sibling_order
-                  )
-              )
-          ) as menu_item,
+            ''link'', ''/console'',
+            ''title'', ''Console'',
+            ''submenu'', (
+                SELECT json_group_array(
+                    json_object(
+                        ''title'', title,
+                        ''link'', link,
+                        ''description'', description
+                    )
+                )
+                FROM (
+                    SELECT
+                        COALESCE(abbreviated_caption, caption) as title,
+                        COALESCE(url, path) as link,
+                        description
+                    FROM sqlpage_aide_navigation
+                    WHERE namespace = ''prime'' AND parent_path = ''/console''
+                    ORDER BY sibling_order
+                )
+            )
+        ) as menu_item,
        json_object(
-              ''link'', ''/orchestration'',
-              ''title'', ''Orchestration'',
-              ''submenu'', (
-                  SELECT json_group_array(
-                      json_object(
-                          ''title'', title,
-                          ''link'', link,
-                          ''description'', description
-                      )
-                  )
-                  FROM (
-                      SELECT
-                          COALESCE(abbreviated_caption, caption) as title,
-                          COALESCE(url, path) as link,
-                          description
-                      FROM sqlpage_aide_navigation
-                      WHERE namespace = ''prime'' AND parent_path = ''/orchestration''
-                      ORDER BY sibling_order
-                  )
-              )
-          ) as menu_item,
-       ''Resource Surveillance Web UI (v'' || sqlpage.version() || '') '' || ''📄 ['' || substr(sqlpage.path(), 2) || ''](/console/sqlpage-files/sqlpage-file.sql?path='' || substr(sqlpage.path(), 2) || '')'' as footer;',
+            ''link'', ''/orchestration'',
+            ''title'', ''Orchestration'',
+            ''submenu'', (
+                SELECT json_group_array(
+                    json_object(
+                        ''title'', title,
+                        ''link'', link,
+                        ''description'', description
+                    )
+                )
+                FROM (
+                    SELECT
+                        COALESCE(abbreviated_caption, caption) as title,
+                        COALESCE(url, path) as link,
+                        description
+                    FROM sqlpage_aide_navigation
+                    WHERE namespace = ''prime'' AND parent_path = ''/orchestration''
+                    ORDER BY sibling_order
+                )
+            )
+        ) as menu_item,
+       json_object(
+            ''link'', ''/site'',
+            ''title'', ''DRH'',
+            ''submenu'', (
+                SELECT json_group_array(
+                    json_object(
+                        ''title'', title,
+                        ''link'', link,
+                        ''description'', description
+                    )
+                )
+                FROM (
+                    SELECT
+                        COALESCE(abbreviated_caption, caption) as title,
+                        COALESCE(url, path) as link,
+                        description
+                    FROM sqlpage_aide_navigation
+                    WHERE namespace = ''prime'' AND parent_path = ''/site''
+                    ORDER BY sibling_order
+                )
+            )
+        ) as menu_item,
+       ''Resource Surveillance Web UI (v'' || sqlpage.version() || '') '' || ''📄 ['' || substr(sqlpage.path(), 2) || ''](/console/sqlpage-files/sqlpage-file.sql?path='' || substr(sqlpage.path(), 2) || '')'' as footer,
+       ''./assets/diabetic-research-hub-logo.png'' AS image;',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
@@ -1849,51 +1877,52 @@ WITH RECURSIVE breadcrumbs AS (
 SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
-                 SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+              
+  SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/study-related-data/index.sql'') as contents;
     ;
-     SELECT
-   ''text'' as component,
-   ''
-   In Continuous Glucose Monitoring (CGM) research, studies are designed to evaluate the effectiveness, accuracy, and impact of CGM systems on diabetes management. Each study aims to gather comprehensive data on glucose levels, treatment efficacy, and patient outcomes to advance our understanding of diabetes care.
+    SELECT
+  ''text'' as component,
+  ''
+  In Continuous Glucose Monitoring (CGM) research, studies are designed to evaluate the effectiveness, accuracy, and impact of CGM systems on diabetes management. Each study aims to gather comprehensive data on glucose levels, treatment efficacy, and patient outcomes to advance our understanding of diabetes care.
 
-   ### Study Details
+  ### Study Details
 
-   - **Study ID**: A unique identifier assigned to each study.
-   - **Study Name**: The name or title of the study.
-   - **Start Date**: The date when the study begins.
-   - **End Date**: The date when the study concludes.
-   - **Treatment Modalities**: Different treatment methods or interventions used in the study.
-   - **Funding Source**: The source(s) of financial support for the study.
-   - **NCT Number**: ClinicalTrials.gov identifier for the study.
-   - **Study Description**: A description of the study’s objectives, methodology, and scope.
+  - **Study ID**: A unique identifier assigned to each study.
+  - **Study Name**: The name or title of the study.
+  - **Start Date**: The date when the study begins.
+  - **End Date**: The date when the study concludes.
+  - **Treatment Modalities**: Different treatment methods or interventions used in the study.
+  - **Funding Source**: The source(s) of financial support for the study.
+  - **NCT Number**: ClinicalTrials.gov identifier for the study.
+  - **Study Description**: A description of the study’s objectives, methodology, and scope.
 
-   '' as contents_md;
+  '' as contents_md;
 
-   SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
-   SELECT * from drh_study_data;
+  SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+  SELECT * from drh_study_data;
 
 
-       SELECT
-           ''text'' as component,
-           ''
+      SELECT
+          ''text'' as component,
+          ''
 
 ## Site Information
 
- Research sites are locations where the studies are conducted. They include clinical settings where participants are recruited, monitored, and data is collected.
+Research sites are locations where the studies are conducted. They include clinical settings where participants are recruited, monitored, and data is collected.
 
- ### Site Details
+### Site Details
 
-   - **Study ID**: A unique identifier for the study associated with the site.
-   - **Site ID**: A unique identifier for each research site.
-   - **Site Name**: The name of the institution or facility where the research is carried out.
-   - **Site Type**: The type or category of the site (e.g., hospital, clinic).
+  - **Study ID**: A unique identifier for the study associated with the site.
+  - **Site ID**: A unique identifier for each research site.
+  - **Site Name**: The name of the institution or facility where the research is carried out.
+  - **Site Type**: The type or category of the site (e.g., hospital, clinic).
 
-       '' as contents_md;
+      '' as contents_md;
 
-       SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
-       SELECT * from drh_site_data;
+      SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+      SELECT * from drh_site_data;
             ',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
@@ -1972,14 +2001,14 @@ SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
               
-    SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+  SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/author-pub-data/index.sql'') as contents;
     ;
 
-    SELECT
-    ''text'' as component,
-    ''
+  SELECT
+  ''text'' as component,
+  ''
 
 ## Authors
 
@@ -1987,20 +2016,20 @@ This section contains information about the authors involved in study publicatio
 
 ### Author Details
 
-  - **Author ID**: A unique identifier for the author.
-  - **Name**: The full name of the author.
-  - **Email**: The email address of the author.
-  - **Investigator ID**: A unique identifier for the investigator the author is associated with.
-  - **Study ID**: A unique identifier for the study associated with the author.
+- **Author ID**: A unique identifier for the author.
+- **Name**: The full name of the author.
+- **Email**: The email address of the author.
+- **Investigator ID**: A unique identifier for the investigator the author is associated with.
+- **Study ID**: A unique identifier for the study associated with the author.
 
 
-        '' as contents_md;
+      '' as contents_md;
 
-    SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
-    SELECT * from drh_author_data;
-    SELECT
-    ''text'' as component,
-    ''
+  SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+  SELECT * from drh_author_data;
+  SELECT
+  ''text'' as component,
+  ''
 ## Publications Overview
 
 This section provides information about the publications resulting from a study. Publications are essential for sharing research findings with the broader scientific community.
@@ -2014,10 +2043,10 @@ This section provides information about the publications resulting from a study.
 - **Study ID**: A unique identifier for the study associated with the publication.
 
 
-    '' as contents_md;
+  '' as contents_md;
 
-    SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
-    SELECT * from drh_publication_data;
+  SELECT ''table'' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
+  SELECT * from drh_publication_data;
             ',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
@@ -2095,23 +2124,23 @@ SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
               
-    SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+  SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/cgm-associated-data/index.sql'') as contents;
     ;
 
-        /*SELECT
-    ''breadcrumb'' as component;
+      /*SELECT
+  ''breadcrumb'' as component;
+  SELECT
+      ''Home'' as title,
+      ''index.sql''    as link;
+  SELECT
+      ''CGM File Meta Data'' as title;
+      */
+
+
+
     SELECT
-        ''Home'' as title,
-        ''index.sql''    as link;
-    SELECT
-        ''CGM File Meta Data'' as title;
-        */
-
-
-
-      SELECT
 ''text'' as component,
 ''
 
@@ -2142,10 +2171,10 @@ SET current_page = ($offset / $limit) + 1;
 
 -- Display uniform_resource table with pagination
 SELECT ''table'' AS component,
-      TRUE AS sort,
-      TRUE AS search;
+    TRUE AS sort,
+    TRUE AS search;
 SELECT * FROM drh_cgmfilemetadata_view
- LIMIT $limit
+LIMIT $limit
 OFFSET $offset;
 
 SELECT ''text'' AS component,
@@ -2486,93 +2515,93 @@ SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
               
-    SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+  SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/verification-validation-log/index.sql'') as contents;
     ;
 
-    SELECT
-      ''text'' as component,
-      ''
-      Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.'' as contents;
+  SELECT
+    ''text'' as component,
+    ''
+    Validation is a detailed process where we assess if the data within the files conforms to expecuted rules or constraints. This step ensures that the content of the files is both correct and meaningful before they are utilized for further processing.'' as contents;
 
 
 
 SELECT
-    ''steps'' AS component,
-    TRUE AS counter,
-    ''green'' AS color;
+  ''steps'' AS component,
+  TRUE AS counter,
+  ''green'' AS color;
 
 
 SELECT
-    ''Check the Validation Log'' AS title,
-    ''file'' AS icon,
-    ''#'' AS link,
-    ''If the log is empty, no action is required. Your files are good to go! If the log has entries, follow the steps below to fix any issues.'' AS description;
+  ''Check the Validation Log'' AS title,
+  ''file'' AS icon,
+  ''#'' AS link,
+  ''If the log is empty, no action is required. Your files are good to go! If the log has entries, follow the steps below to fix any issues.'' AS description;
 
 
 SELECT
-    ''Note the Issues'' AS title,
-    ''note'' AS icon,
-    ''#'' AS link,
-    ''Review the log to see what needs fixing for each file. Note them down to make a note on what needs to be changed in each file.'' AS description;
+  ''Note the Issues'' AS title,
+  ''note'' AS icon,
+  ''#'' AS link,
+  ''Review the log to see what needs fixing for each file. Note them down to make a note on what needs to be changed in each file.'' AS description;
 
 
 SELECT
-    ''Stop the Edge UI'' AS title,
-    ''square-rounded-x'' AS icon,
-    ''#'' AS link,
-    ''Make sure to stop the UI (press CTRL+C in the terminal).'' AS description;
+  ''Stop the Edge UI'' AS title,
+  ''square-rounded-x'' AS icon,
+  ''#'' AS link,
+  ''Make sure to stop the UI (press CTRL+C in the terminal).'' AS description;
 
 
 SELECT
-    ''Make Corrections in Files'' AS title,
-    ''edit'' AS icon,
-    ''#'' AS link,
-    ''Edit the files according to the instructions provided in the log. For example, if a file is empty, fill it with the correct data.'' AS description;
+  ''Make Corrections in Files'' AS title,
+  ''edit'' AS icon,
+  ''#'' AS link,
+  ''Edit the files according to the instructions provided in the log. For example, if a file is empty, fill it with the correct data.'' AS description;
 
 
 SELECT
-    ''Copy the modified Files to the folder'' AS title,
-    ''copy'' AS icon,
-    ''#'' AS link,
-    ''Once you’ve made the necessary changes, replace the old files with the updated ones in the folder.'' AS description;
+  ''Copy the modified Files to the folder'' AS title,
+  ''copy'' AS icon,
+  ''#'' AS link,
+  ''Once you’ve made the necessary changes, replace the old files with the updated ones in the folder.'' AS description;
 
 
 SELECT
-    ''Execute the automated script again'' AS title,
-    ''retry'' AS icon,
-    ''#'' AS link,
-    ''Run the command again to perform file conversion.'' AS description;
+  ''Execute the automated script again'' AS title,
+  ''retry'' AS icon,
+  ''#'' AS link,
+  ''Run the command again to perform file conversion.'' AS description;
 
 
 SELECT
-    ''Repeat the steps until issues are resolved'' AS title,
-    ''refresh'' AS icon,
-    ''#'' AS link,
-    ''Continue this process until the log is empty and all issues are resolved'' AS description;
+  ''Repeat the steps until issues are resolved'' AS title,
+  ''refresh'' AS icon,
+  ''#'' AS link,
+  ''Continue this process until the log is empty and all issues are resolved'' AS description;
 
 
 SELECT
-      ''text'' as component,
-      ''
-      Reminder: Keep updating and re-running the process until you see no entries in the log below.'' as contents;
+    ''text'' as component,
+    ''
+    Reminder: Keep updating and re-running the process until you see no entries in the log below.'' as contents;
 
 
-      SET total_rows = (SELECT COUNT(*) FROM drh_vandv_orch_issues);
+    SET total_rows = (SELECT COUNT(*) FROM drh_vandv_orch_issues);
 SET limit = COALESCE($limit, 50);
 SET offset = COALESCE($offset, 0);
 SET total_pages = ($total_rows + $limit - 1) / $limit;
 SET current_page = ($offset / $limit) + 1;
 
-      SELECT ''table'' AS component,
-      TRUE AS sort,
-      TRUE AS search;
-      SELECT * FROM drh_vandv_orch_issues
-      LIMIT $limit
-      OFFSET $offset;
+    SELECT ''table'' AS component,
+    TRUE AS sort,
+    TRUE AS search;
+    SELECT * FROM drh_vandv_orch_issues
+    LIMIT $limit
+    OFFSET $offset;
 
-      SELECT ''text'' AS component,
+    SELECT ''text'' AS component,
     (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
     ''(Page '' || $current_page || '' of '' || $total_pages || ") " ||
     (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
@@ -2603,7 +2632,8 @@ WITH RECURSIVE breadcrumbs AS (
 SELECT title, link FROM breadcrumbs ORDER BY level DESC;
               -- not including page title from sqlpage_aide_navigation
 
-                SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
+              
+  SELECT ''title'' AS component, (SELECT COALESCE(title, caption)
     FROM sqlpage_aide_navigation
    WHERE namespace = ''prime'' AND path = ''/drh/participant-related-data/index.sql'') as contents;
     ;
