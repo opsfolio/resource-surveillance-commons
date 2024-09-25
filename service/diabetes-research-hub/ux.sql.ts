@@ -5,6 +5,7 @@ import {
   shell as sh,
   uniformResource as ur,
 } from "../../prime/web-ui-content/mod.ts";
+
 import { sqlPageNB as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
@@ -13,6 +14,92 @@ function drhNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
     ...route,
     parentPath: "/drh",
   });
+}
+
+export class DrhShellSqlPages extends sh.ShellSqlPages {
+  defaultShell() {
+    const shellConfig = super.defaultShell();
+    shellConfig.title = "Diabetes Research Hub";
+    shellConfig.image = "./assets/diabetic-research-hub-logo.png";
+    shellConfig.icon = "";
+    shellConfig.link = "https://drh.diabetestechnology.org/";
+    return shellConfig;
+  }
+
+  @spn.shell({ eliminate: true })
+  "shell/shell.json"() {
+    return this.SQL`
+      ${JSON.stringify(this.defaultShell(), undefined, "  ")}
+    `;
+  }
+
+  @spn.shell({ eliminate: true })
+  "shell/shell.sql"() {
+    const literal = (value: unknown) =>
+      typeof value === "number"
+        ? value
+        : value
+        ? this.emitCtx.sqlTextEmitOptions.quotedLiteral(value)[1]
+        : "NULL";
+    const selectNavMenuItems = (rootPath: string, caption: string) =>
+      `json_object(
+              'link', '${rootPath}',
+              'title', ${literal(caption)},
+              'submenu', (
+                  SELECT json_group_array(
+                      json_object(
+                          'title', title,
+                          'link', link,
+                          'description', description
+                      )
+                  )
+                  FROM (
+                      SELECT
+                          COALESCE(abbreviated_caption, caption) as title,
+                          COALESCE(url, path) as link,
+                          description
+                      FROM sqlpage_aide_navigation
+                      WHERE namespace = 'prime' AND parent_path = '${rootPath}'
+                      ORDER BY sibling_order
+                  )
+              )
+          ) as menu_item`;
+
+    const handlers = {
+      DEFAULT: (key: string, value: unknown) => `${literal(value)} AS ${key}`,
+      menu_item: (key: string, items: Record<string, unknown>[]) =>
+        items.map((item) => `${literal(JSON.stringify(item))} AS ${key}`),
+      javascript: (key: string, scripts: string[]) => {
+        const items = scripts.map((s) => `${literal(s)} AS ${key}`);
+        items.push(selectNavMenuItems("/ur", "Uniform Resource"));
+        items.push(selectNavMenuItems("/console", "Console"));
+        items.push(selectNavMenuItems("/orchestration", "Orchestration"));
+        items.push(selectNavMenuItems("/site", "DRH"));
+        return items;
+      },
+      footer: () =>
+        // TODO: add "open in IDE" feature like in other Shahid apps
+        literal(`Resource Surveillance Web UI (v`) +
+        ` || sqlpage.version() || ') ' || ` +
+        `'📄 [' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
+    };
+    const shell = this.defaultShell();
+    const sqlSelectExpr = Object.entries(shell).flatMap(([k, v]) => {
+      switch (k) {
+        case "menu_item":
+          return handlers.menu_item(k, v as Record<string, unknown>[]);
+        case "javascript":
+          return handlers.javascript(k, v as string[]);
+        case "footer":
+          return handlers.footer();
+        default:
+          return handlers.DEFAULT(k, v);
+      }
+    });
+    return this.SQL`
+      SELECT ${sqlSelectExpr.join(",\n       ")};
+    `;
+  }
 }
 
 /**
@@ -26,6 +113,15 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
       -- delete all /drh-related entries and recreate them in case routes are changed
       DELETE FROM sqlpage_aide_navigation WHERE path like '/drh%';
       ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
+    `;
+  }
+
+  menuDDL() {
+    return this.SQL`
+    INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
+    ('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
+    ('/site/public.sql', 'DRH Public Site', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
+    ('/site/dtsorg.sql', 'DTS Main Site', 'prime', '/site', 2, 'https://www.diabetestechnology.org/index.shtml', NULL, NULL, NULL);
     `;
   }
 
@@ -818,7 +914,8 @@ export async function drhSQL() {
         // );
       }
     }(),
-    new sh.ShellSqlPages(),
+    // new sh.ShellSqlPages(),
+    new DrhShellSqlPages(),
     new c.ConsoleSqlPages(),
     new ur.UniformResourceSqlPages(),
     new orch.OrchestrationSqlPages(),
