@@ -783,15 +783,19 @@ VALUES
     ('prime', '/drh', 19, '/drh/participant-related-data', '/drh/participant-related-data/', 'Participant Information', 'Participant Information', NULL, NULL)
 ON CONFLICT (namespace, parent_path, path)
 DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
+INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
+('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
+('/site/public.sql', 'DRH Public Site', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
+('/site/dtsorg.sql', 'DTS Main Site', 'prime', '/site', 2, 'https://www.diabetestechnology.org/index.shtml', NULL, NULL, NULL);
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'shell/shell.json',
       '{
   "component": "shell",
-  "title": "Resource Surveillance State Database (RSSD)",
-  "icon": "database",
+  "title": "Diabetes Research Hub",
+  "icon": "",
   "layout": "fluid",
   "fixed_top_menu": true,
-  "link": "/",
+  "link": "https://drh.diabetestechnology.org/",
   "menu_item": [
     {
       "link": "/",
@@ -804,18 +808,19 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
     "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/handlebars.min.js",
     "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js"
   ],
-  "footer": "Resource Surveillance Web UI"
+  "footer": "Resource Surveillance Web UI",
+  "image": "./assets/diabetic-research-hub-logo.png"
 };',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'shell/shell.sql',
       'SELECT ''shell'' AS component,
-       ''Resource Surveillance State Database (RSSD)'' AS title,
-       ''database'' AS icon,
+       ''Diabetes Research Hub'' AS title,
+       NULL AS icon,
        ''fluid'' AS layout,
        true AS fixed_top_menu,
-       ''/'' AS link,
+       ''https://drh.diabetestechnology.org/'' AS link,
        ''{"link":"/","title":"Home"}'' AS menu_item,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js'' AS javascript,
        ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/sql.min.js'' AS javascript,
@@ -887,7 +892,30 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
                   )
               )
           ) as menu_item,
-       ''Resource Surveillance Web UI (v'' || sqlpage.version() || '') '' || ''📄 ['' || substr(sqlpage.path(), 2) || ''](/console/sqlpage-files/sqlpage-file.sql?path='' || substr(sqlpage.path(), 2) || '')'' as footer;',
+       json_object(
+              ''link'', ''/site'',
+              ''title'', ''DRH'',
+              ''submenu'', (
+                  SELECT json_group_array(
+                      json_object(
+                          ''title'', title,
+                          ''link'', link,
+                          ''description'', description
+                      )
+                  )
+                  FROM (
+                      SELECT
+                          COALESCE(abbreviated_caption, caption) as title,
+                          COALESCE(url, path) as link,
+                          description
+                      FROM sqlpage_aide_navigation
+                      WHERE namespace = ''prime'' AND parent_path = ''/site''
+                      ORDER BY sibling_order
+                  )
+              )
+          ) as menu_item,
+       ''Resource Surveillance Web UI (v'' || sqlpage.version() || '') '' || ''📄 ['' || substr(sqlpage.path(), 2) || ''](/console/sqlpage-files/sqlpage-file.sql?path='' || substr(sqlpage.path(), 2) || '')'' as footer,
+       ''./assets/diabetic-research-hub-logo.png'' AS image;',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
