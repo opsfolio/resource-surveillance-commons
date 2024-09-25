@@ -1,48 +1,49 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run --allow-sys
 import {
-    console as c,
-    orchestration as orch,
-    shell as sh,
-    uniformResource as ur,
+  console as c,
+  orchestration as orch,
+  shell as sh,
+  uniformResource as ur,
 } from "../../prime/web-ui-content/mod.ts";
 
 import { sqlPageNB as spn } from "./deps.ts";
 
 // custom decorator that makes navigation for this notebook type-safe
 function drhNav(route: Omit<spn.RouteConfig, "path" | "parentPath">) {
-    return spn.navigationPrime({
-        ...route,
-        parentPath: "/drh",
-    });
+  return spn.navigationPrime({
+    ...route,
+    parentPath: "/drh",
+  });
 }
 
 export class DrhShellSqlPages extends sh.ShellSqlPages {
-    defaultShell() {
-        const shellConfig = super.defaultShell();
-        shellConfig.title = "Diabetes Research Hub";
-        shellConfig.image = "/assets/diabetic-research-hub-logo.png";
-        shellConfig.icon = "";
-        shellConfig.link = "https://drh.diabetestechnology.org/";
-        return shellConfig;
-    }
+  defaultShell() {
+    const shellConfig = super.defaultShell();
+    shellConfig.title = "Diabetes Research Hub";
+    shellConfig.image =
+      "https://lib.drh.diabetestechnology.org/service/diabetes-research-hub/assets/diabetic-research-hub-logo.png";
+    shellConfig.icon = "";
+    shellConfig.link = "https://drh.diabetestechnology.org/";
+    return shellConfig;
+  }
 
-    @spn.shell({ eliminate: true })
-    "shell/shell.json"() {
-        return this.SQL`
+  @spn.shell({ eliminate: true })
+  "shell/shell.json"() {
+    return this.SQL`
     ${JSON.stringify(this.defaultShell(), undefined, "  ")}
   `;
-    }
+  }
 
-    @spn.shell({ eliminate: true })
-    "shell/shell.sql"() {
-        const literal = (value: unknown) =>
-            typeof value === "number"
-                ? value
-                : value
-                ? this.emitCtx.sqlTextEmitOptions.quotedLiteral(value)[1]
-                : "NULL";
-        const selectNavMenuItems = (rootPath: string, caption: string) =>
-            `json_object(
+  @spn.shell({ eliminate: true })
+  "shell/shell.sql"() {
+    const literal = (value: unknown) =>
+      typeof value === "number"
+        ? value
+        : value
+        ? this.emitCtx.sqlTextEmitOptions.quotedLiteral(value)[1]
+        : "NULL";
+    const selectNavMenuItems = (rootPath: string, caption: string) =>
+      `json_object(
             'link', '${rootPath}',
             'title', ${literal(caption)},
             'submenu', (
@@ -65,80 +66,77 @@ export class DrhShellSqlPages extends sh.ShellSqlPages {
             )
         ) as menu_item`;
 
-        const handlers = {
-            DEFAULT: (key: string, value: unknown) =>
-                `${literal(value)} AS ${key}`,
-            menu_item: (key: string, items: Record<string, unknown>[]) =>
-                items.map((item) =>
-                    `${literal(JSON.stringify(item))} AS ${key}`
-                ),
-            javascript: (key: string, scripts: string[]) => {
-                const items = scripts.map((s) => `${literal(s)} AS ${key}`);
-                items.push(selectNavMenuItems("/ur", "Uniform Resource"));
-                items.push(selectNavMenuItems("/console", "Console"));
-                items.push(
-                    selectNavMenuItems("/orchestration", "Orchestration"),
-                );
-                items.push(selectNavMenuItems("/site", "DRH"));
-                return items;
-            },
-            footer: () =>
-                // TODO: add "open in IDE" feature like in other Shahid apps
-                literal(`Resource Surveillance Web UI (v`) +
-                ` || sqlpage.version() || ') ' || ` +
-                `'📄 [' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
-        };
-        const shell = this.defaultShell();
-        const sqlSelectExpr = Object.entries(shell).flatMap(([k, v]) => {
-            switch (k) {
-                case "menu_item":
-                    return handlers.menu_item(
-                        k,
-                        v as Record<string, unknown>[],
-                    );
-                case "javascript":
-                    return handlers.javascript(k, v as string[]);
-                case "footer":
-                    return handlers.footer();
-                default:
-                    return handlers.DEFAULT(k, v);
-            }
-        });
-        return this.SQL`
+    const handlers = {
+      DEFAULT: (key: string, value: unknown) => `${literal(value)} AS ${key}`,
+      menu_item: (key: string, items: Record<string, unknown>[]) =>
+        items.map((item) => `${literal(JSON.stringify(item))} AS ${key}`),
+      javascript: (key: string, scripts: string[]) => {
+        const items = scripts.map((s) => `${literal(s)} AS ${key}`);
+        items.push(selectNavMenuItems("/ur", "Uniform Resource"));
+        items.push(selectNavMenuItems("/console", "Console"));
+        items.push(
+          selectNavMenuItems("/orchestration", "Orchestration"),
+        );
+        items.push(selectNavMenuItems("/site", "DRH"));
+        return items;
+      },
+      footer: () =>
+        // TODO: add "open in IDE" feature like in other Shahid apps
+        literal(`Resource Surveillance Web UI (v`) +
+        ` || sqlpage.version() || ') ' || ` +
+        `'📄 [' || substr(sqlpage.path(), 2) || '](/console/sqlpage-files/sqlpage-file.sql?path=' || substr(sqlpage.path(), 2) || ')' as footer`,
+    };
+    const shell = this.defaultShell();
+    const sqlSelectExpr = Object.entries(shell).flatMap(([k, v]) => {
+      switch (k) {
+        case "menu_item":
+          return handlers.menu_item(
+            k,
+            v as Record<string, unknown>[],
+          );
+        case "javascript":
+          return handlers.javascript(k, v as string[]);
+        case "footer":
+          return handlers.footer();
+        default:
+          return handlers.DEFAULT(k, v);
+      }
+    });
+    return this.SQL`
     SELECT ${sqlSelectExpr.join(",\n       ")};
   `;
-    }
+  }
 }
 
 /**
  * These pages depend on ../../prime/ux.sql.ts being loaded into RSSD (for nav).
  */
 export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
-    // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
-    // or `DDL` as general SQL before doing any upserts into sqlpage_files.
-    navigationDML() {
-        return this.SQL`
+  // TypicalSqlPageNotebook.SQL injects any method that ends with `DQL`, `DML`,
+  // or `DDL` as general SQL before doing any upserts into sqlpage_files.
+  navigationDML() {
+    return this.SQL`
     -- delete all /drh-related entries and recreate them in case routes are changed
     DELETE FROM sqlpage_aide_navigation WHERE path like '/drh%';
     ${this.upsertNavSQL(...Array.from(this.navigation.values()))}
   `;
-    }
+  }
 
-    menuDDL() {
-        return this.SQL`
+  menuDDL() {
+    return this.SQL`
   INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
   ('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
   ('/site/public.sql', 'Diabetes Research Hub', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
   ('/site/dtsorg.sql', 'Diabetes Technology Society', 'prime', '/site', 2, 'https://www.diabetestechnology.org/', NULL, NULL, NULL);
   `;
-    }
+  }
 
-    @spn.navigationPrimeTopLevel({
-        caption: "DRH Home",
-        description: "Welcome to Diabetes Research Hub",
-    })
-    "drh/index.sql"() {
-        return this.SQL`
+  @spn.navigationPrimeTopLevel({
+    caption: "DRH Home",
+    description: "Welcome to Diabetes Research Hub",
+  })
+  "drh/index.sql"() {
+    return this.SQL`
             SELECT
                   'card'                      as component,
                   'Welcome to the Diabetes Research Hub' as title,
@@ -261,16 +259,16 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
 
 
      `;
-    }
+  }
 
-    @drhNav({
-        caption: "Researcher And Associated Information",
-        abbreviatedCaption: "Researcher And Associated Information",
-        description: "Researcher And Associated Information",
-        siblingOrder: 4,
-    })
-    "drh/researcher-related-data/index.sql"() {
-        return this.SQL`
+  @drhNav({
+    caption: "Researcher And Associated Information",
+    abbreviatedCaption: "Researcher And Associated Information",
+    description: "Researcher And Associated Information",
+    siblingOrder: 4,
+  })
+  "drh/researcher-related-data/index.sql"() {
+    return this.SQL`
      ${this.activePageTitle()}
 
     SELECT
@@ -306,18 +304,18 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
 
 
    `;
-    }
+  }
 
-    @drhNav({
-        caption: "Study and Participant Information",
-        abbreviatedCaption: "Study and Participant Information",
-        description: "Study and Participant Information",
-        siblingOrder: 5,
-    })
-    "drh/study-related-data/index.sql"() {
-        const viewName = `drh_participant_data`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Study and Participant Information",
+    abbreviatedCaption: "Study and Participant Information",
+    description: "Study and Participant Information",
+    siblingOrder: 5,
+  })
+  "drh/study-related-data/index.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
     SELECT
   'text' as component,
@@ -364,17 +362,17 @@ Research sites are locations where the studies are conducted. They include clini
 
 
       `;
-    }
+  }
 
-    @drhNav({
-        caption: "Uniform Resource Participant",
-        description: "Participant demographics with pagination",
-        siblingOrder: 6,
-    })
-    "drh/uniform-resource-participant.sql"() {
-        const viewName = `drh_participant_data`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Uniform Resource Participant",
+    description: "Participant demographics with pagination",
+    siblingOrder: 6,
+  })
+  "drh/uniform-resource-participant.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
     ${this.activePageTitle()}
 
 
@@ -390,16 +388,16 @@ Research sites are locations where the studies are conducted. They include clini
 
     ${pagination.renderSimpleMarkdown()}
   `;
-    }
+  }
 
-    @drhNav({
-        caption: "Author Publication Information",
-        abbreviatedCaption: "Author Publication Information",
-        description: "Author Publication Information",
-        siblingOrder: 7,
-    })
-    "drh/author-pub-data/index.sql"() {
-        return this.SQL`
+  @drhNav({
+    caption: "Author Publication Information",
+    abbreviatedCaption: "Author Publication Information",
+    description: "Author Publication Information",
+    siblingOrder: 7,
+  })
+  "drh/author-pub-data/index.sql"() {
+    return this.SQL`
   ${this.activePageTitle()}
 
   SELECT
@@ -446,16 +444,16 @@ This section provides information about the publications resulting from a study.
 
 
       `;
-    }
+  }
 
-    @drhNav({
-        caption: "PHI DeIdentification Results",
-        abbreviatedCaption: "PHI DeIdentification Results",
-        description: "PHI DeIdentification Results",
-        siblingOrder: 8,
-    })
-    "drh/deidentification-log/index.sql"() {
-        return this.SQL`
+  @drhNav({
+    caption: "PHI DeIdentification Results",
+    abbreviatedCaption: "PHI DeIdentification Results",
+    description: "PHI DeIdentification Results",
+    siblingOrder: 8,
+  })
+  "drh/deidentification-log/index.sql"() {
+    return this.SQL`
   ${this.activePageTitle()}
 
   /*
@@ -478,18 +476,18 @@ This section provides information about the publications resulting from a study.
   SELECT 'table' as component, 1 as search, 1 as sort, 1 as hover, 1 as striped_rows;
   SELECT input_text as "deidentified column", orch_started_at,orch_finished_at ,diagnostics_md from drh_vw_orchestration_deidentify;
   `;
-    }
+  }
 
-    @drhNav({
-        caption: "CGM File MetaData Information",
-        abbreviatedCaption: "CGM File MetaData Information",
-        description: "CGM File MetaData Information",
-        siblingOrder: 9,
-    })
-    "drh/cgm-associated-data/index.sql"() {
-        const viewName = `drh_cgmfilemetadata_view`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "CGM File MetaData Information",
+    abbreviatedCaption: "CGM File MetaData Information",
+    description: "CGM File MetaData Information",
+    siblingOrder: 9,
+  })
+  "drh/cgm-associated-data/index.sql"() {
+    const viewName = `drh_cgmfilemetadata_view`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
 
       /*SELECT
@@ -539,16 +537,16 @@ OFFSET $offset;
 ${pagination.renderSimpleMarkdown()}
 
       `;
-    }
+  }
 
-    @drhNav({
-        caption: "Raw CGM Data",
-        abbreviatedCaption: "Raw CGM Data",
-        description: "Raw CGM Data",
-        siblingOrder: 10,
-    })
-    "drh/cgm-data/index.sql"() {
-        return this.SQL`
+  @drhNav({
+    caption: "Raw CGM Data",
+    abbreviatedCaption: "Raw CGM Data",
+    description: "Raw CGM Data",
+    siblingOrder: 10,
+  })
+  "drh/cgm-data/index.sql"() {
+    return this.SQL`
   ${this.activePageTitle()}
 
   SELECT
@@ -569,15 +567,15 @@ ${pagination.renderSimpleMarkdown()}
   SELECT '[' || table_name || '](raw-cgm/' || table_name || '.sql)' AS "Table"
   FROM drh_raw_cgm_table_lst;
   `;
-    }
-    // no @drhNav since this is a "utility" page (not navigable)
-    @spn.shell({ breadcrumbsFromNavStmts: "no" })
-    "drh/cgm-data/data.sql"() {
-        // Assume $name is passed as a request parameter
-        const viewName = `$name`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
+  }
+  // no @drhNav since this is a "utility" page (not navigable)
+  @spn.shell({ breadcrumbsFromNavStmts: "no" })
+  "drh/cgm-data/data.sql"() {
+    // Assume $name is passed as a request parameter
+    const viewName = `$name`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
 
-        return this.SQL`
+    return this.SQL`
   ${this.activeBreadcrumbsSQL({ titleExpr: `$name || ' Table'` })}
 
 
@@ -596,18 +594,18 @@ ${pagination.renderSimpleMarkdown()}
 
   ${pagination.renderSimpleMarkdown()}
 `;
-    }
+  }
 
-    @drhNav({
-        caption: "Study Files",
-        abbreviatedCaption: "Study Files",
-        description: "Study Files",
-        siblingOrder: 11,
-    })
-    "drh/ingestion-log/index.sql"() {
-        const viewName = `drh_study_files_table_info`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Study Files",
+    abbreviatedCaption: "Study Files",
+    description: "Study Files",
+    siblingOrder: 11,
+  })
+  "drh/ingestion-log/index.sql"() {
+    const viewName = `drh_study_files_table_info`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
 
   SELECT
@@ -629,18 +627,18 @@ ${pagination.renderSimpleMarkdown()}
 
     ${pagination.renderSimpleMarkdown()}
   `;
-    }
+  }
 
-    @drhNav({
-        caption: "Study Participant Dashboard",
-        abbreviatedCaption: "Study Participant Dashboard",
-        description: "Study Participant Dashboard",
-        siblingOrder: 12,
-    })
-    "drh/study-participant-dashboard/index.sql"() {
-        const viewName = `drh_participant_data`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Study Participant Dashboard",
+    abbreviatedCaption: "Study Participant Dashboard",
+    description: "Study Participant Dashboard",
+    siblingOrder: 12,
+  })
+  "drh/study-participant-dashboard/index.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
 
 
@@ -757,18 +755,18 @@ ${pagination.renderSimpleMarkdown()}
 
 
   `;
-    }
+  }
 
-    @drhNav({
-        caption: "Verfication And Validation Results",
-        abbreviatedCaption: "Verfication And Validation Results",
-        description: "Verfication And Validation Results",
-        siblingOrder: 13,
-    })
-    "drh/verification-validation-log/index.sql"() {
-        const viewName = `drh_vandv_orch_issues`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Verfication And Validation Results",
+    abbreviatedCaption: "Verfication And Validation Results",
+    description: "Verfication And Validation Results",
+    siblingOrder: 13,
+  })
+  "drh/verification-validation-log/index.sql"() {
+    const viewName = `drh_vandv_orch_issues`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
 
   SELECT
@@ -850,17 +848,17 @@ SELECT
 
     ${pagination.renderSimpleMarkdown()}
     `;
-    }
+  }
 
-    @drhNav({
-        caption: "Participant Information",
-        abbreviatedCaption: "Participant Information",
-        siblingOrder: 19,
-    })
-    "drh/participant-related-data/index.sql"() {
-        const viewName = `drh_participant_data`;
-        const pagination = this.pagination({ tableOrViewName: viewName });
-        return this.SQL`
+  @drhNav({
+    caption: "Participant Information",
+    abbreviatedCaption: "Participant Information",
+    siblingOrder: 19,
+  })
+  "drh/participant-related-data/index.sql"() {
+    const viewName = `drh_participant_data`;
+    const pagination = this.pagination({ tableOrViewName: viewName });
+    return this.SQL`
   ${this.activePageTitle()}
 
   SELECT
@@ -902,36 +900,36 @@ Participants are individuals who volunteer to take part in CGM research studies.
     ${pagination.renderSimpleMarkdown()}
 
       `;
-    }
+  }
 }
 
 export async function drhSQL() {
-    return await spn.TypicalSqlPageNotebook.SQL(
-        new class extends spn.TypicalSqlPageNotebook {
-            async statelessDRHSQL() {
-                // read the file from either local or remote (depending on location of this file)
-                return await spn.TypicalSqlPageNotebook.fetchText(
-                    import.meta.resolve("./stateless-drh-surveilr.sql"),
-                );
-            }
+  return await spn.TypicalSqlPageNotebook.SQL(
+    new class extends spn.TypicalSqlPageNotebook {
+      async statelessDRHSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        return await spn.TypicalSqlPageNotebook.fetchText(
+          import.meta.resolve("./stateless-drh-surveilr.sql"),
+        );
+      }
 
-            async orchestrateStatefulFDRHSQL() {
-                // read the file from either local or remote (depending on location of this file)
-                // return await spn.TypicalSqlPageNotebook.fetchText(
-                //   import.meta.resolve("./stateful-drh-surveilr.sql"),
-                // );
-            }
-        }(),
-        // new sh.ShellSqlPages(),
-        new DrhShellSqlPages(),
-        new c.ConsoleSqlPages(),
-        new ur.UniformResourceSqlPages(),
-        new orch.OrchestrationSqlPages(),
-        new DRHSqlPages(),
-    );
+      async orchestrateStatefulFDRHSQL() {
+        // read the file from either local or remote (depending on location of this file)
+        // return await spn.TypicalSqlPageNotebook.fetchText(
+        //   import.meta.resolve("./stateful-drh-surveilr.sql"),
+        // );
+      }
+    }(),
+    // new sh.ShellSqlPages(),
+    new DrhShellSqlPages(),
+    new c.ConsoleSqlPages(),
+    new ur.UniformResourceSqlPages(),
+    new orch.OrchestrationSqlPages(),
+    new DRHSqlPages(),
+  );
 }
 
 // this will be used by any callers who want to serve it as a CLI with SDTOUT
 if (import.meta.main) {
-    console.log((await drhSQL()).join("\n"));
+  console.log((await drhSQL()).join("\n"));
 }
