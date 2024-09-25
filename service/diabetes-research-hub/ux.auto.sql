@@ -785,8 +785,8 @@ ON CONFLICT (namespace, parent_path, path)
 DO UPDATE SET title = EXCLUDED.title, abbreviated_caption = EXCLUDED.abbreviated_caption, description = EXCLUDED.description, url = EXCLUDED.url, sibling_order = EXCLUDED.sibling_order;
 INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
 ('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
-('/site/public.sql', 'DRH Public Site', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
-('/site/dtsorg.sql', 'DTS Main Site', 'prime', '/site', 2, 'https://www.diabetestechnology.org/index.shtml', NULL, NULL, NULL);
+('/site/public.sql', 'Diabetics Research Hub', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
+('/site/dtsorg.sql', 'Diabetes Technology Society', 'prime', '/site', 2, 'https://www.diabetestechnology.org/', NULL, NULL, NULL);
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
       'shell/shell.json',
       '{
