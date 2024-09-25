@@ -128,7 +128,7 @@ export class DRHSqlPages extends spn.TypicalSqlPageNotebook {
         return this.SQL`
   INSERT OR IGNORE INTO sqlpage_aide_navigation ("path", caption, namespace, parent_path, sibling_order, url, title, abbreviated_caption, description) VALUES
   ('/site', 'DRH Menus', 'prime', '/', 1, '/site', NULL, NULL, NULL),
-  ('/site/public.sql', 'Diabetics Research Hub', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
+  ('/site/public.sql', 'Diabetes Research Hub', 'prime', '/site', 1, 'https://drh.diabetestechnology.org/', NULL, NULL, NULL),
   ('/site/dtsorg.sql', 'Diabetes Technology Society', 'prime', '/site', 2, 'https://www.diabetestechnology.org/', NULL, NULL, NULL);
   `;
     }
