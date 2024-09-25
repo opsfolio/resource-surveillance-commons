@@ -809,7 +809,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
     "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js"
   ],
   "footer": "Resource Surveillance Web UI",
-  "image": "./assets/diabetic-research-hub-logo.png"
+  "image": "/assets/diabetic-research-hub-logo.png"
 };',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
@@ -915,7 +915,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
             )
         ) as menu_item,
        ''Resource Surveillance Web UI (v'' || sqlpage.version() || '') '' || ''📄 ['' || substr(sqlpage.path(), 2) || ''](/console/sqlpage-files/sqlpage-file.sql?path='' || substr(sqlpage.path(), 2) || '')'' as footer,
-       ''./assets/diabetic-research-hub-logo.png'' AS image;',
+       ''/assets/diabetic-research-hub-logo.png'' AS image;',
       CURRENT_TIMESTAMP)
   ON CONFLICT(path) DO UPDATE SET contents = EXCLUDED.contents, last_modified = CURRENT_TIMESTAMP;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (
