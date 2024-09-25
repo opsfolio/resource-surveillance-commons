@@ -20,7 +20,7 @@ export class DrhShellSqlPages extends sh.ShellSqlPages {
     defaultShell() {
         const shellConfig = super.defaultShell();
         shellConfig.title = "Diabetes Research Hub";
-        shellConfig.image = "./assets/diabetic-research-hub-logo.png";
+        shellConfig.image = "/assets/diabetic-research-hub-logo.png";
         shellConfig.icon = "";
         shellConfig.link = "https://drh.diabetestechnology.org/";
         return shellConfig;
